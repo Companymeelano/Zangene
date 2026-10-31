@@ -1,0 +1,6 @@
+-keep class com.asiyestore.admin.network.** { *; }
+-keep class com.asiyestore.admin.data.** { *; }
+-keep class com.asiyestore.admin.app.** { *; }
+-keepattributes Signature, InnerClasses, EnclosingMethod
+-dontwarn retrofit2.**
+-dontwarn okhttp3.**

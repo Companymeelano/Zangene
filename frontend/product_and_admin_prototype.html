@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASIYE STORE — پیش‌نمایش پنل مدیریت تحت وب و اندروید</title>
+    <link rel="stylesheet" href="src/styles/design_system.css">
+    <link rel="icon" href="../images/favicon.png" type="image/png">
+    <style>
+        .admin-shell {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: calc(100vh - 76px);
+        }
+        .admin-sidebar {
+            background: var(--luxury-black);
+            color: var(--warm-white);
+            padding: 2rem 1.25rem;
+            border-left: 1px solid rgba(198, 161, 108, 0.35);
+        }
+        .admin-nav-link {
+            display: block;
+            padding: 0.85rem 1rem;
+            border-radius: var(--radius-sm);
+            color: var(--platinum-gray);
+            text-decoration: none;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .admin-nav-link.active, .admin-nav-link:hover {
+            background: var(--champagne-gold);
+            color: var(--luxury-black);
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .kpi-card {
+            background: var(--warm-white);
+            padding: 1.4rem;
+            border-radius: var(--radius-md);
+            border-right: 4px solid var(--champagne-gold);
+            box-shadow: var(--shadow-soft);
+        }
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--warm-white);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+        }
+        .orders-table th, .orders-table td {
+            padding: 0.95rem 1rem;
+            text-align: right;
+            border-bottom: 1px solid rgba(198, 161, 108, 0.2);
+        }
+        .orders-table th {
+            background: var(--luxury-black);
+            color: var(--soft-gold);
+        }
+        @media (max-width: 900px) {
+            .admin-shell { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="luxury-header">
+        <a href="index.html" class="logo-container">
+            <img src="../images/app_icon_dark.png" alt="ASIYE STORE" class="logo-img">
+            <div class="logo-text">ASIYE STORE ADMIN<span class="slogan">Executive Control Suite</span></div>
+        </a>
+        <a href="index.html" class="btn-luxury" style="text-decoration:none;">مشاهده ویترین فروشگاه</a>
+    </header>
+
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div style="text-align:center; margin-bottom:2rem;">
+                <img src="../images/logo_horizontal_luxury.png" alt="ASIYE Logo" style="max-width:180px; border-radius:8px;">
+            </div>
+            <a href="#" class="admin-nav-link active">داشبورد اجرایی</a>
+            <a href="#orders-sec" class="admin-nav-link">مدیریت سفارش‌ها</a>
+            <a href="src/pages/luxury_product_samples.html" class="admin-nav-link">مدیریت محصولات</a>
+            <a href="index.html" class="admin-nav-link">تنظیمات درگاه و اقساط</a>
+        </aside>
+
+        <main style="padding: 2rem 4%;">
+            <h1 style="margin-top:0;">داشبورد مدیریتی یکپارچه ASIYE STORE</h1>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div style="color:#78716C; font-size:0.88rem;">فروش تاییدشده امروز</div>
+                    <div style="font-size:1.65rem; font-weight:800; margin-top:0.35rem;">۱۴۵,۸۵۰,۰۰۰ تومان</div>
+                </div>
+                <div class="kpi-card">
+                    <div style="color:#78716C; font-size:0.88rem;">سفارش‌های در جریان</div>
+                    <div style="font-size:1.65rem; font-weight:800; margin-top:0.35rem;">۲۴ سفارش</div>
+                </div>
+                <div class="kpi-card">
+                    <div style="color:#78716C; font-size:0.88rem;">هشدار کسری موجودی</div>
+                    <div style="font-size:1.65rem; font-weight:800; color:#9B2226; margin-top:0.35rem;">۱ تنوع (شامپاینی نود)</div>
+                </div>
+                <div class="kpi-card">
+                    <div style="color:#78716C; font-size:0.88rem;">فروش اقساطی (اسنپ‌پی / تارا)</div>
+                    <div style="font-size:1.65rem; font-weight:800; color:#2D6A4F; margin-top:0.35rem;">۳۸٪ کل فروش</div>
+                </div>
+            </div>
+
+            <h2 id="orders-sec">آخرین سفارش‌های ثبت‌شده</h2>
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>کد سفارش</th>
+                        <th>مشتری</th>
+                        <th>مبلغ کل</th>
+                        <th>روش پرداخت</th>
+                        <th>وضعیت</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>AS-20261031-A91F</td>
+                        <td>سارا محمدی (تهران)</td>
+                        <td>۳,۹۵۰,۰۰۰ تومان</td>
+                        <td>اسنپ‌پی (۴ قسط)</td>
+                        <td><span class="chip active">پرداخت شده — آماده ارسال VIP</span></td>
+                    </tr>
+                    <tr>
+                        <td>AS-20261031-B44C</td>
+                        <td>نازنین رضایی (اصفهان)</td>
+                        <td>۱,۸۵۰,۰۰۰ تومان</td>
+                        <td>درگاه زرین‌پال</td>
+                        <td><span class="chip">تحویل به پست پیشتاز</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </main>
+    </div>
+</body>
+</html>

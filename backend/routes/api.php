@@ -1,0 +1,63 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\CartController;
+use App\Http\Controllers\API\InstallmentController;
+use App\Http\Controllers\API\OrderStatusController;
+use App\Http\Controllers\API\ProductController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\ProductManagementController;
+use App\Http\Controllers\Customer\CheckoutController;
+use App\Http\Middleware\EnsureRoleOrPermission;
+use App\Http\Middleware\EnsureTransactionSafety;
+
+Route::prefix('v1')->middleware([EnsureTransactionSafety::class])->group(function () {
+    // 1. Public Catalog & Authentication Endpoints
+    Route::post('/auth/send-otp', [AuthController::class, 'sendOtp']);
+    Route::post('/auth/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/auth/admin/login', [AuthController::class, 'adminLogin']);
+
+    Route::get('/catalog/meta', [ProductController::class, 'catalogMeta']);
+    Route::get('/products', [ProductController::class, 'index']);
+    Route::get('/products/{id}', [ProductController::class, 'show'])->whereNumber('id');
+
+    // Signed Installment Provider Webhook Callback (HMAC verified in controller)
+    Route::post('/installment/callback/{provider}', [InstallmentController::class, 'callback']);
+
+    // 2. Authenticated Customer Endpoints (Sanctum)
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+        // Cart & Coupon
+        Route::get('/cart', [CartController::class, 'index']);
+        Route::post('/cart/add', [CartController::class, 'add']);
+        Route::delete('/cart/items/{variantId}', [CartController::class, 'remove'])->whereNumber('variantId');
+        Route::post('/cart/coupon', [CartController::class, 'applyCoupon']);
+
+        // Atomic Checkout, Installment Initiation & Order Tracking
+        Route::post('/checkout', [CheckoutController::class, 'processCheckout']);
+        Route::post('/installment/request', [InstallmentController::class, 'createRequest']);
+        Route::get('/orders/track/{orderId}', [OrderStatusController::class, 'track'])->whereNumber('orderId');
+    });
+
+    // 3. Protected Executive Admin Endpoints (Sanctum + RBAC)
+    Route::prefix('admin')
+        ->middleware(['auth:sanctum', EnsureRoleOrPermission::class . ':super-admin|store-manager|warehouse-manager'])
+        ->group(function () {
+            Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+            Route::get('/orders', [DashboardController::class, 'orders']);
+            Route::post('/orders/{id}/status', [OrderStatusController::class, 'updateStatus'])->whereNumber('id');
+
+            Route::get('/products', [ProductManagementController::class, 'index']);
+            Route::post('/products', [ProductManagementController::class, 'store']);
+            Route::put('/products/{id}', [ProductManagementController::class, 'update'])->whereNumber('id');
+            Route::delete('/products/{id}', [ProductManagementController::class, 'destroy'])->whereNumber('id');
+
+            Route::get('/inventory', [InventoryController::class, 'index']);
+            Route::post('/inventory/adjust', [InventoryController::class, 'adjust']);
+            Route::get('/inventory/movements', [InventoryController::class, 'movements']);
+        });
+});

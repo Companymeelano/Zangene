@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASIYE STORE — فروشگاه اینترنتی زیبایی و آرایشی فوق‌لوکس</title>
+    <meta name="description" content="فروشگاه رسمی محصولات آرایشی، مراقبت پوست و عطرهای اختصاصی ASIYE STORE با ضمانت اصالت و خرید اقساطی اسنپ‌پی و تارا.">
+    <link rel="stylesheet" href="src/styles/design_system.css">
+    <link rel="icon" href="../images/favicon.png" type="image/png">
+</head>
+<body>
+    <!-- Luxury Top Ribbon -->
+    <div class="luxury-ribbon">
+        ارسال VIP رایگان برای سفارش‌های بالای ۳,۰۰۰,۰۰۰ تومان &nbsp;|&nbsp; خرید ۴ قسطه بدون کارمزد با اسنپ‌پی و تارا &nbsp;|&nbsp; کد هدیه اولین خرید: <strong>ASIYE20</strong>
+    </div>
+
+    <!-- Header -->
+    <header class="luxury-header">
+        <a href="index.html" class="logo-container">
+            <img src="../images/app_icon_dark.png" alt="ASIYE STORE" class="logo-img">
+            <div class="logo-text">
+                ASIYE STORE
+                <span class="slogan">Your Beauty, Your Signature.</span>
+            </div>
+        </a>
+
+        <nav class="nav-menu">
+            <a class="nav-item active" data-category-filter="all">همه کلکسیون‌ها</a>
+            <a class="nav-item" data-category-filter="1">مراقبت از پوست</a>
+            <a class="nav-item" data-category-filter="2">آرایش لب و صورت</a>
+            <a class="nav-item" data-category-filter="3">عطر و ادکلن</a>
+            <a href="src/pages/luxury_product_samples.html" class="nav-item">کاتالوگ اختصاصی</a>
+            <a href="product_and_admin_prototype.html" class="nav-item">پنل مدیریت</a>
+        </nav>
+
+        <div class="header-actions">
+            <button class="icon-btn" id="open-cart-btn" aria-label="سبد خرید">
+                <span class="cart-badge" id="cart-count-badge">۰</span>
+                <svg class="icon-svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+            </button>
+            <button class="icon-btn" id="mobile-menu-btn" aria-label="منو">
+                <svg class="icon-svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Storefront -->
+    <main style="padding: 2.2rem 5%; max-width: 1380px; margin: 0 auto;">
+        <!-- Hero Banner -->
+        <section class="hero-banner">
+            <div>
+                <span class="hero-badge">کلکسیون طلایی ۲۰۲۶ — پاریس • تهران</span>
+                <h1 class="hero-title">زیبایی اصیل، <span>امضای شخصی شما</span></h1>
+                <p style="font-size: 1.05rem; color: #E8D8CE; max-width: 560px; margin-bottom: 1.75rem;">
+                    ترکیبی کم‌نظیر از طلای ۲۴ عیار کلوئیدی، عصاره‌های گیاهی کمیاب و رایحه‌های ماندگار با ضمانت اصالت صددرصدی و ارسال اختصاصی VIP.
+                </p>
+                <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                    <a href="#catalog-section" class="btn-luxury" style="text-decoration: none;">مشاهده کلکسیون لوکس</a>
+                    <a href="src/pages/luxury_product_samples.html" class="btn-dark" style="text-decoration: none;">بررسی تخصصی ترکیبات</a>
+                </div>
+            </div>
+            <div class="hero-Visual">
+                <img src="../images/product_serum_luxury.png" alt="سرم طلایی احیاکننده پوست ASIYE STORE">
+            </div>
+        </section>
+
+        <!-- Search & Filter Toolbar -->
+        <section id="catalog-section" class="catalog-toolbar">
+            <div class="filter-chips">
+                <button class="chip active" data-category-filter="all">همه محصولات</button>
+                <button class="chip" data-category-filter="1">مراقبت از پوست</button>
+                <button class="chip" data-category-filter="2">آرایش لب</button>
+                <button class="chip" data-category-filter="3">عطر و ادکلن</button>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+                <input type="search" id="catalog-search" class="search-input" placeholder="جستجوی نام محصول یا کد SKU...">
+                <select id="catalog-sort" class="sort-select" aria-label="مرتب‌سازی">
+                    <option value="newest">مرتب‌سازی: جدیدترین</option>
+                    <option value="price_asc">قیمت: کم به زیاد</option>
+                    <option value="price_desc">قیمت: زیاد به کم</option>
+                    <option value="discount">بیشترین درصد تخفیف</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Dynamic Product Grid -->
+        <div id="product-grid" class="product-grid"></div>
+    </main>
+
+    <!-- Slide-Over Shopping Cart Drawer -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <aside id="cart-drawer" class="cart-drawer" aria-label="سبد خرید">
+        <div class="drawer-header">
+            <strong>سبد خرید اختصاصی ASIYE</strong>
+            <button id="close-cart-btn" class="btn-dark" style="padding: 0.3rem 0.75rem;">بستن ×</button>
+        </div>
+        <div id="cart-drawer-body" class="drawer-body"></div>
+        <div id="cart-drawer-summary" class="drawer-footer"></div>
+    </aside>
+
+    <!-- Luxury Footer -->
+    <footer style="background-color: #171717; color: #FFFFFF; padding: 3.5rem 5%; margin-top: 4rem; border-top: 2px solid #C6A16C;">
+        <div style="max-width: 1380px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 2rem; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <img src="../images/logo_horizontal_luxury.png" alt="ASIYE STORE" style="height: 64px; border-radius: 8px;">
+                <div>
+                    <h3 style="color: #C6A16C; margin: 0 0 0.25rem;">ASIYE STORE</h3>
+                    <p style="margin: 0; font-size: 0.9rem; color: #B9B6B0;">Your Beauty, Your Signature. — تضمین اصالت و کیفیت فوق‌لوکس</p>
+                </div>
+            </div>
+            <div style="font-size: 0.85rem; color: #B9B6B0;">
+                تمامی حقوق مادی و معنوی برای اکوسیستم زیبایی ASIYE STORE محفوظ است © ۲۰۲۶
+            </div>
+        </div>
+    </footer>
+
+    <script src="src/api/client.js"></script>
+</body>
+</html>

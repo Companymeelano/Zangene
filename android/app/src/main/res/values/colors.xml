@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="champagne_gold">#C6A16C</color>
+    <color name="champagne_gold_dark">#A6824D</color>
+    <color name="soft_gold">#D8BB8B</color>
+    <color name="ivory">#F8F6F1</color>
+    <color name="warm_white">#FFFFFF</color>
+    <color name="deep_charcoal">#242321</color>
+    <color name="luxury_black">#171717</color>
+    <color name="rose_beige">#E8D8CE</color>
+    <color name="platinum_gray">#B9B6B0</color>
+    <color name="ic_launcher_background">#171717</color>
+</resources>
