@@ -942,7 +942,7 @@ public final class MainActivity extends Activity {
 
         Models.RatingSummary summary = db.getProductRating(p.id);
         LinearLayout head = row(Gravity.CENTER_VERTICAL);
-        TextView title = text("نظرات تاییدشده", 12f, COL_TEXT_MAIN, true);
+        TextView title = text("نظرات تأییدشده", 12f, COL_TEXT_MAIN, true);
         head.addView(title, weight(1f));
         TextView write = text("ثبت نظر", 9.6f, COL_GOLD_DEEP, true);
         write.setPadding(dp(11), dp(6), dp(11), dp(6));
@@ -988,7 +988,7 @@ public final class MainActivity extends Activity {
             body.setPadding(0, dp(5), 0, 0);
             card.addView(body);
 
-            TextView meta = text("خرید تاییدشده  ·  " + r.createdLabel, 8.8f, 0xFF9A8F7D, false);
+            TextView meta = text("خرید تأییدشده  ·  " + r.createdLabel, 8.8f, 0xFF9A8F7D, false);
             meta.setPadding(0, dp(5), 0, 0);
             card.addView(meta);
         }
@@ -1004,7 +1004,7 @@ public final class MainActivity extends Activity {
 
         box.addView(text("تجربه‌تان از " + p.nameFa, 14f, COL_TEXT_MAIN, true));
         box.addView(space(4));
-        box.addView(text("نظر شما پس از تأیید مدیریت مجموعه با نشان «خرید تاییدشده» منتشر می‌شود.",
+        box.addView(text("نظر شما پس از تأیید مدیریت مجموعه با نشان «خرید تأییدشده» منتشر می‌شود.",
                 9.8f, COL_TEXT_MUTED, false));
         box.addView(space(14));
 
