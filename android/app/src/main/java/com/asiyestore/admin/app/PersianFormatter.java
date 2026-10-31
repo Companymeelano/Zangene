@@ -72,7 +72,8 @@ public final class PersianFormatter {
         switch (status) {
             case "pending_payment": return "در انتظار پرداخت";
             case "paid": return "پرداخت شده";
-            case "confirmed": return "تایید کارشناس";
+            case "confirmed": return "تأیید کارشناس";
+            case "pending_approval": return "در انتظار تأیید مدیریت";
             case "preparing": return "در حال بسته‌بندی VIP";
             case "shipped": return "تحویل به پیک / پست";
             case "delivered": return "تحویل شده به مشتری";
@@ -85,15 +86,16 @@ public final class PersianFormatter {
     public static int statusColor(String status) {
         if (status == null) return 0xFF78716C;
         switch (status) {
-            case "pending_payment": return 0xFFB45309;
+            case "pending_payment": return 0xFF9A6B2F;
             case "paid":
-            case "confirmed": return 0xFF1D4ED8;
-            case "preparing": return 0xFF9A6B2F;
-            case "shipped": return 0xFF6D28D9;
-            case "delivered": return 0xFF15803D;
+            case "confirmed": return 0xFF2E6B57;
+            case "pending_approval": return 0xFF8A6A2E;
+            case "preparing": return 0xFF8B6B33;
+            case "shipped": return 0xFF3F5C6B;
+            case "delivered": return 0xFF1F5B45;
             case "cancelled":
-            case "returned": return 0xFFB91C1C;
-            default: return 0xFF57534E;
+            case "returned": return 0xFF96382F;
+            default: return 0xFF5F574C;
         }
     }
 

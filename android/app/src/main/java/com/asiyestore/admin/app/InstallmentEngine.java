@@ -82,7 +82,10 @@ public final class InstallmentEngine {
         zero.payableTotal = amount;
         zero.totalFee = 0L;
         zero.zeroInterest = true;
-        zero.noteFa = "تقسیم مساوی مبلغ • بدون کارمزد و بدون بهره";
+        boolean zeroSplit = zero.financedAmount % zero.months == 0L;
+        zero.noteFa = zeroSplit
+                ? "تقسیم مساوی مبلغ • بدون کارمزد و بدون بهره"
+                : "بدون کارمزد و بهره • قسط آخر اندکی کمتر";
         plans.add(zero);
 
         for (int months : cfg.extendedMonths) {
@@ -96,9 +99,13 @@ public final class InstallmentEngine {
             p.financedAmount = amount - down;
             double feeRate = cfg.annualInterestPercent / 100.0 * (months / 12.0);
             long fee = Math.round(p.financedAmount * feeRate);
-            p.totalFee = fee;
-            p.payableTotal = p.financedAmount + fee;
-            p.monthlyPayment = (long) Math.ceil(p.payableTotal / (double) months);
+            // monthly and total are derived from the same number so the receipt,
+            // the plan card and the repayment table can never disagree.
+            long monthly = (long) Math.ceil((p.financedAmount + fee) / (double) months);
+            p.monthlyPayment = monthly;
+            p.payableTotal = monthly * months;
+            p.totalFee = p.payableTotal - p.financedAmount;
+            if (p.totalFee < 0) p.totalFee = 0;
             p.zeroInterest = false;
             p.noteFa = "کارمزد سالانه " + PersianFormatter.toPersianDigits(String.valueOf((int) cfg.annualInterestPercent)) + "٪";
             plans.add(p);

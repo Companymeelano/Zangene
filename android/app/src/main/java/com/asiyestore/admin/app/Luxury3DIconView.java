@@ -153,8 +153,8 @@ public final class Luxury3DIconView extends View {
         // 3. Subtle Jewel Inner Aura for Contact & Social Icons
         if (!goldPedestal) {
             int auraCol = 0;
-            if (iconType == ICON_WHATSAPP) auraCol = 0x5228946B;
-            else if (iconType == ICON_INSTAGRAM) auraCol = 0x52C95F79;
+            if (iconType == ICON_WHATSAPP) auraCol = 0x3A2E7A5C;
+            else if (iconType == ICON_INSTAGRAM) auraCol = 0x3AC9A28E;
             else if (iconType == ICON_PHONE) auraCol = 0x36C8A46B;
             else if (iconType == ICON_GIFT) auraCol = 0x40C8A46B;
             if (auraCol != 0) {

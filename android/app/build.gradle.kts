@@ -11,8 +11,8 @@ android {
         applicationId = "com.asiyestore.admin"
         minSdk = 24
         targetSdk = 34
-        versionCode = 600
-        versionName = "6.0.0-royal-ai"
+        versionCode = 610
+        versionName = "6.1.0-atelier-noir"
 
         vectorDrawables {
             useSupportLibrary = true
