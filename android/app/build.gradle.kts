@@ -11,8 +11,8 @@ android {
         applicationId = "com.asiyestore.admin"
         minSdk = 24
         targetSdk = 34
-        versionCode = 300
-        versionName = "3.0.0-imperial"
+        versionCode = 400
+        versionName = "4.0.0-signature"
 
         vectorDrawables {
             useSupportLibrary = true

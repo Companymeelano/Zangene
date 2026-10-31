@@ -15,7 +15,7 @@ import java.util.Random;
 
 public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
 
-    private static final String DB_NAME = "asiye_imperial_v3.db";
+    private static final String DB_NAME = "asiye_signature_v4.db";
     private static final int DB_VERSION = 1;
 
     public AsiyeDatabaseHelper(Context context) {
@@ -30,7 +30,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "ttac_serial TEXT NOT NULL," +
                 "batch_code TEXT NOT NULL," +
                 "expiry_label TEXT NOT NULL," +
-                "cold_chain INTEGER NOT NULL DEFAULT 1," +
+                "cold_chain INTEGER NOT NULL DEFAULT 0," +
                 "replenish_days INTEGER NOT NULL DEFAULT 45," +
                 "name_fa TEXT NOT NULL," +
                 "name_en TEXT NOT NULL," +
@@ -46,7 +46,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "stock INTEGER NOT NULL DEFAULT 0," +
                 "low_stock_threshold INTEGER NOT NULL DEFAULT 5," +
                 "published INTEGER NOT NULL DEFAULT 1," +
-                "image_key TEXT NOT NULL DEFAULT 'serum'," +
+                "image_key TEXT NOT NULL DEFAULT 'gatieau_whitening'," +
                 "wishlisted INTEGER NOT NULL DEFAULT 0" +
                 ")");
 
@@ -76,7 +76,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "total_amount INTEGER NOT NULL," +
                 "cashback_earned INTEGER NOT NULL DEFAULT 0," +
                 "vip_gift_box INTEGER NOT NULL DEFAULT 1," +
-                "cold_chain INTEGER NOT NULL DEFAULT 1," +
+                "cold_chain INTEGER NOT NULL DEFAULT 0," +
                 "scented_tissue TEXT," +
                 "gift_message TEXT," +
                 "certificate_code TEXT," +
@@ -95,24 +95,6 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "unit_price INTEGER NOT NULL" +
                 ")");
 
-        db.execSQL("CREATE TABLE wallet_transactions (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "amount INTEGER NOT NULL," +
-                "type TEXT NOT NULL," +
-                "description TEXT NOT NULL," +
-                "created_at_label TEXT NOT NULL" +
-                ")");
-
-        db.execSQL("CREATE TABLE certificates (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "cert_code TEXT UNIQUE NOT NULL," +
-                "product_name TEXT NOT NULL," +
-                "sku TEXT NOT NULL," +
-                "batch_code TEXT NOT NULL," +
-                "owner_name TEXT NOT NULL," +
-                "issued_at_label TEXT NOT NULL" +
-                ")");
-
         db.execSQL("CREATE TABLE stock_movements (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "product_id INTEGER NOT NULL," +
@@ -129,15 +111,13 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "value TEXT" +
                 ")");
 
-        seedImperialEcosystem(db);
+        seedSignatureCatalog(db);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS order_items");
         db.execSQL("DROP TABLE IF EXISTS orders");
-        db.execSQL("DROP TABLE IF EXISTS wallet_transactions");
-        db.execSQL("DROP TABLE IF EXISTS certificates");
         db.execSQL("DROP TABLE IF EXISTS stock_movements");
         db.execSQL("DROP TABLE IF EXISTS coupons");
         db.execSQL("DROP TABLE IF EXISTS products");
@@ -145,143 +125,115 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    private void seedImperialEcosystem(SQLiteDatabase db) {
-        // All 6 Signature Products — each mapped to its own bespoke studio visual!
-        long p1 = insertSeedProduct(db, "AS-SRM-001", "AS-AUTH-2026-9901", "LOT-24K-881", "۱۴۰۷/۰۸", true, 45,
-                "سرم طلایی احیاکننده پوست ۲۴ عیار",
-                "24K Golden Revitalizing Cellular Serum",
-                "مراقبت سلولی پوست",
-                "سرم سلولی حاوی ورقه‌های طلای کلوئیدی ۲۴ عیار، هیالورونیک اسید چندمولکولی و نیاسینامید برای بازسازی سلولی، لیفتینگ و درخشش ابریشمی پوست.",
-                "24K Colloidal Gold, Multi-Molecular Hyaluronic Acid, Damask Rose Essence, Niacinamide",
-                "روزانه ۲ تا ۳ قطره صبح و شب روی پوست تمیز صورت و گردن ماساژ داده شود.",
-                "پاریس / لابراتوار اختصاصی ASIYE", "۳۰ میلی‌لیتر",
-                2_300_000L, 1_850_000L, 28, 5, "serum");
+    private void seedSignatureCatalog(SQLiteDatabase db) {
+        // Exact 6 Flagship Products from @asiyeh.store (Ms. Zangeneh's Official Instagram Page)
+        long p1 = insertSeedProduct(db,
+                "AS-GAT-150", "AS-GAT-150", "LOT-GTW-2026", "۱۴۰۸/۰۶", false, 60,
+                "کرم روشن‌کننده و ضدلک تخصصی گاتیو",
+                "GATIEAU • پرفروش‌ترین محصول پیج",
+                "مراقبت تخصصی پوست",
+                "فرمولاسیون پیشرفته حاوی سرامید، لیپوویت، کمپلکس ضدلک Hentowhite AF و ویتامین‌های A، C و E جهت رفع تیرگی نواحی مختلف، کاهش لک‌های پوستی و یکدست‌سازی درخشان تناژ پوست.",
+                "سرامید، لیپوویت، کمپلکس ضدلک Hentowhite AF، ویتامین‌های A و C و E",
+                "روزانه یک تا دو مرتبه روی پوست تمیز و خشک موضع مورد نظر به آرامی ماساژ داده شود.",
+                "تحت لیسانس اروپا", "۱۵۰ میلی‌لیتر",
+                2_380_000L, 1_550_000L, 24, 5, "gatieau_whitening");
 
-        long p2 = insertSeedProduct(db, "AS-CRM-108", "AS-AUTH-2026-9902", "LOT-CAV-502", "۱۴۰۷/۰۶", true, 60,
-                "کرم شب خاویار سیاه و پپتید طلایی",
-                "Imperial Caviar & Gold Peptide Night Crème",
-                "مراقبت سلولی پوست",
-                "کرم بازسازی‌کننده عمیق شبانه با عصاره خاویار سیاه و کمپلکس مس-پپتید برای تغذیه عمقی و استحکام سد دفاعی پوست.",
-                "Black Caviar Extract, Copper Tripeptide-1, Ceramide NP, Squalane",
-                "هر شب با کاردک طلایی همراه محصول روی پوست صورت و گردن استفاده شود.",
-                "سوئیس / فرانسه", "۵۰ میلی‌لیتر",
-                3_100_000L, 2_690_000L, 14, 5, "caviar");
+        long p2 = insertSeedProduct(db,
+                "AS-GAT-050", "AS-GAT-050", "LOT-GTA-2026", "۱۴۰۸/۰۴", false, 50,
+                "کرم ضدچروک و لیفتینگ تخصصی گاتیو",
+                "GATIEAU • کمپلکس پپتیدی جوان‌ساز",
+                "مراقبت تخصصی پوست",
+                "کاهش‌دهنده هدفمند خطوط پنجه کلاغی، خط اخم و چروک‌های صورت با تحریک کلاژن‌سازی طبیعی و بازگرداندن قوام، استحکام و لطافت ابریشمی به پوست صورت و گردن.",
+                "کمپلکس پپتید جوان‌ساز، هیالورونیک اسید، ویتامین E و نیاسینامید",
+                "هر شب و صبح مقدار مناسبی از کرم را با حرکات رو به بالا روی صورت و گردن ماساژ دهید.",
+                "تحت لیسانس اروپا", "۵۰ میلی‌لیتر",
+                1_610_000L, 1_390_000L, 18, 5, "gatieau_antiwrinkle");
 
-        long p3 = insertSeedProduct(db, "AS-LIP-042", "AS-AUTH-2026-9903", "LOT-VLV-319", "۱۴۰۷/۱۰", false, 90,
-                "رژ لب مخملی مات اختصاصی ASIYE Couture",
-                "Haute Couture Velvet Matte Lipstick",
-                "آرایش کوتور لب",
-                "رژ لب مات با بافت مخملی فوق‌سبک، غنی‌شده با شی‌باتر ارگانیک و ویتامین E با ماندگاری ۱۲ ساعته بدون ایجاد خشکی.",
-                "Organic Shea Butter, Vitamin E, Jojoba Oil, Pure Mineral Pigments",
-                "از مرکز لب به سمت گوشه‌ها با حرکت یکنواخت استفاده شود.",
-                "فرانسه / پالت اختصاصی", "۴ گرم",
-                520_000L, 450_000L, 4, 6, "lipstick");
+        long p3 = insertSeedProduct(db,
+                "AS-LC-104", "AS-LC-104", "LOT-LCP-104", "۱۴۰۸/۰۹", false, 90,
+                "پنکک ضدآب و مخملی لاکچری کوین SPF 25",
+                "LUXURY COIN • تحت لیسانس فرانسه",
+                "میکاپ لوکس",
+                "پودر میکرونیزه فوق‌سبک با پوشانندگی یکدست و مات مخملی، کاملاً واترپروف و قابل استفاده با پد مرطوب بدون تغییر رنگ یا ماسیدگی، غنی‌شده با کلاژن و آلوئه‌ورا.",
+                "پودر معدنی میکرونیزه، کلاژن هیدرولیزشده، عصاره آلوئه‌ورا و ویتامین E",
+                "با پد خشک برای پوشش مخملی روزانه یا با پد مرطوب جهت کاور حرفه‌ای مجلسی استفاده شود.",
+                "تحت لیسانس فرانسه", "شماره ۱۰۴ بژ طبیعی",
+                1_210_000L, 920_000L, 30, 5, "luxury_coin");
 
-        long p4 = insertSeedProduct(db, "AS-PRF-999", "TTAC-8849201140", "LOT-PAR-999", "۱۴۰۸/۱۲", true, 120,
-                "ادوپرفیوم سلطنتی ASIYE Signature",
-                "ASIYE Signature Eau De Parfum Intense",
-                "عطر و نیش پرفیوم",
-                "سمفونی مسحورکننده‌ای از نت‌های رز دمشقی، زعفران سلطنتی، کهربا و چوب صندل گرم؛ امضای فراموش‌نشدنی وقار با ماندگاری ۲۴ ساعته.",
-                "Damask Rose, Royal Saffron, Ambergris, Sandalwood, White Musk",
-                "روی نقاط نبض‌دار از فاصله ۱۵ سانتی‌متری اسپری شود.",
-                "فرانسه (گرس)", "۱۰۰ میلی‌لیتر",
-                2_450_000L, 2_100_000L, 19, 5, "perfume");
+        long p4 = insertSeedProduct(db,
+                "AS-HF-300", "AS-HF-300", "LOT-HFT-300", "۱۴۰۸/۰۵", false, 60,
+                "تونیک گیاهی تقویت و رویش مجدد مو هیرفرند",
+                "HAIR FRIEND • عصاره خالص گیاهی",
+                "تقویت و درمان مو",
+                "محلول تغذیه‌کننده مستقیم فولیکول و پیاز مو سرشار از عصاره چای سبز، شلتوک برنج، برگ زیتون و همیشه‌بهار؛ موثر در توقف ریزش، ضخیم‌سازی تارهای نازک و تحریک رویش مجدد مو.",
+                "عصاره چای سبز، شلتوک برنج، برگ زیتون، گل همیشه‌بهار و رزماری",
+                "روزانه چند پاف روی پوست سر تمیز اسپری شده و ۲ دقیقه با نوک انگشتان ماساژ داده شود (نیاز به آبکشی ندارد).",
+                "فرمولاسیون تخصصی گیاهی", "۳۰۰ میلی‌لیتر",
+                1_950_000L, 1_560_000L, 22, 5, "hair_friend");
 
-        insertSeedProduct(db, "AS-ELX-305", "AS-AUTH-2026-9905", "LOT-ELX-712", "۱۴۰۷/۰۹", false, 75,
-                "الکسیر ابریشم و طلای ۲۴ عیار مو",
-                "L'Elixir D'Exception 24K Gold Hair Oil",
-                "الکسیر طلایی مو",
-                "الکسیر کریستالی حاوی ذرات معلق طلای ۲۴ عیار و روغن آرگان مراکشی برای احیای ساقه مو و درخشش آینه‌ای بدون حس سنگینی.",
-                "24K Gold Flakes, Pure Moroccan Argan Oil, Hydrolyzed Silk Protein",
-                "چند قطره روی ساقه موهای نم‌دار یا خشک ماساژ داده شود.",
-                "فرانسه", "۱۰۰ میلی‌لیتر",
-                1_580_000L, 1_290_000L, 22, 5, "elixir");
+        insertSeedProduct(db,
+                "AS-ORD-240", "AS-ORD-240", "LOT-ORD-771", "۱۴۰۸/۱۱", true, 90,
+                "تونر لایه‌بردار گلیکولیک اسید ۷٪ اوردینری",
+                "THE ORDINARY • اورجینال کانادا",
+                "مراقبت تخصصی پوست",
+                "تونر شفاف‌کننده و لایه‌بردار ملایم سطح پوست با اسیدیته استاندارد ۳.۶ حاوی ریشه جینسینگ و آلوئه‌ورا؛ پاکسازی عمقی منافذ باز، رفع کدری و جای جوش بدون الکل و پارابن.",
+                "گلیکولیک اسید ۷ درصد، عصاره ریشه جینسینگ، فلفل تاسمانی و آلوئه‌ورا",
+                "شب‌ها با پد پنبه‌ای روی پوست تمیز صورت و گردن (به‌جز دور چشم) کشیده شود و روزها ضدآفتاب استفاده گردد.",
+                "کانادا (اورجینال)", "۲۴۰ میلی‌لیتر",
+                3_450_000L, 2_890_000L, 12, 4, "ordinary_toner");
 
-        insertSeedProduct(db, "AS-DSC-777", "AS-AUTH-2026-9906", "LOT-VIP-777", "۱۴۰۸/۰۵", true, 30,
-                "کافره مخمل هدیه VIP و پک تستر عطر Discovery",
-                "VIP Velvet Coffret & 3x5ml Fragrance Discovery Set",
-                "عطر و نیش پرفیوم",
-                "شامل ۳ ویال کریستالی عطرهای اختصاصی در جعبه مخمل مشکی با مهر موم طلایی AS + کارت هدیه ۱۰۰٪ بازگشت وجه برای خرید نسخه اصلی.",
-                "3x5ml Crystal Extrait de Parfum Vials + Wax-Sealed Gold Envelope",
-                "هر ویال را در موقعیت‌های روزانه و شبانه تست کرده و امضای بویایی خود را بیابید.",
-                "پاریس / بسته‌بندی دست‌ساز", "۳ × ۵ میلی‌لیتر",
-                980_000L, 790_000L, 16, 5, "giftbox");
+        insertSeedProduct(db,
+                "AS-MRG-500", "AS-MRG-500", "LOT-MVB-502", "۱۴۰۸/۰۷", false, 50,
+                "پک تخصصی شامپو درخت چای ویتابلا و مورینگا امو",
+                "VITABELLA & MORINGA EMO • فاقد سولفات",
+                "تقویت و درمان مو",
+                "ترکیب مکمل شامپو پاکسازی‌کننده درخت چای ویتابلا برای تنظیم چربی و رفع شوره کف سر به همراه شامپو مغذی روغن مورینگا امو جهت احیا، نرمی و درخشش ساقه مو.",
+                "روغن خالص برگ درخت چای، روغن هسته مورینگا، آمینواسیدها و ویتامین E",
+                "روی موی مرطوب به مدت ۲ دقیقه ماساژ داده و با آب ولرم آبکشی نمایید.",
+                "فرمولاسیون فاقد سولفات", "پک دوتایی کامل",
+                840_000L, 680_000L, 26, 5, "moringa_teatree");
 
-        // Coupons (including Smart Replenishment CRM coupon REFILL10)
-        insertSeedCoupon(db, "ASIYE20", 20, 0, 500_000L, 700_000L);
-        insertSeedCoupon(db, "VIPGOLD", 0, 350_000L, 1_500_000L, 350_000L);
-        insertSeedCoupon(db, "REFILL10", 10, 0, 200_000L, 500_000L);
+        // Coupons
+        insertSeedCoupon(db, "ASIYE20", 20, 0, 500_000L, 600_000L);
+        insertSeedCoupon(db, "VIPGOLD", 0, 250_000L, 1_500_000L, 250_000L);
 
-        // Welcome Gold Wallet Credit + Initial Sample Certificate
-        insertWalletTxInternal(db, 250_000L, "welcome_gift", "هدیه خوش‌آمدگویی عضویت باشگاه الماس سیاه ASIYE");
-        insertCertInternal(db, "AS-CERT-884100", "سرم طلایی احیاکننده پوست ۲۴ عیار", "AS-SRM-001", "LOT-24K-881", "سارا محمدی");
-
-        // Sample VIP Orders with Gift Concierge & Cold-Chain
+        // Sample Verified Order
         ContentValues o1 = new ContentValues();
-        o1.put("order_number", "AS-1405-8841");
+        o1.put("order_number", "AS-1405-9102");
         o1.put("customer_name", "سارا محمدی");
         o1.put("customer_mobile", "09123456789");
-        o1.put("address_summary", "تهران، الهیه، خیابان فرشته، پلاک ۲۴، واحد ۸");
-        o1.put("shipping_method", "پیک اختصاصی VIP زنجیره سرد");
+        o1.put("address_summary", "تهران، سعادت‌آباد، بلوار دریا، پلاک ۱۸");
+        o1.put("shipping_method", "پست پیشتاز ویژه");
         o1.put("payment_method", "snapp_pay");
         o1.put("installments_count", 4);
-        o1.put("subtotal", 3_950_000L);
-        o1.put("discount", 350_000L);
+        o1.put("subtotal", 3_110_000L);
+        o1.put("discount", 0L);
         o1.put("wallet_used", 0L);
         o1.put("shipping_cost", 0L);
-        o1.put("total_amount", 3_600_000L);
-        o1.put("cashback_earned", 180_000L);
+        o1.put("total_amount", 3_110_000L);
+        o1.put("cashback_earned", 0L);
         o1.put("vip_gift_box", 1);
-        o1.put("cold_chain", 1);
-        o1.put("scented_tissue", "رز دمشقی و عود سلطنتی");
-        o1.put("gift_message", "تولدت مبارک عزیزم — با عشق جاودان");
-        o1.put("certificate_code", "AS-CERT-884100");
-        o1.put("status", "preparing");
-        o1.put("tracking_code", "VIP-COLD-99201");
-        o1.put("created_at_label", "امروز — ۱۱:۴۰");
+        o1.put("cold_chain", 0);
+        o1.put("scented_tissue", "بسته‌بندی اختصاصی ASIYE");
+        o1.put("gift_message", "");
+        o1.put("certificate_code", "AS-CERT-9102");
+        o1.put("status", "shipped");
+        o1.put("tracking_code", "29481000841102");
+        o1.put("created_at_label", "امروز");
         long ord1Id = db.insert("orders", null, o1);
-        insertSeedOrderItem(db, ord1Id, p1, "سرم طلایی احیاکننده پوست ۲۴ عیار", "۳۰ میلی‌لیتر", 1, 1_850_000L);
-        insertSeedOrderItem(db, ord1Id, p4, "ادوپرفیوم سلطنتی ASIYE Signature", "۱۰۰ میلی‌لیتر", 1, 2_100_000L);
+        insertSeedOrderItem(db, ord1Id, p1, "کرم روشن‌کننده و ضدلک تخصصی گاتیو", "۱۵۰ میلی‌لیتر", 1, 1_550_000L);
+        insertSeedOrderItem(db, ord1Id, p4, "تونیک گیاهی تقویت و رویش مجدد مو هیرفرند", "۳۰۰ میلی‌لیتر", 1, 1_560_000L);
+        ignored(p2 + p3);
 
-        ContentValues o2 = new ContentValues();
-        o2.put("order_number", "AS-1405-8839");
-        o2.put("customer_name", "نازنین رضایی");
-        o2.put("customer_mobile", "09131112233");
-        o2.put("address_summary", "اصفهان، چهارباغ بالا، مجتمع پارسیان، واحد ۱۲");
-        o2.put("shipping_method", "پست پیشتاز ویژه");
-        o2.put("payment_method", "digipay");
-        o2.put("installments_count", 4);
-        o2.put("subtotal", 3_140_000L);
-        o2.put("discount", 0L);
-        o2.put("wallet_used", 140_000L);
-        o2.put("shipping_cost", 0L);
-        o2.put("total_amount", 3_000_000L);
-        o2.put("cashback_earned", 150_000L);
-        o2.put("vip_gift_box", 1);
-        o2.put("cold_chain", 1);
-        o2.put("scented_tissue", "وانیل ماداگاسکار و کهربا");
-        o2.put("gift_message", "");
-        o2.put("certificate_code", "AS-CERT-883902");
-        o2.put("status", "shipped");
-        o2.put("tracking_code", "294810004512984410");
-        o2.put("created_at_label", "امروز — ۰۹:۱۵");
-        long ord2Id = db.insert("orders", null, o2);
-        insertSeedOrderItem(db, ord2Id, p2, "کرم شب خاویار سیاه و پپتید طلایی", "۵۰ میلی‌لیتر", 1, 2_690_000L);
-        insertSeedOrderItem(db, ord2Id, p3, "رژ لب مخملی مات اختصاصی ASIYE Couture", "شامپاینی نود", 1, 450_000L);
+        insertMovementInternal(db, p1, "کرم روشن‌کننده گاتیو", 24, "in", "شارژ موجودی اورجینال", "مدیریت مجموعه");
 
-        // FEFO Stock Movements
-        insertMovementInternal(db, p1, "سرم طلایی احیاکننده ۲۴ عیار", 30, "in", "ورود بچ LOT-24K-881 (استاندارد FEFO)", "مدیر کل");
-        insertMovementInternal(db, p1, "سرم طلایی احیاکننده ۲۴ عیار", -1, "out", "خروج FEFO سفارش AS-1405-8841", "سیستم هوشمند");
-        insertMovementInternal(db, p3, "رژ لب مخملی مات ASIYE Couture", -1, "out", "خروج FEFO سفارش AS-1405-8839", "سیستم هوشمند");
-
-        // Settings
         putSettingInternal(db, "api_base_url", "https://asiyestore.ir/api/v1");
-        putSettingInternal(db, "customer_name", "مهمان سلطنتی ASIYE");
-        putSettingInternal(db, "customer_mobile", "09123456789");
-        putSettingInternal(db, "customer_address", "تهران، زعفرانیه، خیابان مقدس اردبیلی، پلاک ۱۸");
-        putSettingInternal(db, "wallet_balance", "250000");
-        putSettingInternal(db, "loyalty_points", "1480");
+        putSettingInternal(db, "customer_name", "");
+        putSettingInternal(db, "customer_mobile", "");
+        putSettingInternal(db, "customer_address", "");
     }
+
+    private void ignored(long v) {}
 
     private long insertSeedProduct(SQLiteDatabase db, String sku, String ttac, String batch, String exp,
                                    boolean cold, int repDays, String nameFa, String nameEn,
@@ -336,26 +288,6 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         db.insert("order_items", null, cv);
     }
 
-    private void insertWalletTxInternal(SQLiteDatabase db, long amount, String type, String desc) {
-        ContentValues cv = new ContentValues();
-        cv.put("amount", amount);
-        cv.put("type", type);
-        cv.put("description", desc);
-        cv.put("created_at_label", nowTimeLabel());
-        db.insert("wallet_transactions", null, cv);
-    }
-
-    private void insertCertInternal(SQLiteDatabase db, String certCode, String pName, String sku, String batch, String owner) {
-        ContentValues cv = new ContentValues();
-        cv.put("cert_code", certCode);
-        cv.put("product_name", pName);
-        cv.put("sku", sku);
-        cv.put("batch_code", batch);
-        cv.put("owner_name", owner);
-        cv.put("issued_at_label", nowTimeLabel());
-        db.insertWithOnConflict("certificates", null, cv, SQLiteDatabase.CONFLICT_IGNORE);
-    }
-
     private void insertMovementInternal(SQLiteDatabase db, long productId, String name, int delta, String type, String reason, String actor) {
         ContentValues cv = new ContentValues();
         cv.put("product_id", productId);
@@ -395,50 +327,6 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         putSettingInternal(getWritableDatabase(), key, value);
     }
 
-    public long getWalletBalance() {
-        try {
-            return Long.parseLong(getSetting("wallet_balance", "250000"));
-        } catch (Exception e) {
-            return 250_000L;
-        }
-    }
-
-    public List<Models.WalletTransactionRecord> getWalletTransactions() {
-        List<Models.WalletTransactionRecord> list = new ArrayList<>();
-        SQLiteDatabase db = getReadableDatabase();
-        try (Cursor c = db.rawQuery("SELECT * FROM wallet_transactions ORDER BY id DESC LIMIT 25", null)) {
-            while (c.moveToNext()) {
-                Models.WalletTransactionRecord r = new Models.WalletTransactionRecord();
-                r.id = c.getLong(c.getColumnIndexOrThrow("id"));
-                r.amount = c.getLong(c.getColumnIndexOrThrow("amount"));
-                r.type = c.getString(c.getColumnIndexOrThrow("type"));
-                r.description = c.getString(c.getColumnIndexOrThrow("description"));
-                r.createdAtLabel = c.getString(c.getColumnIndexOrThrow("created_at_label"));
-                list.add(r);
-            }
-        }
-        return list;
-    }
-
-    public List<Models.CertificateRecord> getCertificates() {
-        List<Models.CertificateRecord> list = new ArrayList<>();
-        SQLiteDatabase db = getReadableDatabase();
-        try (Cursor c = db.rawQuery("SELECT * FROM certificates ORDER BY id DESC LIMIT 25", null)) {
-            while (c.moveToNext()) {
-                Models.CertificateRecord r = new Models.CertificateRecord();
-                r.id = c.getLong(c.getColumnIndexOrThrow("id"));
-                r.certCode = c.getString(c.getColumnIndexOrThrow("cert_code"));
-                r.productName = c.getString(c.getColumnIndexOrThrow("product_name"));
-                r.sku = c.getString(c.getColumnIndexOrThrow("sku"));
-                r.batchCode = c.getString(c.getColumnIndexOrThrow("batch_code"));
-                r.ownerName = c.getString(c.getColumnIndexOrThrow("owner_name"));
-                r.issuedAtLabel = c.getString(c.getColumnIndexOrThrow("issued_at_label"));
-                list.add(r);
-            }
-        }
-        return list;
-    }
-
     public Models.Product verifyAuthenticitySerial(String rawCode) {
         if (rawCode == null || rawCode.trim().isEmpty()) return null;
         String clean = rawCode.trim().toUpperCase(Locale.US);
@@ -448,15 +336,6 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 new String[]{clean, clean, clean})) {
             if (c.moveToFirst()) return readProduct(c);
         }
-        // Also check minted digital ownership certificates
-        try (Cursor c = db.rawQuery("SELECT sku FROM certificates WHERE UPPER(cert_code) = ?", new String[]{clean})) {
-            if (c.moveToFirst()) {
-                String sku = c.getString(0);
-                try (Cursor p = db.rawQuery("SELECT * FROM products WHERE sku = ?", new String[]{sku})) {
-                    if (p.moveToFirst()) return readProduct(p);
-                }
-            }
-        }
         return null;
     }
 
@@ -465,48 +344,21 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         StringBuilder sql = new StringBuilder("SELECT * FROM products WHERE 1=1");
         List<String> args = new ArrayList<>();
 
-        if (onlyPublished) {
-            sql.append(" AND published = 1");
-        }
+        if (onlyPublished) sql.append(" AND published = 1");
         if (categoryFilter != null && !categoryFilter.isEmpty() && !"همه".equals(categoryFilter)) {
             sql.append(" AND category = ?");
             args.add(categoryFilter);
         }
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             String q = "%" + searchQuery.trim() + "%";
-            sql.append(" AND (name_fa LIKE ? OR name_en LIKE ? OR sku LIKE ? OR batch_code LIKE ?)");
-            args.add(q);
-            args.add(q);
-            args.add(q);
-            args.add(q);
+            sql.append(" AND (name_fa LIKE ? OR name_en LIKE ? OR sku LIKE ?)");
+            args.add(q); args.add(q); args.add(q);
         }
-
-        if ("price_asc".equals(sortMode)) {
-            sql.append(" ORDER BY sale_price ASC");
-        } else if ("price_desc".equals(sortMode)) {
-            sql.append(" ORDER BY sale_price DESC");
-        } else if ("discount".equals(sortMode)) {
-            sql.append(" ORDER BY discount_percent DESC");
-        } else {
-            sql.append(" ORDER BY id ASC");
-        }
+        sql.append(" ORDER BY id ASC");
 
         SQLiteDatabase db = getReadableDatabase();
         try (Cursor c = db.rawQuery(sql.toString(), args.toArray(new String[0]))) {
-            while (c.moveToNext()) {
-                list.add(readProduct(c));
-            }
-        }
-        return list;
-    }
-
-    public List<Models.Product> getWishlistedProducts() {
-        List<Models.Product> list = new ArrayList<>();
-        SQLiteDatabase db = getReadableDatabase();
-        try (Cursor c = db.rawQuery("SELECT * FROM products WHERE wishlisted = 1 AND published = 1 ORDER BY id DESC", null)) {
-            while (c.moveToNext()) {
-                list.add(readProduct(c));
-            }
+            while (c.moveToNext()) list.add(readProduct(c));
         }
         return list;
     }
@@ -556,20 +408,18 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public String saveOrUpdateProduct(Long existingId, String sku, String nameFa, String nameEn,
                                       String category, String description, String country, String volume,
                                       long origPrice, long salePrice, int initialStock, boolean published, String imageKey) {
-        if (salePrice > origPrice) {
-            return "قیمت فروش نمی‌تواند بیشتر از قیمت اصلی باشد.";
-        }
+        if (salePrice > origPrice) return "قیمت فروش نمی‌تواند بیشتر از قیمت اصلی باشد.";
         int disc = origPrice > 0 ? (int) Math.round(((origPrice - salePrice) * 100.0) / origPrice) : 0;
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
         String normSku = sku.trim().toUpperCase(Locale.US);
         cv.put("sku", normSku);
         cv.put("name_fa", nameFa.trim());
-        cv.put("name_en", nameEn.trim().isEmpty() ? "ASIYE Haute Beauté" : nameEn.trim());
+        cv.put("name_en", nameEn.trim().isEmpty() ? "ASIYE STORE" : nameEn.trim());
         cv.put("category", category);
         cv.put("description", description.trim());
-        cv.put("country", country.trim().isEmpty() ? "فرانسه / ایران" : country.trim());
-        cv.put("volume", volume.trim().isEmpty() ? "۵۰ میلی‌لیتر" : volume.trim());
+        cv.put("country", country.trim().isEmpty() ? "اورجینال" : country.trim());
+        cv.put("volume", volume.trim().isEmpty() ? "استاندارد" : volume.trim());
         cv.put("original_price", origPrice);
         cv.put("sale_price", salePrice);
         cv.put("discount_percent", Math.max(0, disc));
@@ -578,23 +428,18 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
 
         try {
             if (existingId == null) {
-                cv.put("ttac_serial", "AS-AUTH-" + (100000 + new Random().nextInt(899999)));
-                cv.put("batch_code", "LOT-IMP-" + (100 + new Random().nextInt(899)));
-                cv.put("expiry_label", "۱۴۰۸/۰۶");
-                cv.put("cold_chain", 1);
-                cv.put("replenish_days", 45);
+                cv.put("ttac_serial", normSku);
+                cv.put("batch_code", "LOT-" + (100 + new Random().nextInt(899)));
+                cv.put("expiry_label", "۱۴۰۸/۰۸");
                 cv.put("stock", Math.max(0, initialStock));
                 cv.put("low_stock_threshold", 5);
-                long newId = db.insertOrThrow("products", null, cv);
-                if (initialStock > 0) {
-                    insertMovementInternal(db, newId, nameFa.trim(), initialStock, "in", "ورود بچ جدید (استاندارد FEFO)", "مدیر کل");
-                }
+                db.insertOrThrow("products", null, cv);
             } else {
                 db.update("products", cv, "id = ?", new String[]{String.valueOf(existingId)});
             }
             return null;
         } catch (Exception e) {
-            return "کد SKU تکراری است یا خطا در ذخیره‌سازی رخ داد.";
+            return "کد شناسه تکراری است.";
         }
     }
 
@@ -613,93 +458,34 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 db.update("products", cv, "id = ?", new String[]{String.valueOf(c.getLong(0))});
             } else {
                 cv.put("sku", sku);
-                cv.put("ttac_serial", "AS-SYNC-" + sku);
-                cv.put("batch_code", "LOT-SYNC-01");
-                cv.put("expiry_label", "۱۴۰۸/۰۱");
-                cv.put("cold_chain", 1);
-                cv.put("replenish_days", 45);
-                cv.put("category", "مراقبت سلولی پوست");
-                cv.put("description", "همگام‌سازی‌شده از سرور مرکزی ASIYE STORE");
-                cv.put("country", "فرانسه");
-                cv.put("volume", "استاندارد");
+                cv.put("ttac_serial", sku);
+                cv.put("batch_code", "LOT-SYNC");
+                cv.put("expiry_label", "۱۴۰۸/۰۶");
+                cv.put("category", "مراقبت تخصصی پوست");
+                cv.put("description", "همگام‌سازی‌شده از سرور ASIYE STORE");
                 cv.put("published", 1);
-                cv.put("image_key", "serum");
+                cv.put("image_key", "gatieau_whitening");
                 db.insert("products", null, cv);
             }
         }
     }
 
     public String archiveProductSafely(long productId) {
-        SQLiteDatabase db = getWritableDatabase();
-        try (Cursor c = db.rawQuery(
-                "SELECT COUNT(*) FROM order_items oi JOIN orders o ON o.id = oi.order_id " +
-                "WHERE oi.product_id = ? AND o.status IN ('pending_payment','paid','confirmed','preparing','shipped')",
-                new String[]{String.valueOf(productId)})) {
-            if (c.moveToFirst() && c.getInt(0) > 0) {
-                ContentValues cv = new ContentValues();
-                cv.put("published", 0);
-                db.update("products", cv, "id = ?", new String[]{String.valueOf(productId)});
-                return "به دلیل وجود سفارش فعال، محصول حذف فیزیکی نشد و به حالت «آرشیو امن» تغییر یافت.";
-            }
-        }
-        db.delete("products", "id = ?", new String[]{String.valueOf(productId)});
-        return "محصول از کاتالوگ حذف شد.";
+        ContentValues cv = new ContentValues();
+        cv.put("published", 0);
+        getWritableDatabase().update("products", cv, "id = ?", new String[]{String.valueOf(productId)});
+        return "محصول به حالت آرشیو امن منتقل شد.";
     }
 
     public String adjustInventory(long productId, String type, int quantity, String reason) {
-        if (quantity <= 0) return "تعداد باید بزرگ‌تر از صفر باشد.";
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
-        try {
-            Models.Product p = getProductById(productId);
-            if (p == null) return "محصول یافت نشد.";
-
-            int newStock;
-            int delta;
-            if ("in".equals(type)) {
-                newStock = p.stock + quantity;
-                delta = quantity;
-            } else if ("out".equals(type)) {
-                if (p.stock < quantity) {
-                    return "موجودی فعلی (" + PersianFormatter.toPersianDigits(String.valueOf(p.stock)) + ") کمتر از مقدار خروجی است.";
-                }
-                newStock = p.stock - quantity;
-                delta = -quantity;
-            } else {
-                newStock = quantity;
-                delta = quantity - p.stock;
-            }
-
-            ContentValues cv = new ContentValues();
-            cv.put("stock", newStock);
-            db.update("products", cv, "id = ?", new String[]{String.valueOf(productId)});
-            insertMovementInternal(db, productId, p.nameFa, delta, type, reason + " [بچ: " + p.batchCode + "]", "مدیر انبار FEFO");
-
-            db.setTransactionSuccessful();
-            return null;
-        } finally {
-            db.endTransaction();
-        }
-    }
-
-    public List<Models.StockMovementRecord> getStockMovements() {
-        List<Models.StockMovementRecord> list = new ArrayList<>();
-        SQLiteDatabase db = getReadableDatabase();
-        try (Cursor c = db.rawQuery("SELECT * FROM stock_movements ORDER BY id DESC LIMIT 60", null)) {
-            while (c.moveToNext()) {
-                Models.StockMovementRecord m = new Models.StockMovementRecord();
-                m.id = c.getLong(c.getColumnIndexOrThrow("id"));
-                m.productId = c.getLong(c.getColumnIndexOrThrow("product_id"));
-                m.productName = c.getString(c.getColumnIndexOrThrow("product_name"));
-                m.deltaQuantity = c.getInt(c.getColumnIndexOrThrow("delta_quantity"));
-                m.type = c.getString(c.getColumnIndexOrThrow("type"));
-                m.reason = c.getString(c.getColumnIndexOrThrow("reason"));
-                m.actor = c.getString(c.getColumnIndexOrThrow("actor"));
-                m.createdAtLabel = c.getString(c.getColumnIndexOrThrow("created_at_label"));
-                list.add(m);
-            }
-        }
-        return list;
+        Models.Product p = getProductById(productId);
+        if (p == null) return "محصول یافت نشد.";
+        int newStock = "in".equals(type) ? p.stock + quantity : Math.max(0, p.stock - quantity);
+        ContentValues cv = new ContentValues();
+        cv.put("stock", newStock);
+        getWritableDatabase().update("products", cv, "id = ?", new String[]{String.valueOf(productId)});
+        insertMovementInternal(getWritableDatabase(), productId, p.nameFa, "in".equals(type) ? quantity : -quantity, type, reason, "مدیریت");
+        return null;
     }
 
     public long evaluateCouponDiscount(String rawCode, long subtotal) {
@@ -713,154 +499,74 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             int pct = c.getInt(c.getColumnIndexOrThrow("discount_percent"));
             long amt = c.getLong(c.getColumnIndexOrThrow("discount_amount"));
             long maxD = c.getLong(c.getColumnIndexOrThrow("max_discount"));
-
             long disc = pct > 0 ? Math.round(subtotal * (pct / 100.0)) : amt;
             if (maxD > 0 && disc > maxD) disc = maxD;
             return Math.min(disc, subtotal);
         }
     }
 
-    public List<Models.CouponRecord> getCoupons() {
-        List<Models.CouponRecord> list = new ArrayList<>();
-        SQLiteDatabase db = getReadableDatabase();
-        try (Cursor c = db.rawQuery("SELECT * FROM coupons ORDER BY id DESC", null)) {
-            while (c.moveToNext()) {
-                Models.CouponRecord r = new Models.CouponRecord();
-                r.id = c.getLong(c.getColumnIndexOrThrow("id"));
-                r.code = c.getString(c.getColumnIndexOrThrow("code"));
-                r.discountPercent = c.getInt(c.getColumnIndexOrThrow("discount_percent"));
-                r.discountAmount = c.getLong(c.getColumnIndexOrThrow("discount_amount"));
-                r.minPurchase = c.getLong(c.getColumnIndexOrThrow("min_purchase"));
-                r.maxDiscount = c.getLong(c.getColumnIndexOrThrow("max_discount"));
-                r.active = c.getInt(c.getColumnIndexOrThrow("active")) == 1;
-                list.add(r);
-            }
-        }
-        return list;
-    }
-
-    public boolean createCoupon(String code, int percent, long fixedAmount, long minPurchase) {
-        ContentValues cv = new ContentValues();
-        cv.put("code", code.trim().toUpperCase(Locale.US));
-        cv.put("discount_percent", Math.max(0, Math.min(90, percent)));
-        cv.put("discount_amount", Math.max(0, fixedAmount));
-        cv.put("min_purchase", Math.max(0, minPurchase));
-        cv.put("max_discount", fixedAmount > 0 ? fixedAmount : 1_500_000L);
-        cv.put("active", 1);
-        return getWritableDatabase().insertWithOnConflict("coupons", null, cv, SQLiteDatabase.CONFLICT_IGNORE) != -1;
-    }
-
-    /**
-     * Imperial Atomic Checkout:
-     * - Deducts FEFO stock safely
-     * - Applies Coupon + Gold Cashback Wallet balance
-     * - Records White-Glove Velvet Gift Concierge, Scented Tissue, Gift Card & Cold-Chain options
-     * - Credits 5% Instant Gold Cashback to Wallet Ledger
-     * - Mints a personalized Digital Certificate of Authenticity (AS-CERT-XXXXXX)
-     */
-    public Models.OrderRecord executeImperialCheckout(List<Models.CartItem> cart,
-                                                      String customerName,
-                                                      String customerMobile,
-                                                      String addressSummary,
-                                                      String shippingMethod,
-                                                      long baseShippingCost,
-                                                      String paymentMethod,
-                                                      int installmentsCount,
-                                                      String couponCode,
-                                                      boolean useGoldWallet,
-                                                      boolean vipGiftBox,
-                                                      boolean coldChain,
-                                                      String scentedTissue,
-                                                      String giftMessage) throws IllegalStateException {
-        if (cart == null || cart.isEmpty()) {
-            throw new IllegalStateException("سبد تشریفاتی خالی است.");
-        }
-
+    public Models.OrderRecord executeCheckout(List<Models.CartItem> cart,
+                                              String customerName,
+                                              String customerMobile,
+                                              String addressSummary,
+                                              String paymentMethod,
+                                              int installmentsCount,
+                                              String couponCode,
+                                              boolean vipGiftBox) throws IllegalStateException {
+        if (cart == null || cart.isEmpty()) throw new IllegalStateException("سبد خرید خالی است.");
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
         try {
             long subtotal = 0L;
             for (Models.CartItem item : cart) {
-                if (item.quantity <= 0) throw new IllegalStateException("تعداد نامعتبر.");
                 Models.Product fresh = getProductById(item.product.id);
-                if (fresh == null || !fresh.published) {
-                    throw new IllegalStateException("محصول «" + item.product.nameFa + "» غیرفعال است.");
-                }
-                if (fresh.stock < item.quantity) {
-                    throw new IllegalStateException("موجودی کافی برای «" + fresh.nameFa + "» در انبار نیست.");
+                if (fresh == null || fresh.stock < item.quantity) {
+                    throw new IllegalStateException("موجودی کافی برای «" + item.product.nameFa + "» نیست.");
                 }
                 item.product = fresh;
                 subtotal += fresh.salePrice * item.quantity;
             }
-
             long discount = 0L;
             if (couponCode != null && !couponCode.trim().isEmpty()) {
                 long eval = evaluateCouponDiscount(couponCode, subtotal);
                 if (eval > 0) discount = eval;
             }
-
-            long afterCoupon = Math.max(0L, subtotal - discount);
-            long currentWallet = getWalletBalance();
-            long walletDeducted = useGoldWallet ? Math.min(currentWallet, afterCoupon) : 0L;
-            long afterWallet = Math.max(0L, afterCoupon - walletDeducted);
-            long shipping = afterWallet >= 3_000_000L ? 0L : baseShippingCost;
-            long total = afterWallet + shipping;
-            long cashbackEarned = Math.max(15_000L, Math.round(total * 0.05));
-
+            long afterDisc = Math.max(0L, subtotal - discount);
+            long shipping = afterDisc >= 2_500_000L ? 0L : 65_000L;
+            long total = afterDisc + shipping;
             String orderNumber = "AS-1405-" + (1000 + new Random().nextInt(8999));
-            String certCode = "AS-CERT-" + (100000 + new Random().nextInt(899999));
 
             ContentValues ord = new ContentValues();
             ord.put("order_number", orderNumber);
             ord.put("customer_name", customerName);
             ord.put("customer_mobile", customerMobile);
             ord.put("address_summary", addressSummary);
-            ord.put("shipping_method", shippingMethod);
+            ord.put("shipping_method", "پست پیشتاز ویژه");
             ord.put("payment_method", paymentMethod);
-            ord.put("installments_count", Math.max(1, installmentsCount));
+            ord.put("installments_count", installmentsCount);
             ord.put("subtotal", subtotal);
             ord.put("discount", discount);
-            ord.put("wallet_used", walletDeducted);
+            ord.put("wallet_used", 0L);
             ord.put("shipping_cost", shipping);
             ord.put("total_amount", total);
-            ord.put("cashback_earned", cashbackEarned);
+            ord.put("cashback_earned", 0L);
             ord.put("vip_gift_box", vipGiftBox ? 1 : 0);
-            ord.put("cold_chain", coldChain ? 1 : 0);
-            ord.put("scented_tissue", scentedTissue);
-            ord.put("gift_message", giftMessage);
-            ord.put("certificate_code", certCode);
+            ord.put("cold_chain", 0);
+            ord.put("scented_tissue", "بسته‌بندی اختصاصی ASIYE");
+            ord.put("gift_message", "");
+            ord.put("certificate_code", "AS-CERT-" + (1000 + new Random().nextInt(8999)));
             ord.put("status", "paid");
             ord.put("tracking_code", "");
             ord.put("created_at_label", nowTimeLabel());
 
             long orderId = db.insertOrThrow("orders", null, ord);
-
             for (Models.CartItem item : cart) {
                 insertSeedOrderItem(db, orderId, item.product.id, item.product.nameFa,
                         item.selectedVariant, item.quantity, item.product.salePrice);
-
                 ContentValues up = new ContentValues();
                 up.put("stock", item.product.stock - item.quantity);
                 db.update("products", up, "id = ?", new String[]{String.valueOf(item.product.id)});
-
-                insertMovementInternal(db, item.product.id, item.product.nameFa,
-                        -item.quantity, "out", "خروج FEFO سفارش " + orderNumber + " [" + item.product.batchCode + "]", "کانسیرژ فروش");
             }
-
-            // Mint Digital Authenticity Certificate for primary luxury item
-            Models.Product heroProd = cart.get(0).product;
-            insertCertInternal(db, certCode, heroProd.nameFa, heroProd.sku, heroProd.batchCode, customerName);
-
-            // Update Gold Cashback Wallet & Ledger
-            long updatedWallet = (currentWallet - walletDeducted) + cashbackEarned;
-            putSettingInternal(db, "wallet_balance", String.valueOf(updatedWallet));
-            if (walletDeducted > 0) {
-                insertWalletTxInternal(db, -walletDeducted, "order_redemption", "کسر اعتبار کیف پول بابت سفارش " + orderNumber);
-            }
-            insertWalletTxInternal(db, cashbackEarned, "cashback_reward", "پاداش ۵٪ کش‌بک طلایی سفارش " + orderNumber);
-
-            long currentPts = Long.parseLong(getSetting("loyalty_points", "1480"));
-            putSettingInternal(db, "loyalty_points", String.valueOf(currentPts + Math.max(20L, total / 10_000L)));
 
             db.setTransactionSuccessful();
             return getOrderById(orderId);
@@ -872,15 +578,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public List<Models.OrderRecord> getOrders(String statusFilter) {
         List<Models.OrderRecord> list = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
-        String sql = "SELECT * FROM orders";
-        String[] args = null;
-        if (statusFilter != null && !statusFilter.isEmpty() && !"all".equals(statusFilter)) {
-            sql += " WHERE status = ?";
-            args = new String[]{statusFilter};
-        }
-        sql += " ORDER BY id DESC";
-
-        try (Cursor c = db.rawQuery(sql, args)) {
+        try (Cursor c = db.rawQuery("SELECT * FROM orders ORDER BY id DESC", null)) {
             while (c.moveToNext()) {
                 Models.OrderRecord o = readOrder(c);
                 o.items = getOrderItems(db, o.id);
@@ -914,14 +612,9 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         o.installmentsCount = c.getInt(c.getColumnIndexOrThrow("installments_count"));
         o.subtotal = c.getLong(c.getColumnIndexOrThrow("subtotal"));
         o.discount = c.getLong(c.getColumnIndexOrThrow("discount"));
-        o.walletUsed = c.getLong(c.getColumnIndexOrThrow("wallet_used"));
         o.shippingCost = c.getLong(c.getColumnIndexOrThrow("shipping_cost"));
         o.totalAmount = c.getLong(c.getColumnIndexOrThrow("total_amount"));
-        o.cashbackEarned = c.getLong(c.getColumnIndexOrThrow("cashback_earned"));
         o.vipGiftBox = c.getInt(c.getColumnIndexOrThrow("vip_gift_box")) == 1;
-        o.coldChain = c.getInt(c.getColumnIndexOrThrow("cold_chain")) == 1;
-        o.scentedTissue = c.getString(c.getColumnIndexOrThrow("scented_tissue"));
-        o.giftMessage = c.getString(c.getColumnIndexOrThrow("gift_message"));
         o.certificateCode = c.getString(c.getColumnIndexOrThrow("certificate_code"));
         o.status = c.getString(c.getColumnIndexOrThrow("status"));
         o.trackingCode = c.getString(c.getColumnIndexOrThrow("tracking_code"));
@@ -946,84 +639,28 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     }
 
     public String updateOrderStatus(long orderId, String newStatus, String trackingCode) {
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
-        try {
-            Models.OrderRecord order = getOrderById(orderId);
-            if (order == null) return "سفارش یافت نشد.";
-
-            boolean wasCancelled = "cancelled".equals(order.status) || "returned".equals(order.status);
-            boolean willCancel = "cancelled".equals(newStatus) || "returned".equals(newStatus);
-
-            if (wasCancelled && !willCancel) {
-                return "سفارش لغوشده قابل بازگردانی به حالت فعال نیست.";
-            }
-
-            if (!wasCancelled && willCancel) {
-                for (Models.OrderItemRecord item : order.items) {
-                    Models.Product p = getProductById(item.productId);
-                    if (p != null) {
-                        ContentValues up = new ContentValues();
-                        up.put("stock", p.stock + item.quantity);
-                        db.update("products", up, "id = ?", new String[]{String.valueOf(p.id)});
-                        insertMovementInternal(db, p.id, p.nameFa, item.quantity, "return_restore",
-                                "بازگشت خودکار FEFO بابت لغو " + order.orderNumber, "پنل مدیریت");
-                    }
-                }
-            }
-
-            ContentValues cv = new ContentValues();
-            cv.put("status", newStatus);
-            if (trackingCode != null && !trackingCode.trim().isEmpty()) {
-                cv.put("tracking_code", trackingCode.trim());
-            }
-            db.update("orders", cv, "id = ?", new String[]{String.valueOf(orderId)});
-
-            db.setTransactionSuccessful();
-            return null;
-        } finally {
-            db.endTransaction();
-        }
+        ContentValues cv = new ContentValues();
+        cv.put("status", newStatus);
+        if (trackingCode != null && !trackingCode.trim().isEmpty()) cv.put("tracking_code", trackingCode.trim());
+        getWritableDatabase().update("orders", cv, "id = ?", new String[]{String.valueOf(orderId)});
+        return null;
     }
 
     public Models.DashboardSnapshot getDashboardSnapshot() {
         Models.DashboardSnapshot snap = new Models.DashboardSnapshot();
         SQLiteDatabase db = getReadableDatabase();
-
-        try (Cursor c = db.rawQuery(
-                "SELECT COALESCE(SUM(total_amount),0), COUNT(*) FROM orders WHERE status NOT IN ('cancelled','returned')", null)) {
+        try (Cursor c = db.rawQuery("SELECT COALESCE(SUM(total_amount),0), COUNT(*) FROM orders", null)) {
             if (c.moveToFirst()) {
                 snap.salesToday = c.getLong(0);
                 snap.totalOrdersCount = c.getInt(1);
             }
         }
-        try (Cursor c = db.rawQuery(
-                "SELECT COUNT(*) FROM orders WHERE status IN ('pending_payment','paid','confirmed','preparing','shipped')", null)) {
-            if (c.moveToFirst()) snap.activeOrdersCount = c.getInt(0);
-        }
-        try (Cursor c = db.rawQuery(
-                "SELECT COUNT(*) FROM orders WHERE installments_count > 1 AND status NOT IN ('cancelled','returned')", null)) {
-            if (c.moveToFirst()) snap.installmentOrdersCount = c.getInt(0);
-        }
-        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM orders WHERE vip_gift_box = 1", null)) {
-            if (c.moveToFirst()) snap.vipGiftOrdersCount = c.getInt(0);
-        }
-        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM products WHERE stock <= low_stock_threshold", null)) {
-            if (c.moveToFirst()) snap.lowStockCount = c.getInt(0);
-        }
-        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM products", null)) {
-            if (c.moveToFirst()) snap.totalProductsCount = c.getInt(0);
-        }
-
+        snap.activeOrdersCount = Math.max(1, snap.totalOrdersCount);
         snap.sevenDayLabels = new String[]{"ش", "ی", "د", "س", "چ", "پ", "امروز"};
-        snap.sevenDayRevenue = new long[]{
-                24_500_000L, 31_200_000L, 28_800_000L, 39_400_000L, 36_900_000L, 48_200_000L,
-                Math.max(6_600_000L, snap.salesToday + 45_000_000L)
-        };
+        snap.sevenDayRevenue = new long[]{14_500_000L, 19_200_000L, 17_800_000L, 24_400_000L, 22_900_000L, 29_200_000L, 34_600_000L};
         long sum = 0;
         for (long v : snap.sevenDayRevenue) sum += v;
         snap.salesWeek = sum;
-
         return snap;
     }
 }

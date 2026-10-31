@@ -2,12 +2,13 @@ package com.asiyestore.admin.app;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.graphics.Color;
+import android.content.Intent;
+import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
-import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -15,7 +16,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -34,68 +34,58 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * ASIYE STORE — Haute Beauté Imperial Ecosystem v3.0
- * Native RTL Luxury Storefront + AI Beauty Atelier + TTAC Authenticity + 4-BNPL + Gold Wallet + Executive Admin Suite
+ * ASIYE STORE — Quiet Luxury Signature Edition v4.0
+ * Management: سرکار خانم زنگنه (+989044200993 | @asiyeh.store)
+ * Designed & Architected by: Milad Yaghoobi
  */
 public final class MainActivity extends Activity {
 
-    // Haute Couture Palette (Obsidian, Champagne Gold, Warm Silk Ivory)
-    private static final int COL_OBSIDIAN      = 0xFF0A0A0C;
-    private static final int COL_OBSIDIAN_CARD = 0xFF17161B;
-    private static final int COL_GOLD          = 0xFFC6A16C;
-    private static final int COL_GOLD_LIGHT    = 0xFFE2C28E;
-    private static final int COL_GOLD_DARK     = 0xFF9B7844;
-    private static final int COL_IVORY_BG      = 0xFFFBF9F5;
-    private static final int COL_CREAM_SOFT    = 0xFFF3ECE0;
-    private static final int COL_CARD_WHITE    = 0xFFFFFFFF;
-    private static final int COL_TEXT_MAIN     = 0xFF1F1E1C;
-    private static final int COL_TEXT_MUTED    = 0xFF6B655D;
-    private static final int COL_BORDER        = 0xFFE6DEC9;
-    private static final int COL_SUCCESS       = 0xFF1C6B4A;
-    private static final int COL_WARNING       = 0xFFA36A1E;
-    private static final int COL_DANGER        = 0xFFA63232;
+    // Owner & Designer Constants
+    private static final String OWNER_PHONE_E164    = "+989044200993";
+    private static final String OWNER_PHONE_DISPLAY = "+98 904 420 0993";
+    private static final String OWNER_WA_NUMBER     = "989044200993";
+    private static final String INSTAGRAM_URL       = "https://www.instagram.com/asiyeh.store?psln=MnoxdzRzcXcxOGtz";
+
+    // Quiet-Luxury Palette (Obsidian, 24K Champagne Gold, Warm Silk Alabaster)
+    private static final int COL_OBSIDIAN      = 0xFF0B0B0E;
+    private static final int COL_OBSIDIAN_CARD = 0xFF16151C;
+    private static final int COL_GOLD          = 0xFFC8A46B;
+    private static final int COL_GOLD_LIGHT    = 0xFFE8CC9B;
+    private static final int COL_GOLD_DEEP     = 0xFF96733E;
+    private static final int COL_IVORY_BG      = 0xFFFAF8F4;
+    private static final int COL_SILK_CREAM    = 0xFFF2ECE1;
+    private static final int COL_WHITE         = 0xFFFFFFFF;
+    private static final int COL_TEXT_MAIN     = 0xFF1B1A18;
+    private static final int COL_TEXT_MUTED    = 0xFF6E675E;
+    private static final int COL_BORDER        = 0xFFE5DCCB;
+    private static final int COL_SUCCESS       = 0xFF1D6B4B;
 
     private AsiyeDatabaseHelper db;
 
-    // App Mode & Navigation State
+    // Navigation State
     private boolean adminMode = false;
     private boolean adminAuthenticated = false;
-    private int customerTab = 0; // 0=Boutique, 1=AI Atelier, 2=TTAC Authenticity, 3=Concierge Cart, 4=VIP Privée
-    private int atelierSubTab = 0; // 0=AI Skin, 1=Lip Try-On, 2=Fragrance Sommelier
-    private int adminTab = 0;    // 0=Dashboard, 1=Products, 2=Orders+Barcode, 3=FEFO Inventory, 4=Settings/Feeds
+    private int customerTab = 0; // 0=Boutique, 1=Advisor & Auth, 2=Bag, 3=Concierge & Management
+    private int adminTab = 0;    // 0=Dashboard, 1=Catalog, 2=Orders, 3=Inventory
 
-    // Storefront State
+    // Boutique & Studio State
     private String selectedCategory = "همه";
-    private String searchQuery = "";
-    private String sortMode = "newest";
-    private String adminOrderStatusFilter = "all";
+    private int selectedAdvisorConcernIdx = 0;
+    private String lastCheckedSerial = "AS-GAT-150";
+    private Models.Product verifiedProduct = null;
+    private int selectedSmartTopicIdx = 0;
 
-    // AI Atelier Interactive State
-    private int selectedSkinTypeIdx = 0;
-    private int selectedSkinConcernIdx = 0;
-    private int selectedSkinToneIdx = 0;
-    private int selectedLipShadeIdx = 0;
-    private int selectedFragranceMoodIdx = 0;
-    private Models.Product verifiedAuthenticityProduct = null;
-    private String lastVerifiedCode = "AS-AUTH-2026-9901";
-
-    // Cart, Gift Concierge, Gold Wallet & BNPL State
+    // Bag & Checkout State
     private final List<Models.CartItem> cart = new ArrayList<>();
     private String appliedCouponCode = "";
     private String selectedPaymentMethod = "snapp_pay";
-    private int selectedShippingIndex = 0;
-    private boolean useGoldWallet = true;
-    private boolean giftVipVelvetBox = true;
-    private boolean giftColdChain = true;
-    private int selectedTissueScentIdx = 0;
-    private String customGiftMessage = "";
+    private boolean vipGiftPackaging = true;
 
     // Root Containers
     private LinearLayout contentContainer;
     private LinearLayout bottomNavContainer;
-    private TextView modeSwitchBtn;
     private TextView headerSubtitle;
-    private TextView headerWalletChip;
+    private Luxury3DIconView headerAdminIcon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,16 +101,15 @@ public final class MainActivity extends Activity {
         }
 
         db = new AsiyeDatabaseHelper(this);
-        verifiedAuthenticityProduct = db.verifyAuthenticitySerial(lastVerifiedCode);
+        verifiedProduct = db.verifyAuthenticitySerial(lastCheckedSerial);
 
-        // Pre-populate luxury signature serum in cart for instant showcase
         List<Models.Product> initial = db.getProducts(true, "همه", "", "newest");
         if (!initial.isEmpty()) {
-            Models.CartItem seedCart = new Models.CartItem();
-            seedCart.product = initial.get(0);
-            seedCart.selectedVariant = initial.get(0).volume;
-            seedCart.quantity = 1;
-            cart.add(seedCart);
+            Models.CartItem seed = new Models.CartItem();
+            seed.product = initial.get(0);
+            seed.selectedVariant = initial.get(0).volume;
+            seed.quantity = 1;
+            cart.add(seed);
         }
 
         setContentView(buildRootShell());
@@ -133,92 +122,81 @@ public final class MainActivity extends Activity {
         root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         root.setBackgroundColor(COL_IVORY_BG);
 
-        // Obsidian Imperial Header
+        // Breathable Quiet-Luxury Header (Zero Clutter)
         LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.VERTICAL);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
         header.setBackgroundColor(COL_OBSIDIAN);
-        header.setPadding(dp(14), dp(10), dp(14), dp(10));
+        header.setPadding(dp(16), dp(12), dp(16), dp(12));
         header.setElevation(dp(6));
 
-        LinearLayout topRow = new LinearLayout(this);
-        topRow.setOrientation(LinearLayout.HORIZONTAL);
-        topRow.setGravity(Gravity.CENTER_VERTICAL);
+        // Brand Emblem + Crisp Gold Title
+        ImageView emblem = new ImageView(this);
+        emblem.setImageResource(R.drawable.img_brand_emblem);
+        emblem.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        emblem.setBackground(roundedShape(COL_OBSIDIAN, dp(11), COL_GOLD, dp(1)));
+        emblem.setPadding(dp(2), dp(2), dp(2), dp(2));
+        LinearLayout.LayoutParams emLp = new LinearLayout.LayoutParams(dp(42), dp(42));
+        emLp.setMarginEnd(dp(11));
+        emblem.setLayoutParams(emLp);
 
-        LinearLayout brandBox = new LinearLayout(this);
-        brandBox.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams brandLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        brandBox.setLayoutParams(brandLp);
+        LinearLayout titleCol = new LinearLayout(this);
+        titleCol.setOrientation(LinearLayout.VERTICAL);
+        titleCol.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        ImageView logoImg = new ImageView(this);
-        logoImg.setImageResource(R.drawable.img_logo_horizontal);
-        logoImg.setScaleType(ImageView.ScaleType.FIT_START);
-        logoImg.setAdjustViewBounds(true);
-        LinearLayout.LayoutParams logoLp = new LinearLayout.LayoutParams(dp(142), dp(34));
-        logoImg.setLayoutParams(logoLp);
+        TextView brandName = new TextView(this);
+        brandName.setText("ASIYE STORE");
+        brandName.setTextColor(COL_GOLD_LIGHT);
+        brandName.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15.5f);
+        brandName.setTypeface(Typeface.SERIF, Typeface.BOLD);
+        brandName.setLetterSpacing(0.12f);
 
         headerSubtitle = new TextView(this);
-        headerSubtitle.setText("مزون زیبایی سلطنتی • اصالت TTAC • ۴ قسط بدون کارمزد");
-        headerSubtitle.setTextColor(COL_GOLD_LIGHT);
-        headerSubtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f);
-        headerSubtitle.setPadding(0, dp(2), 0, 0);
+        headerSubtitle.setText("مدیریت مجموعه: سرکار خانم زنگنه");
+        headerSubtitle.setTextColor(0xFFD6CFC3);
+        headerSubtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
 
-        brandBox.addView(logoImg);
-        brandBox.addView(headerSubtitle);
+        titleCol.addView(brandName);
+        titleCol.addView(headerSubtitle);
 
-        // Gold Wallet Chip
-        headerWalletChip = new TextView(this);
-        headerWalletChip.setTextColor(COL_GOLD_LIGHT);
-        headerWalletChip.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f);
-        headerWalletChip.setTypeface(Typeface.DEFAULT_BOLD);
-        headerWalletChip.setPadding(dp(9), dp(6), dp(9), dp(6));
-        headerWalletChip.setBackground(roundedShape(0x24C6A16C, dp(16), COL_GOLD, dp(1)));
-        LinearLayout.LayoutParams wLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        wLp.setMarginEnd(dp(6));
-        headerWalletChip.setLayoutParams(wLp);
-        headerWalletChip.setOnClickListener(v -> {
-            if (!adminMode) {
-                customerTab = 4;
-                renderCurrentScreen();
-            }
-        });
+        // Sleek 3D WhatsApp Direct Trigger
+        Luxury3DIconView quickWa = new Luxury3DIconView(this, Luxury3DIconView.ICON_WHATSAPP, false);
+        LinearLayout.LayoutParams waLp = new LinearLayout.LayoutParams(dp(40), dp(40));
+        waLp.setMarginEnd(dp(8));
+        quickWa.setLayoutParams(waLp);
+        quickWa.setOnClickListener(v -> openSmartWhatsApp("مشاوره تخصصی و ثبت سفارش", ""));
 
-        modeSwitchBtn = new TextView(this);
-        modeSwitchBtn.setText("پنل مدیریت");
-        modeSwitchBtn.setTextColor(COL_OBSIDIAN);
-        modeSwitchBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
-        modeSwitchBtn.setTypeface(Typeface.DEFAULT_BOLD);
-        modeSwitchBtn.setPadding(dp(11), dp(6), dp(11), dp(6));
-        modeSwitchBtn.setBackground(roundedShape(COL_GOLD, dp(16), COL_GOLD_LIGHT, dp(1)));
-        modeSwitchBtn.setOnClickListener(v -> handleModeToggle());
+        // Sleek 3D Executive Admin Key Trigger
+        headerAdminIcon = new Luxury3DIconView(this, Luxury3DIconView.ICON_KEY_ADMIN, false);
+        headerAdminIcon.setLayoutParams(new LinearLayout.LayoutParams(dp(40), dp(40)));
+        headerAdminIcon.setOnClickListener(v -> handleModeToggle());
 
-        topRow.addView(brandBox);
-        topRow.addView(headerWalletChip);
-        topRow.addView(modeSwitchBtn);
-        header.addView(topRow);
+        header.addView(emblem);
+        header.addView(titleCol);
+        header.addView(quickWa);
+        header.addView(headerAdminIcon);
 
-        View goldHairline = new View(this);
-        goldHairline.setBackgroundColor(COL_GOLD);
-        goldHairline.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+        View goldLine = new View(this);
+        goldLine.setBackgroundColor(0x66C8A46B);
+        goldLine.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
 
         ScrollView scrollView = new ScrollView(this);
         scrollView.setFillViewport(true);
-        LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
-        scrollView.setLayoutParams(scrollLp);
+        scrollView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         contentContainer = new LinearLayout(this);
         contentContainer.setOrientation(LinearLayout.VERTICAL);
-        contentContainer.setPadding(dp(14), dp(12), dp(14), dp(24));
+        contentContainer.setPadding(dp(16), dp(16), dp(16), dp(28));
         scrollView.addView(contentContainer);
 
         bottomNavContainer = new LinearLayout(this);
         bottomNavContainer.setOrientation(LinearLayout.HORIZONTAL);
         bottomNavContainer.setBackgroundColor(COL_OBSIDIAN);
-        bottomNavContainer.setPadding(dp(4), dp(7), dp(4), dp(9));
-        bottomNavContainer.setElevation(dp(10));
+        bottomNavContainer.setPadding(dp(8), dp(8), dp(8), dp(10));
+        bottomNavContainer.setElevation(dp(12));
 
         root.addView(header);
-        root.addView(goldHairline);
+        root.addView(goldLine);
         root.addView(scrollView);
         root.addView(bottomNavContainer);
         return root;
@@ -235,22 +213,19 @@ public final class MainActivity extends Activity {
             renderCurrentScreen();
             return;
         }
-        showAdminAuthDialog();
-    }
 
-    private void showAdminAuthDialog() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         box.setPadding(dp(20), dp(14), dp(20), dp(8));
 
         TextView hint = new TextView(this);
-        hint.setText("احراز هویت مدیر ارشد (RBAC)\nموبایل پیش‌فرض: ۰۹۱۲۰۰۰۰۰۰۰  |  رمز عبور: Asiye@2026");
+        hint.setText("ورود اختصاصی مدیریت مجموعه (سرکار خانم زنگنه)");
         hint.setTextColor(COL_TEXT_MUTED);
         hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
         box.addView(hint);
 
-        EditText userField = createInput("موبایل یا ایمیل مدیر", "09120000000");
+        EditText userField = createInput("شماره موبایل مدیریت", "09044200993");
         EditText passField = createInput("رمز عبور امنیتی", "Asiye@2026");
         passField.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
 
@@ -260,19 +235,19 @@ public final class MainActivity extends Activity {
         box.addView(passField);
 
         new AlertDialog.Builder(this)
-                .setTitle("ورود به فرماندهی اجرایی ASIYE")
+                .setTitle("پنل مدیریت ASIYE STORE")
                 .setView(box)
-                .setPositiveButton("ورود ایمن", (d, w) -> {
-                    String u = userField.getText().toString().trim();
+                .setPositiveButton("ورود", (d, w) -> {
+                    String u = PersianFormatter.toAsciiDigits(userField.getText().toString().trim());
                     String p = passField.getText().toString().trim();
-                    if (("09120000000".equals(u) || "admin@asiyestore.ir".equalsIgnoreCase(u))
+                    if (("09044200993".equals(u) || "09120000000".equals(u) || "admin@asiyestore.ir".equalsIgnoreCase(u))
                             && "Asiye@2026".equals(p)) {
                         adminAuthenticated = true;
                         adminMode = true;
-                        toast("خوش آمدید؛ پنل فرماندهی امپریال فعال شد.");
+                        toast("خوش آمدید سرکار خانم زنگنه گرامی");
                         renderCurrentScreen();
                     } else {
-                        toast("اطلاعات ورود مدیر نامعتبر است.");
+                        toast("شماره یا رمز عبور صحیح نیست.");
                     }
                 })
                 .setNegativeButton("انصراف", null)
@@ -281,45 +256,43 @@ public final class MainActivity extends Activity {
 
     private void renderCurrentScreen() {
         contentContainer.removeAllViews();
-        long walletBal = db.getWalletBalance();
-        headerWalletChip.setText("کیف طلایی: " + PersianFormatter.toPersianDigits(String.valueOf(walletBal / 1000)) + "هزار");
+        headerAdminIcon.setIconState(Luxury3DIconView.ICON_KEY_ADMIN, adminMode);
 
         if (!adminMode) {
-            headerWalletChip.setVisibility(View.VISIBLE);
-            modeSwitchBtn.setText("پنل مدیریت");
-            headerSubtitle.setText("مزون زیبایی سلطنتی • اصالت TTAC • ۴ قسط بدون کارمزد");
+            headerSubtitle.setText("مدیریت مجموعه: سرکار خانم زنگنه");
             renderCustomerBottomNav();
-            if (customerTab == 0) renderCustomerStorefront();
-            else if (customerTab == 1) renderAiBeautyAtelier();
-            else if (customerTab == 2) renderAuthenticityVerifier();
-            else if (customerTab == 3) renderCustomerCartAndConcierge();
-            else renderCustomerVipPrivee();
+            if (customerTab == 0) renderBoutiqueScreen();
+            else if (customerTab == 1) renderAdvisorAndAuthScreen();
+            else if (customerTab == 2) renderBagScreen();
+            else renderExecutiveConciergeAndDesignerScreen();
         } else {
-            headerWalletChip.setVisibility(View.GONE);
-            modeSwitchBtn.setText("نمای مزون مشتری");
-            headerSubtitle.setText("فرماندهی اجرایی • انبار FEFO • بارکدخوان • فید ترب");
+            headerSubtitle.setText("پنل فرماندهی مدیریت • نمای ادمین فعال است");
             renderAdminBottomNav();
             if (adminTab == 0) renderAdminDashboard();
             else if (adminTab == 1) renderAdminProducts();
             else if (adminTab == 2) renderAdminOrders();
-            else if (adminTab == 3) renderAdminInventoryFefo();
-            else renderAdminSettingsAndFeeds();
+            else renderAdminInventory();
         }
     }
 
     private void renderCustomerBottomNav() {
         bottomNavContainer.removeAllViews();
-        int cartQty = totalCartItems();
-        String cartLabel = cartQty > 0
-                ? "سبد (" + PersianFormatter.toPersianDigits(String.valueOf(cartQty)) + ")"
+        int qty = totalCartItems();
+        String bagTitle = qty > 0
+                ? "سبد خرید (" + PersianFormatter.toPersianDigits(String.valueOf(qty)) + ")"
                 : "سبد خرید";
 
-        String[] labels = new String[]{"ویترین", "آتلیه AI", "اصالت TTAC", cartLabel, "الماس سیاه"};
-        String[] icons  = new String[]{"✦", "◈", "✓", "❖", "♛"};
+        String[] titles = new String[]{"ویترین", "مشاور و اصالت", bagTitle, "مدیریت و ارتباط"};
+        int[] icons = new int[]{
+                Luxury3DIconView.ICON_BOUTIQUE,
+                Luxury3DIconView.ICON_ADVISOR,
+                Luxury3DIconView.ICON_BAG,
+                Luxury3DIconView.ICON_CONCIERGE
+        };
 
-        for (int i = 0; i < labels.length; i++) {
+        for (int i = 0; i < titles.length; i++) {
             final int idx = i;
-            bottomNavContainer.addView(buildNavTab(icons[i], labels[i], customerTab == i, () -> {
+            bottomNavContainer.addView(build3DNavTab(icons[i], titles[i], customerTab == i, () -> {
                 customerTab = idx;
                 renderCurrentScreen();
             }));
@@ -328,323 +301,271 @@ public final class MainActivity extends Activity {
 
     private void renderAdminBottomNav() {
         bottomNavContainer.removeAllViews();
-        String[] labels = new String[]{"داشبورد", "کاتالوگ", "سفارش/بارکد", "انبار FEFO", "فید و سرور"};
-        String[] icons  = new String[]{"◈", "✦", "❖", "▣", "⚙"};
+        String[] titles = new String[]{"گزارش فروش", "محصولات", "سفارش‌ها", "موجودی انبار"};
+        int[] icons = new int[]{
+                Luxury3DIconView.ICON_CROWN,
+                Luxury3DIconView.ICON_BOUTIQUE,
+                Luxury3DIconView.ICON_BAG,
+                Luxury3DIconView.ICON_SHIELD
+        };
 
-        for (int i = 0; i < labels.length; i++) {
+        for (int i = 0; i < titles.length; i++) {
             final int idx = i;
-            bottomNavContainer.addView(buildNavTab(icons[i], labels[i], adminTab == i, () -> {
+            bottomNavContainer.addView(build3DNavTab(icons[i], titles[i], adminTab == i, () -> {
                 adminTab = idx;
                 renderCurrentScreen();
             }));
         }
     }
 
-    private View buildNavTab(String symbol, String title, boolean selected, Runnable onClick) {
+    private View build3DNavTab(int iconType, String title, boolean selected, Runnable onClick) {
         LinearLayout tab = new LinearLayout(this);
         tab.setOrientation(LinearLayout.VERTICAL);
         tab.setGravity(Gravity.CENTER);
         tab.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        tab.setPadding(dp(2), dp(4), dp(2), dp(4));
-        if (selected) {
-            tab.setBackground(roundedShape(0x28C6A16C, dp(12), COL_GOLD, dp(1)));
-        }
+        tab.setPadding(dp(4), dp(4), dp(4), dp(4));
 
-        TextView sym = new TextView(this);
-        sym.setText(symbol);
-        sym.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.5f);
-        sym.setTextColor(selected ? COL_GOLD_LIGHT : 0xFFA39B8B);
-        sym.setGravity(Gravity.CENTER);
+        Luxury3DIconView icon = new Luxury3DIconView(this, iconType, selected);
+        icon.setLayoutParams(new LinearLayout.LayoutParams(dp(34), dp(34)));
 
         TextView lbl = new TextView(this);
         lbl.setText(title);
-        lbl.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f);
+        lbl.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f);
         lbl.setTypeface(selected ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
-        lbl.setTextColor(selected ? COL_GOLD_LIGHT : 0xFFA39B8B);
+        lbl.setTextColor(selected ? COL_GOLD_LIGHT : 0xFFA49C8E);
         lbl.setGravity(Gravity.CENTER);
         lbl.setSingleLine(true);
+        lbl.setPadding(0, dp(3), 0, 0);
 
-        tab.addView(sym);
+        tab.addView(icon);
         tab.addView(lbl);
         tab.setOnClickListener(v -> onClick.run());
         return tab;
     }
 
     // =========================================================================
-    // CUSTOMER TAB 0: IMPERIAL BOUTIQUE STOREFRONT
+    // TAB 0: QUIET-LUXURY BOUTIQUE (@asiyeh.store CURATED COLLECTION)
     // =========================================================================
 
-    private void renderCustomerStorefront() {
-        // Full-Bleed Editorial Atelier Hero Card with Real Studio Banner Image
+    private void renderBoutiqueScreen() {
+        // Serene Editorial Hero Card
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(20), COL_GOLD, dp(1)));
-        hero.setPadding(dp(14), dp(14), dp(14), dp(16));
+        hero.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(22), COL_GOLD, dp(1)));
+        hero.setPadding(dp(14), dp(14), dp(14), dp(18));
 
-        FrameLayout bannerFrame = new FrameLayout(this);
         ImageView heroImg = new ImageView(this);
-        heroImg.setImageResource(R.drawable.img_hero_atelier);
+        heroImg.setImageResource(R.drawable.img_hero_curated);
         heroImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        heroImg.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(165)));
-        bannerFrame.addView(heroImg);
+        heroImg.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(158)));
+        hero.addView(heroImg);
 
-        TextView editionPill = new TextView(this);
-        editionPill.setText("IMPERIAL EDITION • HAUTE BEAUTÉ 2026");
-        editionPill.setTextColor(COL_OBSIDIAN);
-        editionPill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f);
-        editionPill.setTypeface(Typeface.DEFAULT_BOLD);
-        editionPill.setPadding(dp(10), dp(4), dp(10), dp(4));
-        editionPill.setBackground(roundedShape(COL_GOLD_LIGHT, dp(14), COL_GOLD, 0));
-        FrameLayout.LayoutParams epLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.RIGHT);
-        epLp.setMargins(dp(10), dp(10), dp(10), dp(10));
-        editionPill.setLayoutParams(epLp);
-        bannerFrame.addView(editionPill);
-        hero.addView(bannerFrame);
+        TextView eyebrow = new TextView(this);
+        eyebrow.setText("اصالت تضمین‌شده • کلکسیون تخصصی پوست و مو");
+        eyebrow.setTextColor(COL_GOLD_LIGHT);
+        eyebrow.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
+        eyebrow.setPadding(0, dp(12), 0, dp(2));
 
         TextView heroTitle = new TextView(this);
-        heroTitle.setText("هنر جاودان زیبایی، در قاب طلای ۲۴ عیار و مخمل سیاه");
-        heroTitle.setTextColor(0xFFFFFFFF);
-        heroTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f);
+        heroTitle.setText("زیبایی اصیل، با انتخاب‌های علمی و ماندگار");
+        heroTitle.setTextColor(COL_WHITE);
+        heroTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17.5f);
         heroTitle.setTypeface(Typeface.DEFAULT_BOLD);
-        heroTitle.setPadding(0, dp(12), 0, dp(4));
 
-        TextView heroDesc = new TextView(this);
-        heroDesc.setText("مشاور پوست هوش مصنوعی • تست مجازی شید رژ لب • اصالت‌سنجی هولوگرام TTAC • ۴ قسط بدون کارمزد + ۵٪ کش‌بک طلایی آنی");
-        heroDesc.setTextColor(0xFFD6CFC4);
-        heroDesc.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
+        TextView heroSub = new TextView(this);
+        heroSub.setText("گلچینی از برترین محصولات اورجینال گاتیو، لاکچری کوین، اوردینری و هیرفرند با مشاوره مستقیم مدیریت");
+        heroSub.setTextColor(0xFFD2C9BC);
+        heroSub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
+        heroSub.setPadding(0, dp(4), 0, dp(14));
 
-        LinearLayout heroBtnRow = new LinearLayout(this);
-        heroBtnRow.setOrientation(LinearLayout.HORIZONTAL);
-        heroBtnRow.setPadding(0, dp(12), 0, 0);
+        LinearLayout heroActions = new LinearLayout(this);
+        heroActions.setOrientation(LinearLayout.HORIZONTAL);
 
-        Button aiBtn = goldButton("ورود به آتلیه هوش مصنوعی ✦", () -> {
+        View advisorBtn = buttonWith3DIcon("مشاور روتین پوست", Luxury3DIconView.ICON_ADVISOR, true, () -> {
             customerTab = 1;
             renderCurrentScreen();
         });
-        aiBtn.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.2f));
+        advisorBtn.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.15f));
 
-        Button authBtn = outlineButton("استعلام اصالت TTAC", () -> {
-            customerTab = 2;
+        View directBtn = buttonWith3DIcon("ارتباط با مدیریت", Luxury3DIconView.ICON_CONCIERGE, false, () -> {
+            customerTab = 3;
             renderCurrentScreen();
         });
-        authBtn.setTextColor(COL_GOLD_LIGHT);
-        authBtn.setBackground(roundedShape(0x1AC6A16C, dp(12), COL_GOLD, dp(1)));
-        LinearLayout.LayoutParams abLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        abLp.setMarginStart(dp(8));
-        authBtn.setLayoutParams(abLp);
+        LinearLayout.LayoutParams dbLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        dbLp.setMarginStart(dp(8));
+        directBtn.setLayoutParams(dbLp);
 
-        heroBtnRow.addView(aiBtn);
-        heroBtnRow.addView(authBtn);
+        heroActions.addView(advisorBtn);
+        heroActions.addView(directBtn);
 
+        hero.addView(eyebrow);
         hero.addView(heroTitle);
-        hero.addView(heroDesc);
-        hero.addView(heroBtnRow);
+        hero.addView(heroSub);
+        hero.addView(heroActions);
         contentContainer.addView(hero);
-        contentContainer.addView(space(dp(12)));
+        contentContainer.addView(space(dp(16)));
 
-        // Search & Sort Row
-        LinearLayout filterCard = cardContainer();
-        EditText searchInput = createInput("جستجو در نام محصول، کد SKU یا بچ‌کد...", searchQuery);
-        Button searchBtn = goldButton("اعمال فیلتر", () -> {
-            searchQuery = searchInput.getText().toString();
-            renderCurrentScreen();
-        });
-
-        LinearLayout searchRow = new LinearLayout(this);
-        searchRow.setOrientation(LinearLayout.HORIZONTAL);
-        searchRow.setGravity(Gravity.CENTER_VERTICAL);
-        LinearLayout.LayoutParams sLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        sLp.setMarginEnd(dp(8));
-        searchInput.setLayoutParams(sLp);
-        searchRow.addView(searchInput);
-        searchRow.addView(searchBtn);
-        filterCard.addView(searchRow);
-
+        // Calm Category Filter Pills
         HorizontalScrollView catScroll = new HorizontalScrollView(this);
         catScroll.setHorizontalScrollBarEnabled(false);
-        catScroll.setPadding(0, dp(10), 0, 0);
         LinearLayout catRow = new LinearLayout(this);
         catRow.setOrientation(LinearLayout.HORIZONTAL);
 
-        String[] categories = new String[]{"همه", "مراقبت سلولی پوست", "آرایش کوتور لب", "عطر و نیش پرفیوم", "الکسیر طلایی مو"};
-        for (String cat : categories) {
+        String[] cats = new String[]{"همه", "مراقبت تخصصی پوست", "میکاپ لوکس", "تقویت و درمان مو"};
+        for (String cat : cats) {
             boolean active = cat.equals(selectedCategory);
-            TextView chip = new TextView(this);
-            chip.setText(cat);
-            chip.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
-            chip.setTypeface(active ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
-            chip.setTextColor(active ? COL_OBSIDIAN : COL_TEXT_MAIN);
-            chip.setPadding(dp(13), dp(7), dp(13), dp(7));
-            chip.setBackground(roundedShape(active ? COL_GOLD : COL_CREAM_SOFT, dp(18), COL_BORDER, dp(1)));
-            LinearLayout.LayoutParams cLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            cLp.setMarginEnd(dp(7));
-            chip.setLayoutParams(cLp);
-            chip.setOnClickListener(v -> {
+            TextView pill = new TextView(this);
+            pill.setText(cat);
+            pill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
+            pill.setTypeface(active ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
+            pill.setTextColor(active ? COL_GOLD_LIGHT : COL_TEXT_MUTED);
+            pill.setPadding(dp(16), dp(8), dp(16), dp(8));
+            pill.setBackground(roundedShape(active ? COL_OBSIDIAN : COL_WHITE, dp(20), active ? COL_GOLD : COL_BORDER, dp(1)));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.setMarginEnd(dp(8));
+            pill.setLayoutParams(lp);
+            pill.setOnClickListener(v -> {
                 selectedCategory = cat;
                 renderCurrentScreen();
             });
-            catRow.addView(chip);
+            catRow.addView(pill);
         }
         catScroll.addView(catRow);
-        filterCard.addView(catScroll);
-        contentContainer.addView(filterCard);
-        contentContainer.addView(space(dp(12)));
+        contentContainer.addView(catScroll);
+        contentContainer.addView(space(dp(16)));
 
-        // Product Cards (All 6 Bespoke Studio Images!)
-        List<Models.Product> products = db.getProducts(true, selectedCategory, searchQuery, sortMode);
+        // Spacious Gallery Product Cards
+        List<Models.Product> products = db.getProducts(true, selectedCategory, "", "newest");
         for (Models.Product p : products) {
-            contentContainer.addView(buildCustomerProductCard(p));
-            contentContainer.addView(space(dp(12)));
+            contentContainer.addView(buildGalleryProductCard(p));
+            contentContainer.addView(space(dp(16)));
         }
     }
 
-    private View buildCustomerProductCard(Models.Product p) {
-        LinearLayout card = cardContainer();
-        card.setPadding(0, 0, 0, dp(14));
+    private View buildGalleryProductCard(Models.Product p) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(roundedShape(COL_WHITE, dp(22), COL_BORDER, dp(1)));
+        card.setElevation(dp(3));
 
-        FrameLayout imgFrame = new FrameLayout(this);
+        // Clean Studio Media Frame
+        FrameLayout media = new FrameLayout(this);
         ImageView img = new ImageView(this);
         img.setImageResource(resolveProductImage(p.imageKey));
         img.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        img.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(205)));
-        imgFrame.addView(img);
+        img.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(210)));
+        img.setOnClickListener(v -> showEditorialProductDialog(p));
+        media.addView(img);
 
-        // Discount Badge
         if (p.discountPercent > 0) {
-            TextView discBadge = new TextView(this);
-            discBadge.setText(PersianFormatter.toPersianDigits(p.discountPercent + "٪ تخفیف مزون"));
-            discBadge.setTextColor(0xFFFFFFFF);
-            discBadge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
-            discBadge.setTypeface(Typeface.DEFAULT_BOLD);
-            discBadge.setPadding(dp(10), dp(5), dp(10), dp(5));
-            discBadge.setBackground(roundedShape(COL_OBSIDIAN, dp(14), COL_GOLD, dp(1)));
+            TextView badge = new TextView(this);
+            badge.setText(PersianFormatter.toPersianDigits(p.discountPercent + "٪ تخفیف ویژه"));
+            badge.setTextColor(COL_GOLD_LIGHT);
+            badge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
+            badge.setTypeface(Typeface.DEFAULT_BOLD);
+            badge.setPadding(dp(11), dp(5), dp(11), dp(5));
+            badge.setBackground(roundedShape(0xDD0B0B0E, dp(16), COL_GOLD, dp(1)));
             FrameLayout.LayoutParams bLp = new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.RIGHT);
-            bLp.setMargins(dp(10), dp(10), dp(10), dp(10));
-            discBadge.setLayoutParams(bLp);
-            imgFrame.addView(discBadge);
+            bLp.setMargins(dp(12), dp(12), dp(12), dp(12));
+            badge.setLayoutParams(bLp);
+            media.addView(badge);
         }
 
-        // TTAC & Cold-Chain Authenticity Pill
-        TextView authPill = new TextView(this);
-        authPill.setText(p.coldChain ? "✓ اصالت TTAC • زنجیره سرد ۱۸°C" : "✓ اصالت هولوگرام TTAC");
-        authPill.setTextColor(0xFFFFFFFF);
-        authPill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f);
-        authPill.setTypeface(Typeface.DEFAULT_BOLD);
-        authPill.setPadding(dp(9), dp(4), dp(9), dp(4));
-        authPill.setBackground(roundedShape(0xD91C6B4A, dp(12), 0x55FFFFFF, dp(1)));
-        FrameLayout.LayoutParams apLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.RIGHT);
-        apLp.setMargins(dp(10), dp(10), dp(10), dp(10));
-        authPill.setLayoutParams(apLp);
-        imgFrame.addView(authPill);
-
-        // Wishlist Toggle
-        TextView wishBtn = new TextView(this);
-        wishBtn.setText(p.wishlisted ? "♥" : "♡");
-        wishBtn.setTextColor(p.wishlisted ? COL_DANGER : COL_OBSIDIAN);
-        wishBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f);
-        wishBtn.setGravity(Gravity.CENTER);
-        wishBtn.setBackground(roundedShape(0xEEFFFFFF, dp(19), COL_BORDER, dp(1)));
+        // 3D Sculpted Wishlist Medallion
+        Luxury3DIconView wish3d = new Luxury3DIconView(this, Luxury3DIconView.ICON_HEART, p.wishlisted);
         FrameLayout.LayoutParams wLp = new FrameLayout.LayoutParams(dp(38), dp(38), Gravity.TOP | Gravity.LEFT);
-        wLp.setMargins(dp(10), dp(10), dp(10), dp(10));
-        wishBtn.setLayoutParams(wLp);
-        wishBtn.setOnClickListener(v -> {
+        wLp.setMargins(dp(12), dp(12), dp(12), dp(12));
+        wish3d.setLayoutParams(wLp);
+        wish3d.setOnClickListener(v -> {
             db.toggleWishlist(p.id, !p.wishlisted);
             renderCurrentScreen();
         });
-        imgFrame.addView(wishBtn);
+        media.addView(wish3d);
+        card.addView(media);
 
-        card.addView(imgFrame);
-
+        // Airy Typography Body
         LinearLayout body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
-        body.setPadding(dp(14), dp(12), dp(14), 0);
+        body.setPadding(dp(18), dp(16), dp(18), dp(18));
 
-        TextView catMeta = new TextView(this);
-        catMeta.setText(p.category + "  •  بچ: " + p.batchCode + "  •  انقضا: " + p.expiryLabel);
-        catMeta.setTextColor(COL_GOLD_DARK);
-        catMeta.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
-        catMeta.setTypeface(Typeface.DEFAULT_BOLD);
+        TextView brandLine = new TextView(this);
+        brandLine.setText(p.nameEn + "  •  " + p.volume);
+        brandLine.setTextColor(COL_GOLD_DEEP);
+        brandLine.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
+        brandLine.setTypeface(Typeface.DEFAULT_BOLD);
 
         TextView title = new TextView(this);
         title.setText(p.nameFa);
         title.setTextColor(COL_TEXT_MAIN);
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16.5f);
         title.setTypeface(Typeface.DEFAULT_BOLD);
-        title.setPadding(0, dp(3), 0, dp(1));
+        title.setPadding(0, dp(4), 0, dp(6));
+        title.setOnClickListener(v -> showEditorialProductDialog(p));
 
-        TextView subEn = new TextView(this);
-        subEn.setText(p.nameEn);
-        subEn.setTextColor(COL_TEXT_MUTED);
-        subEn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
+        TextView summary = new TextView(this);
+        summary.setText(p.description);
+        summary.setTextColor(COL_TEXT_MUTED);
+        summary.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+        summary.setLineSpacing(dp(3), 1f);
+        summary.setMaxLines(3);
 
+        View divider = new View(this);
+        divider.setBackgroundColor(0x44C8A46B);
+        LinearLayout.LayoutParams divLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
+        divLp.setMargins(0, dp(14), 0, dp(12));
+        divider.setLayoutParams(divLp);
+
+        // Non-Colliding Two-Side Price Row (Right = Current Price, Left = Muted Strike-Through Price)
         LinearLayout priceRow = new LinearLayout(this);
         priceRow.setOrientation(LinearLayout.HORIZONTAL);
         priceRow.setGravity(Gravity.CENTER_VERTICAL);
-        priceRow.setPadding(0, dp(8), 0, dp(4));
 
-        TextView salePrice = new TextView(this);
-        salePrice.setText(PersianFormatter.formatToman(p.salePrice));
-        salePrice.setTextColor(COL_TEXT_MAIN);
-        salePrice.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16.5f);
-        salePrice.setTypeface(Typeface.DEFAULT_BOLD);
-        priceRow.addView(salePrice);
+        TextView currentPrice = new TextView(this);
+        currentPrice.setText(PersianFormatter.formatToman(p.salePrice));
+        currentPrice.setTextColor(COL_OBSIDIAN);
+        currentPrice.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f);
+        currentPrice.setTypeface(Typeface.DEFAULT_BOLD);
+        currentPrice.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        priceRow.addView(currentPrice);
 
         if (p.originalPrice > p.salePrice) {
             TextView oldPrice = new TextView(this);
-            oldPrice.setText("  " + PersianFormatter.formatToman(p.originalPrice));
-            oldPrice.setPaintFlags(oldPrice.getPaintFlags() | android.graphics.Paint.STRIKE_THRU_TEXT_FLAG);
-            oldPrice.setTextColor(COL_TEXT_MUTED);
-            oldPrice.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
+            oldPrice.setText(PersianFormatter.formatToman(p.originalPrice));
+            oldPrice.setPaintFlags(oldPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            oldPrice.setTextColor(0xFF9A9286);
+            oldPrice.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
             priceRow.addView(oldPrice);
         }
 
-        // BNPL + 5% Gold Cashback Strip
-        long perInstallment = Math.round(p.salePrice / 4.0);
-        long cashback = Math.round(p.salePrice * 0.05);
-        TextView bnplStrip = new TextView(this);
-        bnplStrip.setText("✦ ۴ قسط " + PersianFormatter.formatToman(perInstallment) + "  |  +" + PersianFormatter.formatToman(cashback) + " کش‌بک طلایی");
-        bnplStrip.setTextColor(COL_SUCCESS);
-        bnplStrip.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
-        bnplStrip.setPadding(dp(10), dp(6), dp(10), dp(6));
-        bnplStrip.setBackground(roundedShape(0xFFEAF5EF, dp(10), 0xFFBFE0CE, dp(1)));
+        // Action Row with Real 3D Sculpted Icons
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setPadding(0, dp(14), 0, 0);
 
-        LinearLayout btnRow = new LinearLayout(this);
-        btnRow.setOrientation(LinearLayout.HORIZONTAL);
-        btnRow.setPadding(0, dp(10), 0, 0);
-
-        Button detailBtn = outlineButton("شناسنامه و اصالت", () -> showProductDetailsDialog(p));
-        LinearLayout.LayoutParams dLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        dLp.setMarginEnd(dp(8));
-        detailBtn.setLayoutParams(dLp);
-
-        Button addBtn = goldButton(p.stock > 0 ? "افزودن تشریفاتی" : "ناموجود", () -> {
-            if (p.stock <= 0) {
-                toast("این محصول موقتاً ناموجود است.");
-                return;
-            }
-            addToCart(p, p.volume, 1);
-        });
+        View addBtn = buttonWith3DIcon("افزودن به سبد", Luxury3DIconView.ICON_PLUS, true, () -> addToCart(p));
         addBtn.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.25f));
 
-        btnRow.addView(detailBtn);
-        btnRow.addView(addBtn);
+        View waBtn = buttonWith3DIcon("سفارش واتس‌اپ", Luxury3DIconView.ICON_WHATSAPP, false, () ->
+                openSmartWhatsApp("مشاوره و ثبت سفارش مستقیم محصول", p.nameFa));
+        LinearLayout.LayoutParams wBtnLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        wBtnLp.setMarginStart(dp(8));
+        waBtn.setLayoutParams(wBtnLp);
 
-        body.addView(catMeta);
+        actions.addView(addBtn);
+        actions.addView(waBtn);
+
+        body.addView(brandLine);
         body.addView(title);
-        body.addView(subEn);
+        body.addView(summary);
+        body.addView(divider);
         body.addView(priceRow);
-        body.addView(bnplStrip);
-        body.addView(btnRow);
+        body.addView(actions);
         card.addView(body);
-
         return card;
     }
 
-    private void showProductDetailsDialog(Models.Product p) {
+    private void showEditorialProductDialog(Models.Product p) {
         ScrollView sv = new ScrollView(this);
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -652,463 +573,226 @@ public final class MainActivity extends Activity {
         box.setPadding(dp(20), dp(14), dp(20), dp(10));
         sv.addView(box);
 
-        TextView desc = new TextView(this);
-        desc.setText(p.description + "\n\n" +
-                "• ترکیبات کلیدی: " + p.ingredients + "\n" +
-                "• نحوه مصرف: " + p.usageMethod + "\n" +
-                "• مبدا فرمولاسیون: " + p.country + " (" + p.volume + ")\n" +
-                "• کد اصالت هولوگرام TTAC: " + p.ttacSerial + "\n" +
-                "• بچ‌کد آزمایشگاهی: " + p.batchCode + " (انقضا: " + p.expiryLabel + ")");
-        desc.setTextColor(COL_TEXT_MAIN);
-        desc.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
-        desc.setLineSpacing(dp(3), 1f);
-        box.addView(desc);
-
-        String[] variants = "lipstick".equals(p.imageKey)
-                ? new String[]{"شامپاینی نود (NUDE-01)", "رز بژ مخملی (ROSE-02)", "یاقوت پاریسی (RUBY-03)", "توت سلطنتی (BERRY-04)"}
-                : new String[]{p.volume, "نسخه کافره هدیه مخمل VIP"};
-
-        Spinner varSpinner = new Spinner(this);
-        varSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, variants));
-        box.addView(space(dp(10)));
-        box.addView(varSpinner);
+        TextView details = new TextView(this);
+        details.setText(p.description + "\n\n" +
+                "✦ ترکیبات موثر: " + p.ingredients + "\n\n" +
+                "✦ روش مصرف تخصصی: " + p.usageMethod + "\n\n" +
+                "✦ حجم / نسخه: " + p.volume + "  •  " + p.country + "\n" +
+                "✦ کد اصالت کالا: " + p.sku);
+        details.setTextColor(COL_TEXT_MAIN);
+        details.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
+        details.setLineSpacing(dp(3), 1f);
+        box.addView(details);
 
         new AlertDialog.Builder(this)
                 .setTitle(p.nameFa)
                 .setView(sv)
-                .setPositiveButton("افزودن به سبد تشریفاتی", (d, w) -> {
-                    if (p.stock > 0) addToCart(p, (String) varSpinner.getSelectedItem(), 1);
-                })
-                .setNeutralButton("استعلام گواهی اصالت", (d, w) -> {
-                    lastVerifiedCode = p.ttacSerial;
-                    verifiedAuthenticityProduct = p;
-                    customerTab = 2;
-                    renderCurrentScreen();
-                })
+                .setPositiveButton("افزودن به سبد خرید", (d, w) -> addToCart(p))
+                .setNeutralButton("مشاوره واتس‌اپ با مدیریت", (d, w) ->
+                        openSmartWhatsApp("مشاوره تخصصی محصول", p.nameFa))
                 .setNegativeButton("بستن", null)
                 .show();
     }
 
     // =========================================================================
-    // CUSTOMER TAB 1: AI BEAUTY ATELIER (SKIN AI + VIRTUAL LIP TRY-ON + SOMMELIER)
+    // TAB 1: SERENE SKIN/HAIR ROUTINE ADVISOR & AUTHENTICITY CHECK
     // =========================================================================
 
-    private void renderAiBeautyAtelier() {
-        contentContainer.addView(sectionHeader("آتلیه هوشمند زیبایی ASIYE AI", "مشاور سلولی پوست • تست مجازی شید رژ لب • عطرشناس اختصاصی"));
+    private void renderAdvisorAndAuthScreen() {
+        contentContainer.addView(sectionHeader("مشاور هوشمند روتین و اصالت کالا",
+                "پیشنهاد دقیق محصول متناسب با نیاز پوست و موی شما و بررسی ضمانت اصالت"));
 
-        // Sub-tab selector
-        LinearLayout subNav = new LinearLayout(this);
-        subNav.setOrientation(LinearLayout.HORIZONTAL);
-        subNav.setPadding(0, 0, 0, dp(12));
-        String[] subTitles = new String[]{"مشاور پوست AI", "تست مجازی رژ لب", "عطرشناس سلطنتی"};
-        for (int i = 0; i < subTitles.length; i++) {
-            final int idx = i;
-            boolean active = atelierSubTab == i;
-            TextView tab = new TextView(this);
-            tab.setText(subTitles[i]);
-            tab.setGravity(Gravity.CENTER);
-            tab.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
-            tab.setTypeface(active ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
-            tab.setTextColor(active ? COL_OBSIDIAN : COL_GOLD_LIGHT);
-            tab.setPadding(dp(8), dp(9), dp(8), dp(9));
-            tab.setBackground(roundedShape(active ? COL_GOLD : COL_OBSIDIAN_CARD, dp(14), COL_GOLD, dp(1)));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-            if (i < 2) lp.setMarginEnd(dp(6));
-            tab.setLayoutParams(lp);
-            tab.setOnClickListener(v -> {
-                atelierSubTab = idx;
-                renderCurrentScreen();
-            });
-            subNav.addView(tab);
-        }
-        contentContainer.addView(subNav);
+        // Card 1: Intelligent Product Advisor
+        LinearLayout advisorCard = new LinearLayout(this);
+        advisorCard.setOrientation(LinearLayout.VERTICAL);
+        advisorCard.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(22), COL_GOLD, dp(1)));
+        advisorCard.setPadding(dp(18), dp(18), dp(18), dp(18));
 
-        if (atelierSubTab == 0) renderSkinAiSubModule();
-        else if (atelierSubTab == 1) renderLipTryOnSubModule();
-        else renderFragranceSommelierSubModule();
-    }
+        LinearLayout headRow = new LinearLayout(this);
+        headRow.setOrientation(LinearLayout.HORIZONTAL);
+        headRow.setGravity(Gravity.CENTER_VERTICAL);
+        Luxury3DIconView advIcon = new Luxury3DIconView(this, Luxury3DIconView.ICON_ADVISOR, false);
+        LinearLayout.LayoutParams icLp = new LinearLayout.LayoutParams(dp(40), dp(40));
+        icLp.setMarginEnd(dp(10));
+        advIcon.setLayoutParams(icLp);
 
-    private void renderSkinAiSubModule() {
-        LinearLayout darkCard = new LinearLayout(this);
-        darkCard.setOrientation(LinearLayout.VERTICAL);
-        darkCard.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(18), COL_GOLD, dp(1)));
-        darkCard.setPadding(dp(16), dp(16), dp(16), dp(16));
+        TextView advTitle = new TextView(this);
+        advTitle.setText("مشاور انتخاب تخصصی محصول");
+        advTitle.setTextColor(COL_GOLD_LIGHT);
+        advTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15.5f);
+        advTitle.setTypeface(Typeface.DEFAULT_BOLD);
 
-        TextView title = new TextView(this);
-        title.setText("اسکن و نسخه سلولی هوش مصنوعی پوست");
-        title.setTextColor(COL_GOLD_LIGHT);
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15.5f);
-        title.setTypeface(Typeface.DEFAULT_BOLD);
-        darkCard.addView(title);
-        darkCard.addView(space(dp(10)));
+        headRow.addView(advIcon);
+        headRow.addView(advTitle);
+        advisorCard.addView(headRow);
+        advisorCard.addView(space(dp(12)));
 
-        String[] skinTypes = new String[]{"پوست خشک و دهیدراته", "پوست مختلط (T-Zone)", "پوست نرمال تا حساس", "پوست نیازمند لیفتینگ"};
-        String[] concerns = new String[]{"کدری و افت درخشش", "خطوط ظریف و افت کلاژن", "خشکی عمیق سد دفاعی"};
-
-        Spinner typeSp = new Spinner(this);
-        typeSp.setBackground(roundedShape(COL_CREAM_SOFT, dp(10), COL_GOLD, dp(1)));
-        typeSp.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, skinTypes));
-        typeSp.setSelection(selectedSkinTypeIdx);
+        String[] concerns = new String[]{
+                "رفع تیرگی، لک‌های پوستی و یکدست‌سازی رنگ پوست",
+                "کاهش خطوط صورت، چروک و لیفتینگ پوست",
+                "پوشش مخملی، ضدآب و محافظت روزانه پوست",
+                "توقف ریزش مو، تقویت پیاز مو و رویش مجدد",
+                "پاکسازی منافذ باز، شفافیت پوست و رفع جای جوش",
+                "تنظیم چربی کف سر، رفع شوره و تغذیه ساقه مو"
+        };
+        String[] targetSkus = new String[]{"AS-GAT-150", "AS-GAT-050", "AS-LC-104", "AS-HF-300", "AS-ORD-240", "AS-MRG-500"};
 
         Spinner concSp = new Spinner(this);
-        concSp.setBackground(roundedShape(COL_CREAM_SOFT, dp(10), COL_GOLD, dp(1)));
+        concSp.setBackground(roundedShape(COL_SILK_CREAM, dp(14), COL_GOLD, dp(1)));
         concSp.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, concerns));
-        concSp.setSelection(selectedSkinConcernIdx);
+        concSp.setSelection(selectedAdvisorConcernIdx);
+        advisorCard.addView(concSp);
+        advisorCard.addView(space(dp(10)));
 
-        darkCard.addView(typeSp);
-        darkCard.addView(space(dp(8)));
-        darkCard.addView(concSp);
-        darkCard.addView(space(dp(10)));
-
-        // Custom Canvas Skin Diagnostic Meters
-        int hyd = selectedSkinTypeIdx == 0 ? 54 : (selectedSkinTypeIdx == 1 ? 68 : 76);
-        int firm = selectedSkinConcernIdx == 1 ? 58 : 74;
-        int rad = 91;
-
-        AtelierCanvasViews.SkinDiagnosticBarsView gauge = new AtelierCanvasViews.SkinDiagnosticBarsView(this);
-        gauge.setScores(hyd, firm, rad);
-        gauge.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(138)));
-        darkCard.addView(gauge);
-
-        Button analyzeBtn = goldButton("به‌روزرسانی آنالیز هوش مصنوعی پوست", () -> {
-            selectedSkinTypeIdx = typeSp.getSelectedItemPosition();
-            selectedSkinConcernIdx = concSp.getSelectedItemPosition();
-            toast("نسخه درمانی اختصاصی پوست شما بازمحاسبه شد.");
+        View updateBtn = buttonWith3DIcon("نمایش بهترین پیشنهاد برای من", Luxury3DIconView.ICON_BOUTIQUE, false, () -> {
+            selectedAdvisorConcernIdx = concSp.getSelectedItemPosition();
             renderCurrentScreen();
         });
-        darkCard.addView(space(dp(8)));
-        darkCard.addView(analyzeBtn);
+        advisorCard.addView(updateBtn);
+        advisorCard.addView(space(dp(14)));
 
-        TextView rxBox = new TextView(this);
-        rxBox.setText("✦ نسخه پیشنهادی صبح و شب شما:\n" +
-                "۱. نوبت صبح: سرم طلایی احیاکننده ۲۴ عیار (افزایش درخشش و آبرسانی چندمولکولی)\n" +
-                "۲. نوبت شب: کرم خاویار سیاه و پپتید طلایی (بازسازی سد لیپیدی و تحریک کلاژن)\n" +
-                "• امتیاز ویژه مزون: خرید یک‌کلیکه پک کامل با کد تخفیف خودکار ASIYE20");
-        rxBox.setTextColor(0xFFEAE3D5);
-        rxBox.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-        rxBox.setLineSpacing(dp(3), 1f);
-        rxBox.setPadding(0, dp(12), 0, dp(10));
-        darkCard.addView(rxBox);
+        Models.Product recommended = db.verifyAuthenticitySerial(targetSkus[selectedAdvisorConcernIdx]);
+        if (recommended != null) {
+            LinearLayout recBox = new LinearLayout(this);
+            recBox.setOrientation(LinearLayout.VERTICAL);
+            recBox.setPadding(dp(14), dp(14), dp(14), dp(14));
+            recBox.setBackground(roundedShape(0x16FFFFFF, dp(16), 0x66C8A46B, dp(1)));
 
-        Button bundleBtn = goldButton("افزودن پک روتین صبح و شب + تخفیف ASIYE20", () -> {
-            List<Models.Product> all = db.getProducts(true, "همه", "", "newest");
-            for (Models.Product p : all) {
-                if ("AS-SRM-001".equals(p.sku) || "AS-CRM-108".equals(p.sku)) {
-                    addToCartSilent(p, p.volume, 1);
-                }
-            }
-            appliedCouponCode = "ASIYE20";
-            toast("پک روتین پوست + کوپن ۲۰٪ ASIYE20 به سبد اضافه شد!");
-            customerTab = 3;
-            renderCurrentScreen();
-        });
-        darkCard.addView(bundleBtn);
-        contentContainer.addView(darkCard);
-    }
+            TextView rTitle = new TextView(this);
+            rTitle.setText("پیشنهاد اختصاصی: " + recommended.nameFa);
+            rTitle.setTextColor(COL_GOLD_LIGHT);
+            rTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
+            rTitle.setTypeface(Typeface.DEFAULT_BOLD);
 
-    private void renderLipTryOnSubModule() {
-        LinearLayout card = cardContainer();
+            TextView rDesc = new TextView(this);
+            rDesc.setText(recommended.description + "\nبهای ویژه: " + PersianFormatter.formatToman(recommended.salePrice));
+            rDesc.setTextColor(0xFFEDE6D8);
+            rDesc.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
+            rDesc.setLineSpacing(dp(3), 1f);
+            rDesc.setPadding(0, dp(6), 0, dp(12));
 
-        int[] skinColors = new int[]{0xFFF5E1D3, 0xFFE5C1A8, 0xFFC99B7B};
-        String[] skinNames = new String[]{"پوست بلوری روشن", "گندمی طبیعی", "برنزه طلایی"};
+            final Models.Product finalRec = recommended;
+            View recAdd = buttonWith3DIcon("افزودن مستقیم به سبد خرید", Luxury3DIconView.ICON_PLUS, true, () -> addToCart(finalRec));
 
-        int[] lipColors = new int[]{0xFFC68B73, 0xFFB86B77, 0xFF9E1B32, 0xFF6A1F3B, 0xFFB3543E, 0xFFD97F6C};
-        String[] lipNames = new String[]{
-                "شامپاینی نود (NUDE-01)",
-                "رز بژ مخملی (ROSE-02)",
-                "یاقوت پاریسی (RUBY-03)",
-                "توت سلطنتی (BERRY-04)",
-                "تراکوتا ابریشمی (TERRA-05)",
-                "هلویی طلایی (PEACH-06)"
-        };
-
-        AtelierCanvasViews.LipTryOnCanvasView lipCanvas = new AtelierCanvasViews.LipTryOnCanvasView(this);
-        lipCanvas.updateLook(skinColors[selectedSkinToneIdx], lipColors[selectedLipShadeIdx], lipNames[selectedLipShadeIdx]);
-        lipCanvas.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(200)));
-        card.addView(lipCanvas);
-        card.addView(space(dp(12)));
-
-        TextView toneLbl = new TextView(this);
-        toneLbl.setText("۱. انتخاب تناژ رنگ پوست شما:");
-        toneLbl.setTextColor(COL_TEXT_MAIN);
-        toneLbl.setTypeface(Typeface.DEFAULT_BOLD);
-        toneLbl.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
-        card.addView(toneLbl);
-        card.addView(space(dp(6)));
-
-        LinearLayout toneRow = new LinearLayout(this);
-        toneRow.setOrientation(LinearLayout.HORIZONTAL);
-        for (int i = 0; i < skinNames.length; i++) {
-            final int idx = i;
-            boolean active = selectedSkinToneIdx == i;
-            TextView tChip = new TextView(this);
-            tChip.setText(skinNames[i]);
-            tChip.setGravity(Gravity.CENTER);
-            tChip.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
-            tChip.setTextColor(COL_TEXT_MAIN);
-            tChip.setPadding(dp(8), dp(7), dp(8), dp(7));
-            tChip.setBackground(roundedShape(skinColors[i], dp(12), active ? COL_OBSIDIAN : COL_BORDER, dp(active ? 2 : 1)));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-            if (i < 2) lp.setMarginEnd(dp(6));
-            tChip.setLayoutParams(lp);
-            tChip.setOnClickListener(v -> {
-                selectedSkinToneIdx = idx;
-                renderCurrentScreen();
-            });
-            toneRow.addView(tChip);
+            recBox.addView(rTitle);
+            recBox.addView(rDesc);
+            recBox.addView(recAdd);
+            advisorCard.addView(recBox);
         }
-        card.addView(toneRow);
-        card.addView(space(dp(12)));
 
-        TextView shadeLbl = new TextView(this);
-        shadeLbl.setText("۲. انتخاب شید مخملی رژ لب ASIYE Couture:");
-        shadeLbl.setTextColor(COL_TEXT_MAIN);
-        shadeLbl.setTypeface(Typeface.DEFAULT_BOLD);
-        shadeLbl.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
-        card.addView(shadeLbl);
-        card.addView(space(dp(8)));
+        contentContainer.addView(advisorCard);
+        contentContainer.addView(space(dp(18)));
 
-        HorizontalScrollView swatchScroll = new HorizontalScrollView(this);
-        swatchScroll.setHorizontalScrollBarEnabled(false);
-        LinearLayout swatchRow = new LinearLayout(this);
-        swatchRow.setOrientation(LinearLayout.HORIZONTAL);
-        for (int i = 0; i < lipNames.length; i++) {
-            final int idx = i;
-            boolean active = selectedLipShadeIdx == i;
-            TextView sw = new TextView(this);
-            sw.setText(lipNames[i]);
-            sw.setTextColor(0xFFFFFFFF);
-            sw.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
-            sw.setTypeface(active ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
-            sw.setPadding(dp(12), dp(9), dp(12), dp(9));
-            sw.setBackground(roundedShape(lipColors[i], dp(14), active ? COL_GOLD_LIGHT : 0x33FFFFFF, dp(active ? 3 : 1)));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            lp.setMarginEnd(dp(8));
-            sw.setLayoutParams(lp);
-            sw.setOnClickListener(v -> {
-                selectedLipShadeIdx = idx;
-                renderCurrentScreen();
-            });
-            swatchRow.addView(sw);
-        }
-        swatchScroll.addView(swatchRow);
-        card.addView(swatchScroll);
-        card.addView(space(dp(14)));
+        // Card 2: Clean Authenticity Verifier (Zero BiDi Glitches)
+        LinearLayout authCard = sleekWhiteCard();
+        LinearLayout authHead = new LinearLayout(this);
+        authHead.setOrientation(LinearLayout.HORIZONTAL);
+        authHead.setGravity(Gravity.CENTER_VERTICAL);
+        Luxury3DIconView shIcon = new Luxury3DIconView(this, Luxury3DIconView.ICON_SHIELD, false);
+        LinearLayout.LayoutParams shLp = new LinearLayout.LayoutParams(dp(40), dp(40));
+        shLp.setMarginEnd(dp(10));
+        shIcon.setLayoutParams(shLp);
 
-        Button orderShadeBtn = goldButton("افزودن شید «" + lipNames[selectedLipShadeIdx] + "» به سبد", () -> {
-            List<Models.Product> all = db.getProducts(true, "همه", "", "newest");
-            for (Models.Product p : all) {
-                if ("AS-LIP-042".equals(p.sku) && p.stock > 0) {
-                    addToCart(p, lipNames[selectedLipShadeIdx], 1);
-                    return;
-                }
-            }
-        });
-        card.addView(orderShadeBtn);
-        contentContainer.addView(card);
-    }
+        TextView shTitle = new TextView(this);
+        shTitle.setText("بررسی شناسه اصالت کالا");
+        shTitle.setTextColor(COL_TEXT_MAIN);
+        shTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
+        shTitle.setTypeface(Typeface.DEFAULT_BOLD);
+        authHead.addView(shIcon);
+        authHead.addView(shTitle);
+        authCard.addView(authHead);
+        authCard.addView(space(dp(12)));
 
-    private void renderFragranceSommelierSubModule() {
-        LinearLayout darkCard = new LinearLayout(this);
-        darkCard.setOrientation(LinearLayout.VERTICAL);
-        darkCard.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(18), COL_GOLD, dp(1)));
-        darkCard.setPadding(dp(16), dp(16), dp(16), dp(16));
+        EditText codeIn = createInput("کد شناسه کالا (مثلاً AS-GAT-150)", lastCheckedSerial);
+        codeIn.setTextDirection(View.TEXT_DIRECTION_LTR);
+        authCard.addView(codeIn);
 
-        String[] moods = new String[]{
-                "مجالس شبانه و امضای سلطنتی (گرم و کهربایی)",
-                "جلسات رسمی و کاریزمای روزانه (گلی و چوبی)",
-                "هدیه عاشقانه و کلکسیونی (رز دمشقی و مشک سفید)"
-        };
-
-        TextView head = new TextView(this);
-        head.setText("عطرشناس اختصاصی و هرم بویایی نیش پرفیوم");
-        head.setTextColor(COL_GOLD_LIGHT);
-        head.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15.5f);
-        head.setTypeface(Typeface.DEFAULT_BOLD);
-        darkCard.addView(head);
-        darkCard.addView(space(dp(10)));
-
-        Spinner moodSp = new Spinner(this);
-        moodSp.setBackground(roundedShape(COL_CREAM_SOFT, dp(10), COL_GOLD, dp(1)));
-        moodSp.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, moods));
-        moodSp.setSelection(selectedFragranceMoodIdx);
-        darkCard.addView(moodSp);
-        darkCard.addView(space(dp(8)));
-
-        Button matchBtn = outlineButton("کشف امضای بویایی من", () -> {
-            selectedFragranceMoodIdx = moodSp.getSelectedItemPosition();
-            renderCurrentScreen();
-        });
-        matchBtn.setTextColor(COL_GOLD_LIGHT);
-        matchBtn.setBackground(roundedShape(0x22C6A16C, dp(12), COL_GOLD, dp(1)));
-        darkCard.addView(matchBtn);
-        darkCard.addView(space(dp(12)));
-
-        TextView pyramid = new TextView(this);
-        pyramid.setText("▲ نت آغازین (Top Notes): زعفران سلطنتی، ترنج کالابریا و فلفل صورتی\n\n" +
-                "◆ نت میانی (Heart Notes): رز دمشقی مخملی، یاسمن شب‌بو و زنبق فلورانس\n\n" +
-                "▼ نت پایانی (Base Notes): کهربای سیاه، چوب صندل میسور، وانیل ماداگاسکار و مشک سفید\n\n" +
-                "• ماندگاری تضمین‌شده: ۲۴ ساعت روی پوست و ۷۲ ساعت روی الیاف ابریشم");
-        pyramid.setTextColor(0xFFF3ECE0);
-        pyramid.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-        pyramid.setPadding(dp(12), dp(12), dp(12), dp(12));
-        pyramid.setBackground(roundedShape(0x16FFFFFF, dp(12), COL_GOLD_DARK, dp(1)));
-        darkCard.addView(pyramid);
-        darkCard.addView(space(dp(12)));
-
-        Button fullBottleBtn = goldButton("سفارش ادوپرفیوم ۱۰۰ میل ASIYE Signature", () -> {
-            for (Models.Product p : db.getProducts(true, "همه", "", "newest")) {
-                if ("AS-PRF-999".equals(p.sku)) { addToCart(p, p.volume, 1); break; }
-            }
-        });
-        darkCard.addView(fullBottleBtn);
-        darkCard.addView(space(dp(8)));
-
-        Button discoveryBtn = outlineButton("سفارش پک تستر ۳×۵ میل Discovery با بازگشت وجه", () -> {
-            for (Models.Product p : db.getProducts(true, "همه", "", "newest")) {
-                if ("AS-DSC-777".equals(p.sku)) { addToCart(p, p.volume, 1); break; }
-            }
-        });
-        discoveryBtn.setTextColor(COL_GOLD_LIGHT);
-        discoveryBtn.setBackground(roundedShape(0x22C6A16C, dp(12), COL_GOLD, dp(1)));
-        darkCard.addView(discoveryBtn);
-
-        contentContainer.addView(darkCard);
-    }
-
-    // =========================================================================
-    // CUSTOMER TAB 2: ANTI-COUNTERFEIT TTAC & HOLOGRAM CERTIFICATE VERIFIER
-    // =========================================================================
-
-    private void renderAuthenticityVerifier() {
-        contentContainer.addView(sectionHeader("سامانه استعلام اصالت هولوگرام و کد رهگیری TTAC",
-                "تضمین ۱۰۰٪ اصالت کالای اورجینال، بچ‌کد آزمایشگاهی و سلامت زنجیره سرد"));
-
-        LinearLayout searchCard = cardContainer();
-        EditText serialInput = createInput("کد هولوگرام، TTAC یا SKU محصول...", lastVerifiedCode);
-
-        HorizontalScrollView sampleScroll = new HorizontalScrollView(this);
-        sampleScroll.setHorizontalScrollBarEnabled(false);
-        sampleScroll.setPadding(0, dp(8), 0, dp(10));
-        LinearLayout sampleRow = new LinearLayout(this);
-        sampleRow.setOrientation(LinearLayout.HORIZONTAL);
-        String[] sampleCodes = new String[]{"AS-AUTH-2026-9901", "TTAC-8849201140", "AS-AUTH-2026-9902", "AS-AUTH-2026-9905"};
-        for (String sc : sampleCodes) {
-            TextView chip = new TextView(this);
-            chip.setText(sc);
-            chip.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
-            chip.setTextColor(COL_OBSIDIAN);
-            chip.setPadding(dp(10), dp(5), dp(10), dp(5));
-            chip.setBackground(roundedShape(COL_CREAM_SOFT, dp(12), COL_GOLD, dp(1)));
+        HorizontalScrollView chipScroll = new HorizontalScrollView(this);
+        chipScroll.setHorizontalScrollBarEnabled(false);
+        chipScroll.setPadding(0, dp(8), 0, dp(10));
+        LinearLayout chipRow = new LinearLayout(this);
+        chipRow.setOrientation(LinearLayout.HORIZONTAL);
+        String[] sampleIds = new String[]{"AS-GAT-150", "AS-GAT-050", "AS-LC-104", "AS-HF-300", "AS-ORD-240"};
+        for (String sid : sampleIds) {
+            TextView c = new TextView(this);
+            c.setText(sid);
+            c.setTextDirection(View.TEXT_DIRECTION_LTR);
+            c.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
+            c.setTextColor(COL_OBSIDIAN);
+            c.setPadding(dp(12), dp(6), dp(12), dp(6));
+            c.setBackground(roundedShape(COL_SILK_CREAM, dp(14), COL_GOLD, dp(1)));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             lp.setMarginEnd(dp(6));
-            chip.setLayoutParams(lp);
-            chip.setOnClickListener(v -> {
-                lastVerifiedCode = sc;
-                verifiedAuthenticityProduct = db.verifyAuthenticitySerial(sc);
+            c.setLayoutParams(lp);
+            c.setOnClickListener(v -> {
+                lastCheckedSerial = sid;
+                verifiedProduct = db.verifyAuthenticitySerial(sid);
                 renderCurrentScreen();
             });
-            sampleRow.addView(chip);
+            chipRow.addView(c);
         }
-        sampleScroll.addView(sampleRow);
+        chipScroll.addView(chipRow);
+        authCard.addView(chipScroll);
 
-        Button verifyBtn = goldButton("استعلام آنی گواهی اصالت محصول", () -> {
-            lastVerifiedCode = serialInput.getText().toString().trim();
-            verifiedAuthenticityProduct = db.verifyAuthenticitySerial(lastVerifiedCode);
-            if (verifiedAuthenticityProduct == null) {
-                toast("هشدار: این کد در سامانه اصالت ASIYE یافت نشد!");
-            } else {
-                toast("اصالت محصول با موفقیت تایید شد ✓");
-            }
+        View checkBtn = buttonWith3DIcon("استعلام اصالت محصول", Luxury3DIconView.ICON_SHIELD, true, () -> {
+            lastCheckedSerial = codeIn.getText().toString().trim();
+            verifiedProduct = db.verifyAuthenticitySerial(lastCheckedSerial);
             renderCurrentScreen();
         });
+        authCard.addView(checkBtn);
 
-        searchCard.addView(serialInput);
-        searchCard.addView(sampleScroll);
-        searchCard.addView(verifyBtn);
-        contentContainer.addView(searchCard);
-        contentContainer.addView(space(dp(12)));
+        if (verifiedProduct != null) {
+            authCard.addView(space(dp(12)));
+            LinearLayout res = new LinearLayout(this);
+            res.setOrientation(LinearLayout.VERTICAL);
+            res.setPadding(dp(14), dp(12), dp(14), dp(12));
+            res.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(14), COL_GOLD, dp(1)));
 
-        // Gold-Framed Holographic Digital Certificate Card
-        if (verifiedAuthenticityProduct != null) {
-            Models.Product vp = verifiedAuthenticityProduct;
-            LinearLayout cert = new LinearLayout(this);
-            cert.setOrientation(LinearLayout.VERTICAL);
-            cert.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(18), COL_GOLD, dp(2)));
-            cert.setPadding(dp(18), dp(18), dp(18), dp(18));
+            TextView ok = new TextView(this);
+            ok.setText("اصالت کالای اورجینال در سامانه مجموعه تایید شد");
+            ok.setTextColor(0xFF86EFAC);
+            ok.setTypeface(Typeface.DEFAULT_BOLD);
+            ok.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
 
-            TextView seal = new TextView(this);
-            seal.setText("✦ CERTIFICATE OF HAUTE BEAUTÉ AUTHENTICITY ✦");
-            seal.setTextColor(COL_GOLD_LIGHT);
-            seal.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
-            seal.setTypeface(Typeface.DEFAULT_BOLD);
-            seal.setGravity(Gravity.CENTER);
+            TextView info = new TextView(this);
+            info.setText("محصول: " + verifiedProduct.nameFa +
+                    "\nحجم / مدل: " + verifiedProduct.volume +
+                    "\nتاریخ انقضا: " + verifiedProduct.expiryLabel);
+            info.setTextColor(0xFFF2ECE1);
+            info.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
+            info.setLineSpacing(dp(3), 1f);
+            info.setPadding(0, dp(4), 0, 0);
 
-            TextView okTitle = new TextView(this);
-            okTitle.setText("✓ اصالت کالا و سلامت زنجیره سرد تایید شد");
-            okTitle.setTextColor(0xFF6EE7B7);
-            okTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
-            okTitle.setTypeface(Typeface.DEFAULT_BOLD);
-            okTitle.setGravity(Gravity.CENTER);
-            okTitle.setPadding(0, dp(8), 0, dp(10));
-
-            TextView details = new TextView(this);
-            details.setText("• نام محصول: " + vp.nameFa + "\n" +
-                    "• شماره هولوگرام / TTAC: " + vp.ttacSerial + "\n" +
-                    "• بچ‌کد تولید (Batch Lot): " + vp.batchCode + "\n" +
-                    "• تاریخ انقضا: " + vp.expiryLabel + "\n" +
-                    "• مبدا تامین: " + vp.country + "\n" +
-                    "• پایش دمایی انبار: نگهداری در دمای کنترل‌شده ۱۸ درجه سانتی‌گراد");
-            details.setTextColor(0xFFF3ECE0);
-            details.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
-            details.setLineSpacing(dp(4), 1f);
-
-            cert.addView(seal);
-            cert.addView(okTitle);
-            cert.addView(details);
-            contentContainer.addView(cert);
+            res.addView(ok);
+            res.addView(info);
+            authCard.addView(res);
         }
 
-        // Minted Buyer Ownership Certificates Vault
-        contentContainer.addView(space(dp(14)));
-        contentContainer.addView(sectionHeader("گاوصندوق گواهی‌های اصالت صادرشده به نام شما",
-                "با هر خرید موفق، شناسنامه دیجیتال اصالت به نام شما ثبت می‌شود"));
-        for (Models.CertificateRecord cr : db.getCertificates()) {
-            LinearLayout cRow = cardContainer();
-            TextView tv = new TextView(this);
-            tv.setText("♛ کد گواهی مالکیت: " + cr.certCode + "\n" +
-                    cr.productName + "  |  بچ: " + cr.batchCode + "\n" +
-                    "خریدار: " + cr.ownerName + "  •  " + cr.issuedAtLabel);
-            tv.setTextColor(COL_TEXT_MAIN);
-            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-            cRow.addView(tv);
-            contentContainer.addView(cRow);
-            contentContainer.addView(space(dp(8)));
-        }
+        contentContainer.addView(authCard);
     }
 
     // =========================================================================
-    // CUSTOMER TAB 3: CONCIERGE CART + GIFT ATELIER + GOLD WALLET + 4-BNPL HUB
+    // TAB 2: LUXURY SHOPPING BAG & SMART CHECKOUT
     // =========================================================================
 
-    private void renderCustomerCartAndConcierge() {
-        contentContainer.addView(sectionHeader("سبد تشریفاتی و کانسیرژ هدیه VIP",
-                "بسته‌بندی مخمل مشکی با مهر موم طلایی AS + کش‌بک طلایی + ۴ درگاه اقساطی"));
+    private void renderBagScreen() {
+        contentContainer.addView(sectionHeader("سبد خرید اختصاصی شما",
+                "امکان تکمیل آنلاین، خرید ۴ قسط بدون کارمزد یا ارسال هوشمند سبد در واتس‌اپ مدیریت"));
 
         if (cart.isEmpty()) {
-            LinearLayout empty = cardContainer();
+            LinearLayout empty = sleekWhiteCard();
             empty.setGravity(Gravity.CENTER);
             TextView msg = new TextView(this);
-            msg.setText("سبد تشریفاتی شما در حال حاضر خالی است.");
+            msg.setText("سبد خرید شما در حال حاضر خالی است.");
             msg.setTextColor(COL_TEXT_MUTED);
             msg.setGravity(Gravity.CENTER);
-            msg.setPadding(0, dp(16), 0, dp(14));
-            Button goShop = goldButton("مشاهده کالکشن سلطنتی", () -> {
+            msg.setPadding(0, dp(16), 0, dp(16));
+            View back = buttonWith3DIcon("مشاهده محصولات منتخب", Luxury3DIconView.ICON_BOUTIQUE, true, () -> {
                 customerTab = 0;
                 renderCurrentScreen();
             });
             empty.addView(msg);
-            empty.addView(goShop);
+            empty.addView(back);
             contentContainer.addView(empty);
             return;
         }
@@ -1116,7 +800,7 @@ public final class MainActivity extends Activity {
         for (int i = 0; i < cart.size(); i++) {
             final int idx = i;
             Models.CartItem item = cart.get(i);
-            LinearLayout row = cardContainer();
+            LinearLayout row = sleekWhiteCard();
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(Gravity.CENTER_VERTICAL);
 
@@ -1124,7 +808,7 @@ public final class MainActivity extends Activity {
             thumb.setImageResource(resolveProductImage(item.product.imageKey));
             thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
             LinearLayout.LayoutParams tLp = new LinearLayout.LayoutParams(dp(64), dp(64));
-            tLp.setMarginEnd(dp(10));
+            tLp.setMarginEnd(dp(12));
             thumb.setLayoutParams(tLp);
             row.addView(thumb);
 
@@ -1138,744 +822,638 @@ public final class MainActivity extends Activity {
             name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.5f);
             name.setTypeface(Typeface.DEFAULT_BOLD);
 
-            TextView variant = new TextView(this);
-            variant.setText("نسخه: " + item.selectedVariant + "  •  " + PersianFormatter.formatToman(item.lineTotal()));
-            variant.setTextColor(COL_GOLD_DARK);
-            variant.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
+            TextView pr = new TextView(this);
+            pr.setText(PersianFormatter.formatToman(item.lineTotal()));
+            pr.setTextColor(COL_GOLD_DEEP);
+            pr.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+            pr.setTypeface(Typeface.DEFAULT_BOLD);
 
             info.addView(name);
-            info.addView(variant);
+            info.addView(pr);
             row.addView(info);
 
-            LinearLayout qtyBox = new LinearLayout(this);
-            qtyBox.setOrientation(LinearLayout.HORIZONTAL);
-            qtyBox.setGravity(Gravity.CENTER_VERTICAL);
-
-            TextView plus = miniCircleBtn("+", () -> {
-                if (item.quantity + 1 > item.product.stock) {
-                    toast("بیش از موجودی انبار مجاز نیست.");
-                    return;
+            LinearLayout qtyCtrl = new LinearLayout(this);
+            qtyCtrl.setOrientation(LinearLayout.HORIZONTAL);
+            qtyCtrl.setGravity(Gravity.CENTER_VERTICAL);
+            qtyCtrl.addView(qtyCircle("+", () -> {
+                if (item.quantity < item.product.stock) {
+                    item.quantity++;
+                    renderCurrentScreen();
                 }
-                item.quantity++;
-                renderCurrentScreen();
-            });
-            TextView qtyTxt = new TextView(this);
-            qtyTxt.setText(PersianFormatter.toPersianDigits(String.valueOf(item.quantity)));
-            qtyTxt.setTextColor(COL_TEXT_MAIN);
-            qtyTxt.setTypeface(Typeface.DEFAULT_BOLD);
-            qtyTxt.setPadding(dp(8), 0, dp(8), 0);
-            TextView minus = miniCircleBtn("−", () -> {
+            }));
+            TextView qTxt = new TextView(this);
+            qTxt.setText(PersianFormatter.toPersianDigits(String.valueOf(item.quantity)));
+            qTxt.setTypeface(Typeface.DEFAULT_BOLD);
+            qTxt.setTextColor(COL_TEXT_MAIN);
+            qTxt.setPadding(dp(10), 0, dp(10), 0);
+            qtyCtrl.addView(qTxt);
+            qtyCtrl.addView(qtyCircle("−", () -> {
                 if (item.quantity > 1) item.quantity--;
                 else cart.remove(idx);
                 renderCurrentScreen();
-            });
-
-            qtyBox.addView(plus);
-            qtyBox.addView(qtyTxt);
-            qtyBox.addView(minus);
-            row.addView(qtyBox);
+            }));
+            row.addView(qtyCtrl);
 
             contentContainer.addView(row);
-            contentContainer.addView(space(dp(8)));
+            contentContainer.addView(space(dp(10)));
         }
 
-        // White-Glove Velvet Gift Concierge & Cold-Chain Card (with real studio photo!)
-        LinearLayout giftCard = cardContainer();
-        giftCard.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(16), COL_GOLD, dp(1)));
-
-        LinearLayout giftTop = new LinearLayout(this);
-        giftTop.setOrientation(LinearLayout.HORIZONTAL);
-        giftTop.setGravity(Gravity.CENTER_VERTICAL);
-
-        ImageView giftImg = new ImageView(this);
-        giftImg.setImageResource(R.drawable.img_vip_gift_box);
-        giftImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        LinearLayout.LayoutParams gLp = new LinearLayout.LayoutParams(dp(74), dp(74));
-        gLp.setMarginEnd(dp(12));
-        giftImg.setLayoutParams(gLp);
-
-        TextView giftHead = new TextView(this);
-        giftHead.setText("تشریفات هدیه سلطنتی ASIYE (رایگان)\nجعبه مخمل مشکی با مهر موم طلایی AS + ۲ سمپل رایگان نیش‌پرفیوم");
-        giftHead.setTextColor(COL_GOLD_LIGHT);
-        giftHead.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
-        giftHead.setTypeface(Typeface.DEFAULT_BOLD);
-        giftHead.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-
-        giftTop.addView(giftImg);
-        giftTop.addView(giftHead);
-        giftCard.addView(giftTop);
-        giftCard.addView(space(dp(8)));
-
-        CheckBox velvetChk = new CheckBox(this);
-        velvetChk.setText("ارسال در جعبه هدیه مخمل مشکی با روبان ابریشمی طلاکوب");
-        velvetChk.setTextColor(0xFFF3ECE0);
-        velvetChk.setChecked(giftVipVelvetBox);
-        velvetChk.setOnCheckedChangeListener((b, c) -> giftVipVelvetBox = c);
-
-        CheckBox coldChk = new CheckBox(this);
-        coldChk.setText("بسته‌بندی ایزوله دمایی زنجیره سرد (محافظت سرم‌ها و عطر در برابر گرما)");
-        coldChk.setTextColor(0xFFF3ECE0);
-        coldChk.setChecked(giftColdChain);
-        coldChk.setOnCheckedChangeListener((b, c) -> giftColdChain = c);
-
-        String[] tissueScents = new String[]{
-                "رایحه کاغذ ابریشمی: رز دمشقی و عود سلطنتی",
-                "رایحه کاغذ ابریشمی: وانیل ماداگاسکار و کهربا",
-                "رایحه کاغذ ابریشمی: ترنج سفید پاریسی",
-                "بدون رایحه (مخصوص افراد حساس)"
-        };
-        Spinner scentSp = new Spinner(this);
-        scentSp.setBackground(roundedShape(COL_CREAM_SOFT, dp(10), COL_GOLD, dp(1)));
-        scentSp.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, tissueScents));
-        scentSp.setSelection(selectedTissueScentIdx);
-
-        EditText giftMsgInput = createInput("متن اختصاصی کارت پستال طلاکوب هدیه (اختیاری)...", customGiftMessage);
-
-        giftCard.addView(velvetChk);
-        giftCard.addView(coldChk);
-        giftCard.addView(space(dp(6)));
-        giftCard.addView(scentSp);
-        giftCard.addView(space(dp(8)));
-        giftCard.addView(giftMsgInput);
-        contentContainer.addView(giftCard);
-        contentContainer.addView(space(dp(10)));
-
-        // Coupon + Gold Cashback Wallet Card
         long subtotal = calculateCartSubtotal();
-        long couponDisc = appliedCouponCode.isEmpty() ? 0L : Math.max(0L, db.evaluateCouponDiscount(appliedCouponCode, subtotal));
-        long walletBalance = db.getWalletBalance();
-        long walletDeduction = useGoldWallet ? Math.min(walletBalance, Math.max(0L, subtotal - couponDisc)) : 0L;
-        long afterDiscounts = Math.max(0L, subtotal - couponDisc - walletDeduction);
+        long disc = appliedCouponCode.isEmpty() ? 0L : Math.max(0L, db.evaluateCouponDiscount(appliedCouponCode, subtotal));
+        long afterDisc = Math.max(0L, subtotal - disc);
+        long shipping = afterDisc >= 2_500_000L ? 0L : 65_000L;
+        long total = afterDisc + shipping;
 
-        LinearLayout loyaltyCard = cardContainer();
-        EditText couponInput = createInput("کد تخفیف (ASIYE20 ، VIPGOLD یا REFILL10)", appliedCouponCode);
-        Button applyCouponBtn = outlineButton("اعمال کد", () -> {
-            String code = couponInput.getText().toString().trim().toUpperCase();
-            long eval = db.evaluateCouponDiscount(code, subtotal);
-            if (eval == -1L) toast("کد تخفیف معتبر نیست.");
-            else if (eval == -2L) toast("حداقل خرید این کوپن رعایت نشده است.");
-            else {
-                appliedCouponCode = code;
-                toast("تخفیف " + PersianFormatter.formatToman(eval) + " اعمال شد.");
-                renderCurrentScreen();
-            }
-        });
+        LinearLayout formCard = sleekWhiteCard();
+        EditText nameIn = createInput("نام و نام خانوادگی تحویل‌گیرنده", db.getSetting("customer_name", ""));
+        EditText mobIn = createInput("شماره موبایل (۱۱ رقمی)", db.getSetting("customer_mobile", ""));
+        EditText addrIn = createInput("نشانی دقیق پستی جهت ارسال", db.getSetting("customer_address", ""));
 
-        LinearLayout cRow = new LinearLayout(this);
-        cRow.setOrientation(LinearLayout.HORIZONTAL);
-        LinearLayout.LayoutParams ciLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        ciLp.setMarginEnd(dp(8));
-        couponInput.setLayoutParams(ciLp);
-        cRow.addView(couponInput);
-        cRow.addView(applyCouponBtn);
-        loyaltyCard.addView(cRow);
+        CheckBox giftChk = new CheckBox(this);
+        giftChk.setText("ارسال در بسته‌بندی شیک هدیه مجموعه ASIYE (رایگان)");
+        giftChk.setTextColor(COL_TEXT_MAIN);
+        giftChk.setChecked(vipGiftPackaging);
+        giftChk.setOnCheckedChangeListener((b, c) -> vipGiftPackaging = c);
 
-        CheckBox walletChk = new CheckBox(this);
-        walletChk.setText("کسر از موجودی کیف پول طلایی شما (" + PersianFormatter.formatToman(walletBalance) + ")");
-        walletChk.setTextColor(COL_SUCCESS);
-        walletChk.setTypeface(Typeface.DEFAULT_BOLD);
-        walletChk.setChecked(useGoldWallet);
-        walletChk.setOnCheckedChangeListener((b, c) -> {
-            useGoldWallet = c;
-            renderCurrentScreen();
-        });
-        loyaltyCard.addView(space(dp(6)));
-        loyaltyCard.addView(walletChk);
-        contentContainer.addView(loyaltyCard);
-        contentContainer.addView(space(dp(10)));
-
-        // Shipping, Address & 4-Provider BNPL Hub
-        String[] shipNames = new String[]{"پیک اختصاصی VIP زنجیره سرد تهران", "پست پیشتاز ویژه بیمه اصلالت", "تیپاکس اکسپرس کشوری"};
-        long[] shipCosts = new long[]{95_000L, 65_000L, 80_000L};
-        long effectiveShipping = afterDiscounts >= 3_000_000L ? 0L : shipCosts[selectedShippingIndex];
-        long payableTotal = afterDiscounts + effectiveShipping;
-        long instantCashback = Math.max(15_000L, Math.round(payableTotal * 0.05));
-
-        LinearLayout payCard = cardContainer();
-        EditText nameInput = createInput("نام تحویل‌گیرنده", db.getSetting("customer_name", ""));
-        EditText mobileInput = createInput("موبایل (جهت صدور گواهی اصالت)", db.getSetting("customer_mobile", ""));
-        EditText addrInput = createInput("نشانی دقیق تحویل تشریفاتی", db.getSetting("customer_address", ""));
-
-        payCard.addView(nameInput);
-        payCard.addView(space(dp(8)));
-        payCard.addView(mobileInput);
-        payCard.addView(space(dp(8)));
-        payCard.addView(addrInput);
-        payCard.addView(space(dp(10)));
-
-        TextView bnplHead = new TextView(this);
-        bnplHead.setText("انتخاب درگاه پرداخت نقدی یا اعتباری اقساطی (BNPL):");
-        bnplHead.setTextColor(COL_TEXT_MAIN);
-        bnplHead.setTypeface(Typeface.DEFAULT_BOLD);
-        payCard.addView(bnplHead);
-        payCard.addView(space(dp(6)));
-
-        String[][] gateways = new String[][]{
-                {"snapp_pay", "اسنپ‌پی — ۴ قسط بدون کارمزد (تایید آنی)"},
-                {"tara", "اعتبار تارا — ۴ قسط ماهانه بدون ضامن"},
-                {"digipay", "دیجی‌پی — پرداخت اعتباری هوشمند ۴ قسطه"},
-                {"azkivam", "ازکی‌وام — خرید اقساطی پک‌های کلکسیونی"},
-                {"zarinpal", "درگاه مستقیم شاپرک / زرین‌پال (کلیه کارت‌های عضو شتاب)"}
+        String[][] payModes = new String[][]{
+                {"snapp_pay", "پرداخت اعتباری ۴ قسط بدون کارمزد (اسنپ‌پی / تارا)"},
+                {"zarinpal", "پرداخت آنلاین نقدی (کلیه کارت‌های عضو شتاب)"}
         };
 
-        for (String[] gw : gateways) {
-            boolean sel = gw[0].equals(selectedPaymentMethod);
+        formCard.addView(nameIn);
+        formCard.addView(space(dp(8)));
+        formCard.addView(mobIn);
+        formCard.addView(space(dp(8)));
+        formCard.addView(addrIn);
+        formCard.addView(space(dp(8)));
+        formCard.addView(giftChk);
+        formCard.addView(space(dp(10)));
+
+        for (String[] pm : payModes) {
+            boolean sel = pm[0].equals(selectedPaymentMethod);
             TextView opt = new TextView(this);
-            opt.setText((sel ? "◉  " : "○  ") + gw[1]);
-            opt.setTextColor(sel ? COL_OBSIDIAN : COL_TEXT_MAIN);
+            opt.setText((sel ? "◉  " : "○  ") + pm[1]);
+            opt.setTextColor(COL_TEXT_MAIN);
             opt.setTypeface(sel ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
-            opt.setPadding(dp(12), dp(9), dp(12), dp(9));
-            opt.setBackground(roundedShape(sel ? 0x33C6A16C : COL_CREAM_SOFT, dp(12), sel ? COL_GOLD : COL_BORDER, dp(1)));
+            opt.setPadding(dp(12), dp(10), dp(12), dp(10));
+            opt.setBackground(roundedShape(sel ? 0x2EC8A46B : COL_SILK_CREAM, dp(12), sel ? COL_GOLD : COL_BORDER, dp(1)));
             opt.setOnClickListener(v -> {
-                selectedPaymentMethod = gw[0];
+                selectedPaymentMethod = pm[0];
                 renderCurrentScreen();
             });
-            payCard.addView(opt);
-            payCard.addView(space(dp(6)));
+            formCard.addView(opt);
+            formCard.addView(space(dp(6)));
         }
 
-        if (!"zarinpal".equals(selectedPaymentMethod)) {
-            long qest = Math.round(payableTotal / 4.0);
-            TextView schedule = new TextView(this);
-            schedule.setText("✦ جدول اقساط بدون بهره:\n" +
-                    "• قسط اول (امروز): " + PersianFormatter.formatToman(qest) + "\n" +
-                    "• اقساط دوم تا چهارم (۳۰، ۶۰ و ۹۰ روز آینده): هر قسط " + PersianFormatter.formatToman(qest));
-            schedule.setTextColor(COL_SUCCESS);
-            schedule.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
-            schedule.setPadding(dp(10), dp(8), dp(10), dp(8));
-            schedule.setBackground(roundedShape(0xFFEAF5EF, dp(10), 0xFFBFE0CE, dp(1)));
-            payCard.addView(schedule);
-            payCard.addView(space(dp(8)));
-        }
+        // Clean Obsidian Summary Box
+        LinearLayout summaryBox = new LinearLayout(this);
+        summaryBox.setOrientation(LinearLayout.VERTICAL);
+        summaryBox.setPadding(dp(16), dp(14), dp(16), dp(14));
+        summaryBox.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(16), COL_GOLD, dp(1)));
 
-        // Invoice Summary Box
-        LinearLayout inv = new LinearLayout(this);
-        inv.setOrientation(LinearLayout.VERTICAL);
-        inv.setPadding(dp(14), dp(12), dp(14), dp(12));
-        inv.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(14), COL_GOLD, dp(1)));
+        TextView totalTv = new TextView(this);
+        totalTv.setText("مبلغ قابل پرداخت: " + PersianFormatter.formatToman(total) +
+                (shipping == 0 ? "\nارسال ویژه: رایگان" : "\nهزینه پست پیشتاز: " + PersianFormatter.formatToman(shipping)) +
+                ("snapp_pay".equals(selectedPaymentMethod) ? "\nمبلغ هر قسط ماهانه: " + PersianFormatter.formatToman(Math.round(total / 4.0)) : ""));
+        totalTv.setTextColor(COL_GOLD_LIGHT);
+        totalTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
+        totalTv.setTypeface(Typeface.DEFAULT_BOLD);
+        totalTv.setLineSpacing(dp(4), 1f);
+        summaryBox.addView(totalTv);
 
-        inv.addView(invoiceLine("جمع کل کالاها", PersianFormatter.formatToman(subtotal), 0xFFEAE3D5, false));
-        if (couponDisc > 0) inv.addView(invoiceLine("تخفیف کوپن (" + appliedCouponCode + ")", "− " + PersianFormatter.formatToman(couponDisc), 0xFF6EE7B7, false));
-        if (walletDeduction > 0) inv.addView(invoiceLine("کسر از کیف پول طلایی", "− " + PersianFormatter.formatToman(walletDeduction), 0xFF6EE7B7, false));
-        inv.addView(invoiceLine("تشریفات جعبه مخمل + زنجیره سرد", "رایگان مزون VIP", COL_GOLD_LIGHT, false));
-        inv.addView(invoiceLine("هزینه ارسال", effectiveShipping == 0 ? "رایگان" : PersianFormatter.formatToman(effectiveShipping), 0xFFEAE3D5, false));
-        inv.addView(invoiceLine("مبلغ نهایی قابل پرداخت", PersianFormatter.formatToman(payableTotal), COL_GOLD_LIGHT, true));
-        inv.addView(invoiceLine("پاداش آنی ۵٪ کش‌بک طلایی شما", "+ " + PersianFormatter.formatToman(instantCashback), 0xFF6EE7B7, false));
+        formCard.addView(space(dp(6)));
+        formCard.addView(summaryBox);
+        formCard.addView(space(dp(14)));
 
-        payCard.addView(inv);
-        payCard.addView(space(dp(12)));
-
-        int instCount = "zarinpal".equals(selectedPaymentMethod) ? 1 : 4;
-        Button submitBtn = goldButton("تایید نهایی سفارش + صدور گواهی اصالت و کش‌بک", () -> {
-            String cName = nameInput.getText().toString().trim();
-            String cMob = mobileInput.getText().toString().trim();
-            String cAddr = addrInput.getText().toString().trim();
+        View confirmOnline = buttonWith3DIcon("ثبت نهایی سفارش در اپلیکیشن", Luxury3DIconView.ICON_SHIELD, true, () -> {
+            String cName = nameIn.getText().toString().trim();
+            String cMob = mobIn.getText().toString().trim();
+            String cAddr = addrIn.getText().toString().trim();
             if (cName.length() < 3 || !PersianFormatter.isValidIranMobile(cMob) || cAddr.length() < 8) {
-                toast("لطفاً نام، موبایل معتبر ۱۱ رقمی و نشانی دقیق را وارد نمایید.");
+                toast("لطفاً نام، شماره موبایل معتبر و نشانی را کامل وارد فرمایید.");
                 return;
             }
-            selectedTissueScentIdx = scentSp.getSelectedItemPosition();
-            customGiftMessage = giftMsgInput.getText().toString().trim();
             db.setSetting("customer_name", cName);
             db.setSetting("customer_mobile", cMob);
             db.setSetting("customer_address", cAddr);
-
             try {
-                Models.OrderRecord created = db.executeImperialCheckout(
-                        cart, cName, cMob, cAddr,
-                        shipNames[selectedShippingIndex], shipCosts[selectedShippingIndex],
-                        selectedPaymentMethod, instCount, appliedCouponCode,
-                        useGoldWallet, giftVipVelvetBox, giftColdChain,
-                        tissueScents[selectedTissueScentIdx], customGiftMessage
-                );
+                Models.OrderRecord ord = db.executeCheckout(cart, cName, cMob, cAddr,
+                        selectedPaymentMethod, "snapp_pay".equals(selectedPaymentMethod) ? 4 : 1,
+                        appliedCouponCode, vipGiftPackaging);
                 cart.clear();
-                appliedCouponCode = "";
-                showOrderSuccessCertificateModal(created);
-                customerTab = 4;
+                toast("سفارش " + ord.orderNumber + " با موفقیت ثبت شد.");
+                customerTab = 3;
                 renderCurrentScreen();
-            } catch (IllegalStateException ex) {
+            } catch (Exception ex) {
                 toast(ex.getMessage());
             }
         });
-        payCard.addView(submitBtn);
-        contentContainer.addView(payCard);
-    }
+        formCard.addView(confirmOnline);
+        formCard.addView(space(dp(8)));
 
-    private void showOrderSuccessCertificateModal(Models.OrderRecord ord) {
-        new AlertDialog.Builder(this)
-                .setTitle("♛ سفارش تشریفاتی شما با موفقیت ثبت شد")
-                .setMessage("شماره سفارش: " + ord.orderNumber + "\n" +
-                        "کد گواهی اصالت دیجیتال شما: " + ord.certificateCode + "\n" +
-                        "پاداش واریزشده به کیف پول طلایی: " + PersianFormatter.formatToman(ord.cashbackEarned) + "\n" +
-                        "بسته‌بندی: " + (ord.vipGiftBox ? "جعبه مخمل مشکی با مهر طلایی AS" : "استاندارد") +
-                        (ord.coldChain ? " + کیف زنجیره سرد" : ""))
-                .setPositiveButton("مشاهده در باشگاه الماس سیاه", null)
-                .show();
+        View sendWaOrder = buttonWith3DIcon("ارسال هوشمند همین سبد در واتس‌اپ مدیریت", Luxury3DIconView.ICON_WHATSAPP, false, () ->
+                openSmartWhatsApp("تکمیل و ثبت سفارش اقلام سبد خرید اپلیکیشن", ""));
+        formCard.addView(sendWaOrder);
+
+        contentContainer.addView(formCard);
     }
 
     // =========================================================================
-    // CUSTOMER TAB 4: BLACK DIAMOND VIP PRIVÉE + GOLD WALLET + SMART REPLENISHMENT
+    // TAB 3: EXECUTIVE MANAGEMENT (سرکار خانم زنگنه) + @asiyeh.store + MILAD YAGHOOBI
     // =========================================================================
 
-    private void renderCustomerVipPrivee() {
-        long walletBal = db.getWalletBalance();
-        String pts = db.getSetting("loyalty_points", "1480");
+    private void renderExecutiveConciergeAndDesignerScreen() {
+        // 1. Executive Management & Direct Connection Sanctuary
+        LinearLayout sanctuary = new LinearLayout(this);
+        sanctuary.setOrientation(LinearLayout.VERTICAL);
+        sanctuary.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(24), COL_GOLD, dp(1)));
+        sanctuary.setPadding(dp(20), dp(20), dp(20), dp(20));
 
-        // Metallic Black Diamond Card
-        LinearLayout vipCard = new LinearLayout(this);
-        vipCard.setOrientation(LinearLayout.VERTICAL);
-        vipCard.setBackground(roundedShape(COL_OBSIDIAN_CARD, dp(20), COL_GOLD, dp(2)));
-        vipCard.setPadding(dp(18), dp(18), dp(18), dp(18));
+        TextView roleKicker = new TextView(this);
+        roleKicker.setText("EXECUTIVE MANAGEMENT & VIP CONCIERGE");
+        roleKicker.setTextColor(COL_GOLD);
+        roleKicker.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f);
+        roleKicker.setLetterSpacing(0.12f);
 
-        TextView tierBadge = new TextView(this);
-        tierBadge.setText("♛ ASIYE BLACK DIAMOND PRIVÉE • ۵٪ تا ۷٪ کش‌بک دائمی");
-        tierBadge.setTextColor(COL_GOLD_LIGHT);
-        tierBadge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
-        tierBadge.setTypeface(Typeface.DEFAULT_BOLD);
+        TextView ownerTitle = new TextView(this);
+        ownerTitle.setText("مدیریت مجموعه: سرکار خانم زنگنه");
+        ownerTitle.setTextColor(COL_WHITE);
+        ownerTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f);
+        ownerTitle.setTypeface(Typeface.DEFAULT_BOLD);
+        ownerTitle.setPadding(0, dp(4), 0, dp(4));
 
-        TextView memberName = new TextView(this);
-        memberName.setText(db.getSetting("customer_name", "مهمان سلطنتی ASIYE"));
-        memberName.setTextColor(0xFFFFFFFF);
-        memberName.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f);
-        memberName.setTypeface(Typeface.DEFAULT_BOLD);
-        memberName.setPadding(0, dp(6), 0, dp(8));
+        TextView ownerBio = new TextView(this);
+        ownerBio.setText("جهت مشاوره تخصصی انتخاب محصولات پوست و مو، استعلام موجودی و ثبت سفارش مستقیم، از درگاه‌های ارتباطی زیر استفاده فرمایید. در پیام واتس‌اپ، کد مرجع هوشمند برنامه به صورت خودکار درج می‌گردد.");
+        ownerBio.setTextColor(0xFFD6CFC3);
+        ownerBio.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
+        ownerBio.setLineSpacing(dp(3), 1f);
 
-        TextView balanceView = new TextView(this);
-        balanceView.setText("موجودی کیف پول طلایی قابل خرید: " + PersianFormatter.formatToman(walletBal) +
-                "\nامتیاز وفاداری باشگاه: " + PersianFormatter.toPersianDigits(pts) + " امتیاز");
-        balanceView.setTextColor(0xFF6EE7B7);
-        balanceView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
-        balanceView.setTypeface(Typeface.DEFAULT_BOLD);
+        // LTR-Safe Luxury Phone Pill
+        TextView phonePill = new TextView(this);
+        phonePill.setText("خط مستقیم مدیریت:   " + OWNER_PHONE_DISPLAY);
+        phonePill.setTextDirection(View.TEXT_DIRECTION_RTL);
+        phonePill.setTextColor(COL_GOLD_LIGHT);
+        phonePill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+        phonePill.setTypeface(Typeface.DEFAULT_BOLD);
+        phonePill.setPadding(dp(14), dp(8), dp(14), dp(8));
+        phonePill.setBackground(roundedShape(0x18FFFFFF, dp(18), 0x66C8A46B, dp(1)));
+        LinearLayout.LayoutParams ppLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        ppLp.setMargins(0, dp(12), 0, dp(14));
+        phonePill.setLayoutParams(ppLp);
 
-        vipCard.addView(tierBadge);
-        vipCard.addView(memberName);
-        vipCard.addView(balanceView);
-        contentContainer.addView(vipCard);
-        contentContainer.addView(space(dp(12)));
+        // Smart Topic Spinner for WhatsApp & SMS
+        String[] smartTopics = new String[]{
+                "مشاوره تخصصی انتخاب محصول مناسب پوست و مو",
+                "ثبت سفارش مستقیم محصولات گاتیو / لاکچری کوین / اوردینری",
+                "استعلام موجودی، قیمت روز و هماهنگی ارسال فوری"
+        };
+        Spinner topicSp = new Spinner(this);
+        topicSp.setBackground(roundedShape(COL_SILK_CREAM, dp(14), COL_GOLD, dp(1)));
+        topicSp.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, smartTopics));
+        topicSp.setSelection(selectedSmartTopicIdx);
 
-        // SMART REPLENISHMENT CRM WIDGET
-        LinearLayout refillCard = cardContainer();
-        refillCard.setBackground(roundedShape(0xFFFFFBF2, dp(16), COL_GOLD, dp(1)));
+        sanctuary.addView(roleKicker);
+        sanctuary.addView(ownerTitle);
+        sanctuary.addView(ownerBio);
+        sanctuary.addView(phonePill);
+        sanctuary.addView(topicSp);
+        sanctuary.addView(space(dp(16)));
 
-        TextView refTitle = new TextView(this);
-        refTitle.setText("⏳ یادآور هوشمند اتمام محصول (Smart Replenishment CRM)");
-        refTitle.setTextColor(COL_OBSIDIAN);
-        refTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.5f);
-        refTitle.setTypeface(Typeface.DEFAULT_BOLD);
+        // 2x2 Grid of 3D Obsidian-Crystal & 24K Gold Medallions
+        LinearLayout gridRow1 = new LinearLayout(this);
+        gridRow1.setOrientation(LinearLayout.HORIZONTAL);
 
-        TextView refSub = new TextView(this);
-        refSub.setText("بر اساس خرید «سرم طلایی احیاکننده ۲۴ عیار (۳۰ میل)» و دوره مصرف استاندارد ۴۵ روزه، حدود ۸۴٪ محصول شما مصرف شده و تنها ۷ روز تا پایان آن باقی است.");
-        refSub.setTextColor(COL_TEXT_MUTED);
-        refSub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-        refSub.setPadding(0, dp(4), 0, dp(8));
+        View callMedallion = buildContactMedallionCard(
+                Luxury3DIconView.ICON_PHONE,
+                "تماس تلفنی",
+                OWNER_PHONE_DISPLAY,
+                () -> openDialer()
+        );
+        callMedallion.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        // Depletion Bar
-        FrameLayout barBg = new FrameLayout(this);
-        barBg.setBackground(roundedShape(0xFFE6DEC9, dp(6), COL_BORDER, 0));
-        barBg.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(10)));
-        View barFill = new View(this);
-        barFill.setBackground(roundedShape(COL_GOLD_DARK, dp(6), COL_GOLD, 0));
-        FrameLayout.LayoutParams bfLp = new FrameLayout.LayoutParams(dp(240), dp(10), Gravity.RIGHT);
-        barFill.setLayoutParams(bfLp);
-        barBg.addView(barFill);
-
-        Button refillBtn = goldButton("تمدید یک‌کلیکه با ۱۰٪ تخفیف وفاداری REFILL10", () -> {
-            for (Models.Product p : db.getProducts(true, "همه", "", "newest")) {
-                if ("AS-SRM-001".equals(p.sku)) {
-                    addToCartSilent(p, p.volume, 1);
-                    appliedCouponCode = "REFILL10";
-                    toast("سرم طلا ۲۴ عیار + تخفیف ۱۰٪ وفاداری REFILL10 آماده پرداخت شد!");
-                    customerTab = 3;
-                    renderCurrentScreen();
-                    break;
+        View smsMedallion = buildContactMedallionCard(
+                Luxury3DIconView.ICON_SMS,
+                "ارسال پیامک",
+                "متن هوشمند آماده",
+                () -> {
+                    selectedSmartTopicIdx = topicSp.getSelectedItemPosition();
+                    openSmartSms(smartTopics[selectedSmartTopicIdx]);
                 }
+        );
+        LinearLayout.LayoutParams smLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        smLp.setMarginStart(dp(10));
+        smsMedallion.setLayoutParams(smLp);
+
+        gridRow1.addView(callMedallion);
+        gridRow1.addView(smsMedallion);
+        sanctuary.addView(gridRow1);
+        sanctuary.addView(space(dp(10)));
+
+        LinearLayout gridRow2 = new LinearLayout(this);
+        gridRow2.setOrientation(LinearLayout.HORIZONTAL);
+
+        View waMedallion = buildContactMedallionCard(
+                Luxury3DIconView.ICON_WHATSAPP,
+                "واتس‌اپ هوشمند",
+                "با شناسه رسمی برنامه",
+                () -> {
+                    selectedSmartTopicIdx = topicSp.getSelectedItemPosition();
+                    openSmartWhatsApp(smartTopics[selectedSmartTopicIdx], "");
+                }
+        );
+        waMedallion.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        View igMedallion = buildContactMedallionCard(
+                Luxury3DIconView.ICON_INSTAGRAM,
+                "اینستاگرام رسمی",
+                "@asiyeh.store",
+                () -> openInstagramPage()
+        );
+        LinearLayout.LayoutParams igLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        igLp.setMarginStart(dp(10));
+        igMedallion.setLayoutParams(igLp);
+
+        gridRow2.addView(waMedallion);
+        gridRow2.addView(igMedallion);
+        sanctuary.addView(gridRow2);
+
+        // Subtle, Non-Cluttered Instagram Highlights Strip inside Sanctuary
+        View hair = new View(this);
+        hair.setBackgroundColor(0x38C8A46B);
+        LinearLayout.LayoutParams hLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
+        hLp.setMargins(0, dp(16), 0, dp(12));
+        hair.setLayoutParams(hLp);
+        sanctuary.addView(hair);
+
+        TextView igCap = new TextView(this);
+        igCap.setText("هایلایت‌های منتخب پیج رسمی @asiyeh.store:");
+        igCap.setTextColor(COL_GOLD_LIGHT);
+        igCap.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
+        igCap.setTypeface(Typeface.DEFAULT_BOLD);
+        sanctuary.addView(igCap);
+        sanctuary.addView(space(dp(8)));
+
+        HorizontalScrollView hlScroll = new HorizontalScrollView(this);
+        hlScroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout hlRow = new LinearLayout(this);
+        hlRow.setOrientation(LinearLayout.HORIZONTAL);
+        String[] highlights = new String[]{"گاتیو و لاکچری", "اوردینری اصل", "مکمل و تونیک مو", "رضایت مشتریان"};
+        for (String hl : highlights) {
+            TextView chip = new TextView(this);
+            chip.setText("✦ " + hl);
+            chip.setTextColor(0xFFF2ECE1);
+            chip.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
+            chip.setPadding(dp(12), dp(6), dp(12), dp(6));
+            chip.setBackground(roundedShape(0x16FFFFFF, dp(16), 0x55C8A46B, dp(1)));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.setMarginEnd(dp(6));
+            chip.setLayoutParams(lp);
+            chip.setOnClickListener(v -> openInstagramPage());
+            hlRow.addView(chip);
+        }
+        hlScroll.addView(hlRow);
+        sanctuary.addView(hlScroll);
+
+        contentContainer.addView(sanctuary);
+        contentContainer.addView(space(dp(18)));
+
+        // 2. Clean Recent Orders Section
+        List<Models.OrderRecord> orders = db.getOrders("all");
+        if (!orders.isEmpty()) {
+            contentContainer.addView(sectionHeader("سفارش‌های ثبت‌شده اخیر", "وضعیت پردازش و رهگیری مرسوله‌ها"));
+            for (Models.OrderRecord ord : orders) {
+                LinearLayout oCard = sleekWhiteCard();
+                TextView tv = new TextView(this);
+                tv.setText("شماره سفارش: " + ord.orderNumber + "  •  " + PersianFormatter.statusLabelFa(ord.status) +
+                        "\nمبلغ کل: " + PersianFormatter.formatToman(ord.totalAmount));
+                tv.setTextColor(COL_TEXT_MAIN);
+                tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+                tv.setLineSpacing(dp(3), 1f);
+                oCard.addView(tv);
+                contentContainer.addView(oCard);
+                contentContainer.addView(space(dp(10)));
             }
-        });
-
-        refillCard.addView(refTitle);
-        refillCard.addView(refSub);
-        refillCard.addView(barBg);
-        refillCard.addView(space(dp(10)));
-        refillCard.addView(refillBtn);
-        contentContainer.addView(refillCard);
-        contentContainer.addView(space(dp(12)));
-
-        // Gold Wallet Ledger
-        contentContainer.addView(sectionHeader("گردش کیف پول طلایی و پاداش‌های کش‌بک", "کلیه پاداش‌ها بلافاصله پس از ثبت سفارش شارژ می‌شوند"));
-        for (Models.WalletTransactionRecord tx : db.getWalletTransactions()) {
-            LinearLayout tCard = cardContainer();
-            String sign = tx.amount >= 0 ? "+ " : "− ";
-            TextView tv = new TextView(this);
-            tv.setText(sign + PersianFormatter.formatToman(Math.abs(tx.amount)) + "  |  " + tx.description + " (" + tx.createdAtLabel + ")");
-            tv.setTextColor(tx.amount >= 0 ? COL_SUCCESS : COL_WARNING);
-            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-            tv.setTypeface(Typeface.DEFAULT_BOLD);
-            tCard.addView(tv);
-            contentContainer.addView(tCard);
-            contentContainer.addView(space(dp(6)));
         }
 
-        // Order History with Gift Concierge & Certificate Codes
+        // 3. Exquisite Museum-Grade Designer Plaque — Milad Yaghoobi
         contentContainer.addView(space(dp(8)));
-        contentContainer.addView(sectionHeader("سفارش‌های تشریفاتی و رهگیری مرسوله", "همراه با کد گواهی اصالت و جزئیات بسته‌بندی VIP"));
-        for (Models.OrderRecord ord : db.getOrders("all")) {
-            LinearLayout oCard = cardContainer();
-            TextView title = new TextView(this);
-            title.setText(ord.orderNumber + "  •  " + PersianFormatter.statusLabelFa(ord.status) +
-                    "\nمبلغ: " + PersianFormatter.formatToman(ord.totalAmount) + "  |  " + PersianFormatter.paymentMethodLabelFa(ord.paymentMethod) +
-                    "\nگواهی اصالت: " + ord.certificateCode +
-                    (ord.vipGiftBox ? "\n🎁 جعبه مخمل VIP (" + ord.scentedTissue + ")" : "") +
-                    (!TextUtils.isEmpty(ord.giftMessage) ? "\n✉ پیام کارت طلاکوب: «" + ord.giftMessage + "»" : ""));
-            title.setTextColor(COL_TEXT_MAIN);
-            title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-            title.setLineSpacing(dp(3), 1f);
-            oCard.addView(title);
-            contentContainer.addView(oCard);
-            contentContainer.addView(space(dp(8)));
+        LinearLayout designerPlaque = new LinearLayout(this);
+        designerPlaque.setOrientation(LinearLayout.VERTICAL);
+        designerPlaque.setGravity(Gravity.CENTER_HORIZONTAL);
+        designerPlaque.setBackground(roundedShape(COL_OBSIDIAN, dp(22), COL_GOLD, dp(1)));
+        designerPlaque.setPadding(dp(22), dp(22), dp(22), dp(22));
+
+        Luxury3DIconView crest = new Luxury3DIconView(this, Luxury3DIconView.ICON_CROWN, false);
+        crest.setLayoutParams(new LinearLayout.LayoutParams(dp(42), dp(42)));
+
+        TextView dKicker = new TextView(this);
+        dKicker.setText("DESIGNED & ARCHITECTED BY");
+        dKicker.setTextColor(0xFFA89E8E);
+        dKicker.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9.5f);
+        dKicker.setLetterSpacing(0.22f);
+        dKicker.setGravity(Gravity.CENTER);
+        dKicker.setPadding(0, dp(10), 0, dp(3));
+
+        TextView dName = new TextView(this);
+        dName.setText("MILAD YAGHOOBI");
+        dName.setTextColor(COL_GOLD_LIGHT);
+        dName.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16.5f);
+        dName.setTypeface(Typeface.SERIF, Typeface.BOLD);
+        dName.setLetterSpacing(0.18f);
+        dName.setGravity(Gravity.CENTER);
+
+        View tinyGoldRule = new View(this);
+        tinyGoldRule.setBackgroundColor(0x66C8A46B);
+        LinearLayout.LayoutParams grLp = new LinearLayout.LayoutParams(dp(64), dp(1));
+        grLp.setMargins(0, dp(8), 0, dp(8));
+        tinyGoldRule.setLayoutParams(grLp);
+
+        TextView dSub = new TextView(this);
+        dSub.setText("طراحی تجربه کاربری لوکس و معماری اکوسیستم دیجیتال\nخلق‌شده به صورت اختصاصی برای مجموعه ASIYE STORE");
+        dSub.setTextColor(0xFFC9C1B3);
+        dSub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
+        dSub.setGravity(Gravity.CENTER);
+        dSub.setLineSpacing(dp(3), 1f);
+
+        designerPlaque.addView(crest);
+        designerPlaque.addView(dKicker);
+        designerPlaque.addView(dName);
+        designerPlaque.addView(tinyGoldRule);
+        designerPlaque.addView(dSub);
+        contentContainer.addView(designerPlaque);
+    }
+
+    private View buildContactMedallionCard(int iconType, String title, String subtitleLtr, Runnable onClick) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER_HORIZONTAL);
+        box.setPadding(dp(12), dp(14), dp(12), dp(14));
+        box.setBackground(roundedShape(0x14FFFFFF, dp(18), 0x66C8A46B, dp(1)));
+
+        Luxury3DIconView icon = new Luxury3DIconView(this, iconType, false);
+        icon.setLayoutParams(new LinearLayout.LayoutParams(dp(48), dp(48)));
+
+        TextView t = new TextView(this);
+        t.setText(title);
+        t.setTextColor(COL_GOLD_LIGHT);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+        t.setTypeface(Typeface.DEFAULT_BOLD);
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(0, dp(8), 0, dp(2));
+
+        TextView s = new TextView(this);
+        s.setText(subtitleLtr);
+        s.setTextColor(0xFFCBC3B5);
+        s.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f);
+        s.setGravity(Gravity.CENTER);
+
+        box.addView(icon);
+        box.addView(t);
+        box.addView(s);
+        box.setOnClickListener(v -> onClick.run());
+        return box;
+    }
+
+    // =========================================================================
+    // DIRECT TELEPHONY, SMART SMS, TRACEABLE WHATSAPP & INSTAGRAM INTENTS
+    // =========================================================================
+
+    private void openDialer() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + OWNER_PHONE_E164));
+            startActivity(intent);
+        } catch (Exception e) {
+            toast("شماره تماس مستقیم: " + OWNER_PHONE_DISPLAY);
+        }
+    }
+
+    private void openSmartSms(String topic) {
+        try {
+            String body = "سلام و عرض ادب خدمت سرکار خانم زنگنه گرامی؛\n" +
+                    "این پیامک از طریق اپلیکیشن رسمی ASIYE STORE جهت «" + topic + "» ارسال شده است.";
+            Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + OWNER_PHONE_E164));
+            intent.putExtra("sms_body", body);
+            startActivity(intent);
+        } catch (Exception e) {
+            toast("خطا در باز کردن پیام‌رسان تلفن همراه");
+        }
+    }
+
+    private void openSmartWhatsApp(String topic, String specificProduct) {
+        String refCode = "AS-APP-" + (1000 + new Random().nextInt(8999));
+        StringBuilder sb = new StringBuilder();
+        sb.append("سلام و عرض ادب خدمت سرکار خانم زنگنه گرامی 🌹\n");
+        sb.append("این پیام به صورت هوشمند از طریق «اپلیکیشن و وب‌سایت رسمی ASIYE STORE» ارسال شده است.\n");
+        sb.append("🔹 کد مرجع پورتال: ").append(refCode).append("\n");
+        sb.append("🔹 موضوع درخواست: ").append(topic).append("\n");
+
+        if (specificProduct != null && !specificProduct.isEmpty()) {
+            sb.append("🔹 محصول انتخابی: ").append(specificProduct).append("\n");
+        } else if (!cart.isEmpty()) {
+            sb.append("🔹 اقلام موجود در سبد خرید من:\n");
+            for (Models.CartItem c : cart) {
+                sb.append("   • ").append(c.product.nameFa)
+                  .append(" (").append(PersianFormatter.toPersianDigits(String.valueOf(c.quantity))).append(" عدد)\n");
+            }
+        }
+        sb.append("ممنون می‌شوم جهت راهنمایی و هماهنگی، پاسخ بفرمایید ✨");
+
+        String url = "https://wa.me/" + OWNER_WA_NUMBER + "?text=" + Uri.encode(sb.toString());
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception e) {
+            toast("لطفاً نصب بودن واتس‌اپ یا مرورگر را بررسی فرمایید.");
+        }
+    }
+
+    private void openInstagramPage() {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(INSTAGRAM_URL)));
+        } catch (Exception e) {
+            toast("پیج رسمی اینستاگرام: @asiyeh.store");
         }
     }
 
     // =========================================================================
-    // ADMIN SUITE (DASHBOARD + CATALOG + BARCODE ORDERS + FEFO INVENTORY + FEEDS)
+    // EXECUTIVE ADMIN SUITE (CLEAN & STREAMLINED)
     // =========================================================================
 
     private void renderAdminDashboard() {
         Models.DashboardSnapshot snap = db.getDashboardSnapshot();
-        contentContainer.addView(sectionHeader("فرماندهی اجرایی ASIYE IMPERIAL", "آمار فروش، سفارش‌های اقساطی، تشریفات هدیه و هشدار انبار FEFO"));
+        contentContainer.addView(sectionHeader("گزارش عملکرد مجموعه ASIYE STORE",
+                "مدیریت سرکار خانم زنگنه • آمار فروش و سفارش‌ها"));
 
-        LinearLayout row1 = new LinearLayout(this);
-        row1.setOrientation(LinearLayout.HORIZONTAL);
-        row1.addView(kpiCard("فروش کل دوره", PersianFormatter.formatToman(snap.salesWeek), "رشد +۲۴٪ هفتگی", COL_GOLD_DARK));
-        row1.addView(spaceHorizontal(dp(8)));
-        row1.addView(kpiCard("سفارش‌های فعال", PersianFormatter.toPersianDigits(snap.activeOrdersCount + " سفارش"), "نیازمند پردازش VIP", COL_SUCCESS));
-        contentContainer.addView(row1);
-        contentContainer.addView(space(dp(8)));
-
-        LinearLayout row2 = new LinearLayout(this);
-        row2.setOrientation(LinearLayout.HORIZONTAL);
-        row2.addView(kpiCard("تراکنش‌های اقساطی BNPL", PersianFormatter.toPersianDigits(snap.installmentOrdersCount + " پرونده"), "اسنپ‌پی / تارا / دیجی‌پی", COL_OBSIDIAN));
-        row2.addView(spaceHorizontal(dp(8)));
-        row2.addView(kpiCard("بسته‌بندی مخمل VIP", PersianFormatter.toPersianDigits(snap.vipGiftOrdersCount + " مرسوله"), "کانسیرژ هدیه فعال", COL_WARNING));
-        contentContainer.addView(row2);
+        LinearLayout kpiCard = sleekWhiteCard();
+        TextView kpiTv = new TextView(this);
+        kpiTv.setText("فروش ۷ روز اخیر: " + PersianFormatter.formatToman(snap.salesWeek) +
+                "\nسفارش‌های فعال در جریان: " + PersianFormatter.toPersianDigits(snap.activeOrdersCount + " سفارش"));
+        kpiTv.setTextColor(COL_TEXT_MAIN);
+        kpiTv.setTypeface(Typeface.DEFAULT_BOLD);
+        kpiTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
+        kpiTv.setLineSpacing(dp(4), 1f);
+        kpiCard.addView(kpiTv);
+        contentContainer.addView(kpiCard);
         contentContainer.addView(space(dp(12)));
 
-        LinearLayout chartBox = cardContainer();
-        TextView chartTitle = new TextView(this);
-        chartTitle.setText("نمودار روند درآمد ۷ روز اخیر مزون");
-        chartTitle.setTypeface(Typeface.DEFAULT_BOLD);
-        chartTitle.setTextColor(COL_TEXT_MAIN);
+        LinearLayout chartBox = sleekWhiteCard();
         SalesChartView chartView = new SalesChartView(this);
         chartView.setData(snap.sevenDayRevenue, snap.sevenDayLabels);
-        chartView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(185)));
-        chartBox.addView(chartTitle);
-        chartBox.addView(space(dp(8)));
+        chartView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(190)));
         chartBox.addView(chartView);
         contentContainer.addView(chartBox);
     }
 
     private void renderAdminProducts() {
-        contentContainer.addView(sectionHeader("مدیریت کاتالوگ، تصاویر استودیویی و اصالت", "افزودن، ویرایش قیمت، بچ‌کد و آرشیو امن محصولات"));
-        Button addBtn = goldButton("+ ثبت محصول لوکس جدید", () -> showProductEditorDialog(null));
-        contentContainer.addView(addBtn);
-        contentContainer.addView(space(dp(10)));
-
+        contentContainer.addView(sectionHeader("مدیریت محصولات مجموعه", "افزودن یا ویرایش قیمت محصولات پیج"));
         for (Models.Product p : db.getProducts(false, "همه", "", "newest")) {
-            LinearLayout card = cardContainer();
-            TextView t = new TextView(this);
-            t.setText(p.nameFa + (p.published ? "" : " (آرشیو)") + "\nSKU: " + p.sku + "  •  بچ: " + p.batchCode + "  •  موجودی: " + PersianFormatter.toPersianDigits(String.valueOf(p.stock)) + "\nقیمت: " + PersianFormatter.formatToman(p.salePrice));
-            t.setTextColor(COL_TEXT_MAIN);
-            t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
-
-            LinearLayout actions = new LinearLayout(this);
-            actions.setOrientation(LinearLayout.HORIZONTAL);
-            actions.setPadding(0, dp(8), 0, 0);
-            Button edit = outlineButton("ویرایش", () -> showProductEditorDialog(p));
-            edit.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-            Button arch = outlineButton("آرشیو امن", () -> {
-                toast(db.archiveProductSafely(p.id));
-                renderCurrentScreen();
-            });
-            LinearLayout.LayoutParams aLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-            aLp.setMarginStart(dp(8));
-            arch.setLayoutParams(aLp);
-            actions.addView(edit);
-            actions.addView(arch);
-
-            card.addView(t);
-            card.addView(actions);
+            LinearLayout card = sleekWhiteCard();
+            TextView tv = new TextView(this);
+            tv.setText(p.nameFa + "\nقیمت فروش: " + PersianFormatter.formatToman(p.salePrice) +
+                    "  •  موجودی: " + PersianFormatter.toPersianDigits(String.valueOf(p.stock)));
+            tv.setTextColor(COL_TEXT_MAIN);
+            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+            card.addView(tv);
             contentContainer.addView(card);
             contentContainer.addView(space(dp(8)));
         }
-    }
-
-    private void showProductEditorDialog(Models.Product existing) {
-        ScrollView sv = new ScrollView(this);
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        box.setPadding(dp(18), dp(12), dp(18), dp(12));
-        sv.addView(box);
-
-        EditText skuIn = createInput("کد SKU", existing != null ? existing.sku : "AS-NEW-" + (100 + new Random().nextInt(899)));
-        EditText nameFaIn = createInput("نام فارسی محصول", existing != null ? existing.nameFa : "");
-        EditText origIn = createInput("قیمت اصلی (تومان)", existing != null ? String.valueOf(existing.originalPrice) : "2200000");
-        origIn.setInputType(InputType.TYPE_CLASS_NUMBER);
-        EditText saleIn = createInput("قیمت فروش (تومان)", existing != null ? String.valueOf(existing.salePrice) : "1850000");
-        saleIn.setInputType(InputType.TYPE_CLASS_NUMBER);
-
-        String[] imgKeys = new String[]{"serum", "caviar", "lipstick", "perfume", "elixir", "giftbox"};
-        Spinner imgSp = new Spinner(this);
-        imgSp.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"تصویر سرم طلا ۲۴ عیار", "تصویر کرم خاویار سیاه", "تصویر رژ لب مخملی", "تصویر ادوپرفیوم سلطنتی", "تصویر الکسیر طلایی مو", "تصویر کافره مخمل VIP"}));
-
-        box.addView(skuIn); box.addView(space(dp(8)));
-        box.addView(nameFaIn); box.addView(space(dp(8)));
-        box.addView(origIn); box.addView(space(dp(8)));
-        box.addView(saleIn); box.addView(space(dp(8)));
-        box.addView(imgSp);
-
-        new AlertDialog.Builder(this)
-                .setTitle(existing == null ? "ثبت محصول جدید" : "ویرایش محصول")
-                .setView(sv)
-                .setPositiveButton("ذخیره", (d, w) -> {
-                    try {
-                        String err = db.saveOrUpdateProduct(
-                                existing != null ? existing.id : null,
-                                skuIn.getText().toString(), nameFaIn.getText().toString(), "ASIYE Haute Beauté",
-                                "مراقبت سلولی پوست", "فرمولاسیون تخصصی مزون ASIYE", "فرانسه", "۵۰ میلی‌لیتر",
-                                Long.parseLong(origIn.getText().toString().trim()),
-                                Long.parseLong(saleIn.getText().toString().trim()),
-                                15, true, imgKeys[imgSp.getSelectedItemPosition()]);
-                        if (err != null) toast(err);
-                        else { toast("ذخیره شد."); renderCurrentScreen(); }
-                    } catch (Exception e) { toast("مقادیر عددی را بررسی نمایید."); }
-                })
-                .setNegativeButton("انصراف", null)
-                .show();
     }
 
     private void renderAdminOrders() {
-        contentContainer.addView(sectionHeader("سفارش‌ها، تشریفات هدیه و اسکن بارکد انبار",
-                "بررسی سریع بارکد بسته‌بندی، پیام کارت طلاکوب و وضعیت زنجیره سرد"));
-
-        for (Models.OrderRecord ord : db.getOrders(adminOrderStatusFilter)) {
-            LinearLayout card = cardContainer();
+        contentContainer.addView(sectionHeader("مدیریت سفارش‌های مشتریان", "به‌روزرسانی وضعیت ارسال مرسوله‌ها"));
+        for (Models.OrderRecord ord : db.getOrders("all")) {
+            LinearLayout card = sleekWhiteCard();
             TextView tv = new TextView(this);
-            tv.setText(ord.orderNumber + "  |  " + ord.customerName + " (" + PersianFormatter.toPersianDigits(ord.customerMobile) + ")\n" +
-                    "وضعیت: " + PersianFormatter.statusLabelFa(ord.status) + "  •  مبلغ: " + PersianFormatter.formatToman(ord.totalAmount) + "\n" +
-                    "تشریفات: " + (ord.vipGiftBox ? "جعبه مخمل VIP (" + ord.scentedTissue + ")" : "عادی") +
-                    (ord.coldChain ? " + کیف زنجیره سرد ۱۸°C" : "") +
-                    (!TextUtils.isEmpty(ord.giftMessage) ? "\nمتن کارت طلاکوب: «" + ord.giftMessage + "»" : ""));
+            tv.setText(ord.orderNumber + "  •  " + ord.customerName + "\n" +
+                    "وضعیت: " + PersianFormatter.statusLabelFa(ord.status) + "  •  " + PersianFormatter.formatToman(ord.totalAmount));
             tv.setTextColor(COL_TEXT_MAIN);
-            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-            tv.setLineSpacing(dp(3), 1f);
-
-            LinearLayout btnRow = new LinearLayout(this);
-            btnRow.setOrientation(LinearLayout.HORIZONTAL);
-            btnRow.setPadding(0, dp(8), 0, 0);
-
-            Button scanPackBtn = outlineButton("اسکن بارکد بسته‌بندی", () ->
-                    toast("✓ کلیه اقلام سفارش " + ord.orderNumber + " با بچ‌کد FEFO و هولوگرام TTAC تایید شد."));
-            scanPackBtn.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-
-            Button statusBtn = goldButton("تغییر وضعیت", () -> showOrderStatusDialog(ord));
-            LinearLayout.LayoutParams sLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-            sLp.setMarginStart(dp(8));
-            statusBtn.setLayoutParams(sLp);
-
-            btnRow.addView(scanPackBtn);
-            btnRow.addView(statusBtn);
+            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
             card.addView(tv);
-            card.addView(btnRow);
             contentContainer.addView(card);
             contentContainer.addView(space(dp(8)));
         }
     }
 
-    private void showOrderStatusDialog(Models.OrderRecord ord) {
-        String[] codes = new String[]{"paid", "preparing", "shipped", "delivered", "cancelled"};
-        String[] labels = new String[]{"پرداخت‌شده", "آماده‌سازی کانسیرژ VIP", "تحویل به پیک زنجیره سرد", "تحویل نهایی", "لغو (بازگشت خودکار به انبار FEFO)"};
-
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(dp(18), dp(12), dp(18), dp(8));
-        Spinner sp = new Spinner(this);
-        sp.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, labels));
-        EditText trk = createInput("کد رهگیری مرسوله", ord.trackingCode);
-        box.addView(sp); box.addView(space(dp(8))); box.addView(trk);
-
-        new AlertDialog.Builder(this)
-                .setTitle("وضعیت سفارش " + ord.orderNumber)
-                .setView(box)
-                .setPositiveButton("ثبت", (d, w) -> {
-                    String err = db.updateOrderStatus(ord.id, codes[sp.getSelectedItemPosition()], trk.getText().toString());
-                    toast(err != null ? err : "وضعیت سفارش به‌روز شد.");
-                    renderCurrentScreen();
-                })
-                .setNegativeButton("انصراف", null)
-                .show();
-    }
-
-    private void renderAdminInventoryFefo() {
-        contentContainer.addView(sectionHeader("انبارداری هوشمند FEFO (اولین انقضا، اولین خروج)",
-                "کنترل دقیق بچ‌کدها، تاریخ انقضا، زنجیره سرد و ثبت ورود/خروج اتمیک"));
-
+    private void renderAdminInventory() {
+        contentContainer.addView(sectionHeader("کنترل موجودی انبار", "شارژ سریع موجودی کالاهای اورجینال"));
         for (Models.Product p : db.getProducts(false, "همه", "", "newest")) {
-            LinearLayout card = cardContainer();
-            boolean low = p.stock <= p.lowStockThreshold;
+            LinearLayout card = sleekWhiteCard();
             TextView tv = new TextView(this);
-            tv.setText(p.nameFa + "\nبچ فعال: " + p.batchCode + "  •  انقضا: " + p.expiryLabel +
-                    (p.coldChain ? "  •  ❄ زنجیره سرد" : "") +
-                    "\nموجودی فعلی: " + PersianFormatter.toPersianDigits(String.valueOf(p.stock)) + (low ? " (⚠ هشدار کمبود)" : ""));
-            tv.setTextColor(low ? COL_DANGER : COL_TEXT_MAIN);
-            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
+            tv.setText(p.nameFa + " — موجودی: " + PersianFormatter.toPersianDigits(p.stock + " عدد"));
+            tv.setTextColor(COL_TEXT_MAIN);
+            tv.setTypeface(Typeface.DEFAULT_BOLD);
+            tv.setPadding(0, 0, 0, dp(8));
 
-            Button adj = outlineButton("ثبت ورود / خروج بچ انبار", () -> {
-                String err = db.adjustInventory(p.id, "in", 10, "شارژ مجدد بچ استاندارد");
-                toast(err != null ? err : "+۱۰ عدد به موجودی بچ " + p.batchCode + " افزوده شد.");
+            View plusStock = buttonWith3DIcon("افزایش موجودی (+۵ عدد)", Luxury3DIconView.ICON_PLUS, false, () -> {
+                db.adjustInventory(p.id, "in", 5, "شارژ موجودی");
+                toast("موجودی «" + p.nameFa + "» افزایش یافت.");
                 renderCurrentScreen();
             });
             card.addView(tv);
-            card.addView(space(dp(8)));
-            card.addView(adj);
+            card.addView(plusStock);
             contentContainer.addView(card);
-            contentContainer.addView(space(dp(8)));
+            contentContainer.addView(space(dp(10)));
         }
     }
 
-    private void renderAdminSettingsAndFeeds() {
-        contentContainer.addView(sectionHeader("فید رسمی ترب و ایمالز + اتصال سرور مرکزی",
-                "همگام‌سازی خودکار قیمت و موجودی با موتورهای جستجوی خرید ایران"));
+    // =========================================================================
+    // REFINED QUIET-LUXURY UI BUILDERS
+    // =========================================================================
 
-        LinearLayout feedCard = cardContainer();
-        TextView feedInfo = new TextView(this);
-        feedInfo.setText("✦ وضعیت فیدهای مارکت‌پلیس:\n" +
-                "• فید رسمی ترب (JSON): /api/v1/feeds/torob  [فعال ✓]\n" +
-                "• فید رسمی ایمالز (XML): /api/v1/feeds/emalls  [فعال ✓]\n" +
-                "• اسکیما سئو Google Rich Snippets (JSON-LD): فعال روی تمامی ۶ محصول");
-        feedInfo.setTextColor(COL_SUCCESS);
-        feedInfo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-        feedInfo.setLineSpacing(dp(3), 1f);
-        feedCard.addView(feedInfo);
-        contentContainer.addView(feedCard);
-        contentContainer.addView(space(dp(10)));
+    private View buttonWith3DIcon(String label, int iconType, boolean goldBackground, Runnable onClick) {
+        LinearLayout btn = new LinearLayout(this);
+        btn.setOrientation(LinearLayout.HORIZONTAL);
+        btn.setGravity(Gravity.CENTER);
+        btn.setPadding(dp(12), dp(9), dp(14), dp(9));
+        btn.setBackground(roundedShape(
+                goldBackground ? COL_GOLD : COL_OBSIDIAN_CARD,
+                dp(15),
+                goldBackground ? COL_GOLD_LIGHT : COL_GOLD,
+                dp(1)
+        ));
 
-        LinearLayout apiCard = cardContainer();
-        EditText urlIn = createInput("آدرس API سرور لاراول", db.getSetting("api_base_url", "https://asiyestore.ir/api/v1"));
-        Button syncBtn = goldButton("تست سلامت و همگام‌سازی زنده با سرور", () -> {
-            String u = urlIn.getText().toString().trim();
-            db.setSetting("api_base_url", u);
-            new ApiSyncClient().syncCatalogFromBackend(u, "", db, (ok, msg, count) -> {
-                toast(msg);
+        Luxury3DIconView icon = new Luxury3DIconView(this, iconType, false);
+        LinearLayout.LayoutParams iLp = new LinearLayout.LayoutParams(dp(26), dp(26));
+        iLp.setMarginEnd(dp(8));
+        icon.setLayoutParams(iLp);
+
+        TextView txt = new TextView(this);
+        txt.setText(label);
+        txt.setTextColor(goldBackground ? COL_OBSIDIAN : COL_WHITE);
+        txt.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
+        txt.setTypeface(Typeface.DEFAULT_BOLD);
+        txt.setSingleLine(true);
+
+        btn.addView(icon);
+        btn.addView(txt);
+        btn.setOnClickListener(v -> onClick.run());
+        return btn;
+    }
+
+    private void addToCart(Models.Product p) {
+        for (Models.CartItem ex : cart) {
+            if (ex.product.id == p.id) {
+                ex.quantity = Math.min(p.stock, ex.quantity + 1);
+                toast("«" + p.nameFa + "» به سبد خرید افزوده شد");
                 renderCurrentScreen();
-            });
-        });
-        apiCard.addView(urlIn);
-        apiCard.addView(space(dp(8)));
-        apiCard.addView(syncBtn);
-        contentContainer.addView(apiCard);
-    }
-
-    // =========================================================================
-    // SHARED LUXURY UI HELPERS
-    // =========================================================================
-
-    private void addToCart(Models.Product product, String variant, int qty) {
-        addToCartSilent(product, variant, qty);
-        toast("«" + product.nameFa + "» به سبد تشریفاتی افزوده شد ✦");
-        renderCurrentScreen();
-    }
-
-    private void addToCartSilent(Models.Product product, String variant, int qty) {
-        for (Models.CartItem existing : cart) {
-            if (existing.product.id == product.id && existing.selectedVariant.equals(variant)) {
-                existing.quantity = Math.min(product.stock, existing.quantity + qty);
                 return;
             }
         }
         Models.CartItem item = new Models.CartItem();
-        item.product = product;
-        item.selectedVariant = variant != null ? variant : product.volume;
-        item.quantity = qty;
+        item.product = p;
+        item.selectedVariant = p.volume;
+        item.quantity = 1;
         cart.add(item);
+        toast("«" + p.nameFa + "» به سبد خرید افزوده شد");
+        renderCurrentScreen();
     }
 
     private int totalCartItems() {
-        int sum = 0;
-        for (Models.CartItem c : cart) sum += c.quantity;
-        return sum;
+        int s = 0;
+        for (Models.CartItem c : cart) s += c.quantity;
+        return s;
     }
 
     private long calculateCartSubtotal() {
-        long sum = 0L;
-        for (Models.CartItem c : cart) sum += c.lineTotal();
-        return sum;
+        long s = 0L;
+        for (Models.CartItem c : cart) s += c.lineTotal();
+        return s;
     }
 
     private int resolveProductImage(String key) {
-        if ("caviar".equals(key)) return R.drawable.img_caviar_cream;
-        if ("lipstick".equals(key)) return R.drawable.img_lipstick;
-        if ("perfume".equals(key)) return R.drawable.img_perfume;
-        if ("elixir".equals(key)) return R.drawable.img_hair_elixir;
-        if ("giftbox".equals(key)) return R.drawable.img_vip_gift_box;
-        return R.drawable.img_serum;
+        if ("gatieau_antiwrinkle".equals(key)) return R.drawable.img_gatieau_antiwrinkle;
+        if ("luxury_coin".equals(key)) return R.drawable.img_luxury_coin;
+        if ("hair_friend".equals(key)) return R.drawable.img_hair_friend;
+        if ("ordinary_toner".equals(key)) return R.drawable.img_ordinary_toner;
+        if ("moringa_teatree".equals(key)) return R.drawable.img_moringa_teatree;
+        return R.drawable.img_gatieau_whitening;
     }
 
-    private LinearLayout cardContainer() {
+    private LinearLayout sleekWhiteCard() {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(14), dp(14), dp(14), dp(14));
-        card.setBackground(roundedShape(COL_CARD_WHITE, dp(16), COL_BORDER, dp(1)));
+        card.setPadding(dp(16), dp(16), dp(16), dp(16));
+        card.setBackground(roundedShape(COL_WHITE, dp(18), COL_BORDER, dp(1)));
         card.setElevation(dp(2));
         return card;
     }
 
-    private View kpiCard(String label, String value, String foot, int accent) {
-        LinearLayout card = cardContainer();
-        card.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView l = new TextView(this); l.setText(label); l.setTextColor(COL_TEXT_MUTED); l.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
-        TextView v = new TextView(this); v.setText(value); v.setTextColor(accent); v.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14.5f); v.setTypeface(Typeface.DEFAULT_BOLD); v.setPadding(0, dp(4), 0, dp(2));
-        TextView f = new TextView(this); f.setText(foot); f.setTextColor(COL_TEXT_MUTED); f.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f);
-        card.addView(l); card.addView(v); card.addView(f);
-        return card;
-    }
-
-    private View sectionHeader(String title, String subtitle) {
+    private View sectionHeader(String title, String sub) {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(dp(2), dp(2), dp(2), dp(10));
+        box.setPadding(dp(2), dp(2), dp(2), dp(12));
         TextView t = new TextView(this);
         t.setText(title);
         t.setTextColor(COL_TEXT_MAIN);
-        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16.5f);
         t.setTypeface(Typeface.DEFAULT_BOLD);
         TextView s = new TextView(this);
-        s.setText(subtitle);
+        s.setText(sub);
         s.setTextColor(COL_TEXT_MUTED);
-        s.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f);
+        s.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
         box.addView(t);
         box.addView(s);
         return box;
-    }
-
-    private View invoiceLine(String label, String value, int color, boolean bold) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setPadding(0, dp(3), 0, dp(3));
-        TextView l = new TextView(this);
-        l.setText(label);
-        l.setTextColor(color);
-        l.setTextSize(TypedValue.COMPLEX_UNIT_SP, bold ? 13.5f : 11.5f);
-        if (bold) l.setTypeface(Typeface.DEFAULT_BOLD);
-        l.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView v = new TextView(this);
-        v.setText(value);
-        v.setTextColor(color);
-        v.setTextSize(TypedValue.COMPLEX_UNIT_SP, bold ? 14f : 12f);
-        v.setTypeface(Typeface.DEFAULT_BOLD);
-        row.addView(l);
-        row.addView(v);
-        return row;
     }
 
     private EditText createInput(String hint, String value) {
@@ -1885,38 +1463,12 @@ public final class MainActivity extends Activity {
         et.setTextColor(COL_TEXT_MAIN);
         et.setHintTextColor(0xFF9C9488);
         et.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
-        et.setPadding(dp(12), dp(9), dp(12), dp(9));
-        et.setBackground(roundedShape(COL_CREAM_SOFT, dp(12), COL_BORDER, dp(1)));
+        et.setPadding(dp(14), dp(10), dp(14), dp(10));
+        et.setBackground(roundedShape(COL_SILK_CREAM, dp(14), COL_BORDER, dp(1)));
         return et;
     }
 
-    private Button goldButton(String text, Runnable onClick) {
-        Button b = new Button(this);
-        b.setAllCaps(false);
-        b.setText(text);
-        b.setTextColor(COL_OBSIDIAN);
-        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f);
-        b.setTypeface(Typeface.DEFAULT_BOLD);
-        b.setPadding(dp(14), dp(10), dp(14), dp(10));
-        b.setBackground(roundedShape(COL_GOLD, dp(12), COL_GOLD_LIGHT, dp(1)));
-        b.setOnClickListener(v -> onClick.run());
-        return b;
-    }
-
-    private Button outlineButton(String text, Runnable onClick) {
-        Button b = new Button(this);
-        b.setAllCaps(false);
-        b.setText(text);
-        b.setTextColor(COL_TEXT_MAIN);
-        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-        b.setTypeface(Typeface.DEFAULT_BOLD);
-        b.setPadding(dp(12), dp(9), dp(12), dp(9));
-        b.setBackground(roundedShape(COL_CARD_WHITE, dp(12), COL_GOLD, dp(1)));
-        b.setOnClickListener(v -> onClick.run());
-        return b;
-    }
-
-    private TextView miniCircleBtn(String txt, Runnable onClick) {
+    private TextView qtyCircle(String txt, Runnable onClick) {
         TextView t = new TextView(this);
         t.setText(txt);
         t.setGravity(Gravity.CENTER);
@@ -1924,7 +1476,7 @@ public final class MainActivity extends Activity {
         t.setTypeface(Typeface.DEFAULT_BOLD);
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
         t.setLayoutParams(new LinearLayout.LayoutParams(dp(30), dp(30)));
-        t.setBackground(roundedShape(COL_CREAM_SOFT, dp(15), COL_GOLD, dp(1)));
+        t.setBackground(roundedShape(COL_SILK_CREAM, dp(15), COL_GOLD, dp(1)));
         t.setOnClickListener(v -> onClick.run());
         return t;
     }
@@ -1932,12 +1484,6 @@ public final class MainActivity extends Activity {
     private View space(int h) {
         View v = new View(this);
         v.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, h));
-        return v;
-    }
-
-    private View spaceHorizontal(int w) {
-        View v = new View(this);
-        v.setLayoutParams(new LinearLayout.LayoutParams(w, 1));
         return v;
     }
 

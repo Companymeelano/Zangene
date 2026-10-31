@@ -3,323 +3,542 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#11100F">
-    <title>ASIYE STORE — مزون زیبایی، عطرهای نیش و مراقبت سلولی پوست</title>
-    <meta name="description" content="مزون فوق‌لوکس زیبایی ASIYE STORE مجهز به هوش مصنوعی آنالیز پوست، تست مجازی رژ لب، ضمانت اصالت TTAC، زنجیره سرد و خرید اقساطی اسنپ‌پی، تارا، دیجی‌پی و ازکی‌وام.">
+    <meta name="theme-color" content="#0B0B0E">
+    <title>ASIYE STORE — مزون تخصصی پوست، مو و زیبایی | مدیریت: سرکار خانم زنگنه</title>
+    <meta name="description" content="مجموعه تخصصی محصولات اورجینال مراقبت پوست، مو و زیبایی ASIYE STORE به مدیریت سرکار خانم زنگنه — گاتیو، لاکچری کوین، اوردینری، هیرفرند و ویتابلا با ضمانت اصالت.">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="stylesheet" href="src/styles/design_system.css">
     <link rel="icon" href="../images/favicon.png" type="image/png">
-    <!-- Rich SEO JSON-LD Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Store",
-      "name": "ASIYE STORE — Imperial Beauty Maison",
-      "description": "فروشگاه فوق‌لوکس محصولات مراقبت پوست طلای ۲۴ عیار، آرایش کوتور و عطرهای نیش با ضمانت اصالت TTAC",
-      "currenciesAccepted": "IRR",
-      "paymentAccepted": "ZarinPal, SnappPay, Tara, Digipay, AzkiVam",
-      "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "reviewCount": "1284" }
+      "name": "ASIYE STORE",
+      "founder": "سرکار خانم زنگنه",
+      "telephone": "+989044200993",
+      "sameAs": ["https://www.instagram.com/asiyeh.store?psln=MnoxdzRzcXcxOGtz"]
     }
     </script>
 </head>
 <body>
-    <!-- Top Imperial Announcement Bar -->
     <div class="luxury-ribbon">
-        ✨ هدیه خوش‌آمدگویی VIP: <strong>۲۵۰,۰۰۰ تومان شارژ کیف پول طلایی</strong> &nbsp;|&nbsp; بسته‌بندی مخمل با مهر موم طلایی + کیف عایق دمایی رایگان &nbsp;|&nbsp; خرید ۴ تا ۱۲ قسط اسنپ‌پی، تارا، دیجی‌پی و ازکی‌وام
+        ضمانت ۱۰۰٪ اصالت کالاهای اورجینال &nbsp;•&nbsp; مشاوره مستقیم با مدیریت مجموعه &nbsp;•&nbsp; امکان خرید نقدی و ۴ قسط بدون کارمزد
     </div>
 
-    <!-- Sticky Obsidian & Gold Header -->
     <header class="luxury-header">
         <a href="index.html" class="logo-container">
             <img src="../images/app_icon_dark.png" alt="ASIYE STORE" class="logo-img">
             <div class="logo-text">
                 ASIYE STORE
-                <span class="slogan">PARIS • TEHRAN — HAUTE BEAUTÉ</span>
+                <span class="slogan">مدیریت مجموعه: سرکار خانم زنگنه</span>
             </div>
         </a>
 
         <nav class="nav-menu">
-            <a href="#atelier-concierge" class="nav-item active">آتلیه هوشمند AI</a>
-            <a href="#catalog-section" class="nav-item">کلکسیون سلطنتی</a>
-            <a href="#vip-replenish" class="nav-item">باشگاه الماس سیاه</a>
-            <a href="src/pages/luxury_product_samples.html" class="nav-item">شناسنامه ترکیبات</a>
-            <a href="product_and_admin_prototype.html" class="nav-item">پنل فرماندهی ادمین</a>
+            <a href="#collection" class="nav-item active">کلکسیون منتخب</a>
+            <a href="#routine-studio" class="nav-item">مشاور پوست و اصالت</a>
+            <a href="#concierge-hub" class="nav-item">ارتباط مستقیم با مدیریت</a>
+            <a href="product_and_admin_prototype.html" class="nav-item">پنل مدیریت</a>
         </nav>
 
         <div class="header-actions">
-            <div class="wallet-pill" id="wallet-header-pill" title="مشاهده کیف پول طلایی">
-                کیف پول طلایی: <span id="header-wallet-balance">۲۵۰,۰۰۰ تومان</span>
-            </div>
-            <button class="icon-btn" id="open-cart-btn" aria-label="سبد تشریفاتی">
-                <span class="cart-badge" id="cart-count-badge">۰</span>
-                <svg class="icon-svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="9" cy="21" r="1"></circle>
-                    <circle cx="20" cy="21" r="1"></circle>
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                </svg>
-            </button>
-            <button class="icon-btn" id="mobile-menu-btn" aria-label="منو">
-                <svg class="icon-svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
+            <a href="#concierge-hub" class="icon-3d-trigger" id="header-wa-slot" title="مشاوره مستقیم واتس‌اپ"></a>
+            <button class="icon-3d-trigger" id="open-bag-btn" aria-label="سبد خرید">
+                <span class="cart-badge" id="bag-count">۰</span>
+                <span id="header-bag-slot"></span>
             </button>
         </div>
     </header>
 
-    <main style="padding: 2.2rem 5%; max-width: 1420px; margin: 0 auto;">
-        <!-- Editorial Full-Bleed Hero -->
-        <section class="imperial-hero">
-            <img src="../images/hero_atelier_banner.jpg" alt="ASIYE Haute Beauté Atelier" class="imperial-hero-bg">
-            <div class="imperial-hero-overlay"></div>
-            <div class="imperial-hero-content">
-                <div class="hero-kicker">✦ نسخه امپریال ۲۰۲۶ — بدون مشابه در خاورمیانه</div>
-                <h1 class="imperial-hero-title">وقتی علم سلولی با <span>طلای ۲۴ عیار</span> پیوند می‌خورد</h1>
-                <p style="font-size: 1.04rem; color: #E8D8CE; margin-bottom: 1.8rem;">
-                    از مشاور پوست مبتنی بر هوش مصنوعی و تست مجازی شیدهای کوتور تا تضمین اصالت هولوگرافیک TTAC، ارسال با زنجیره سرد اختصاصی و ۵٪ کش‌بک طلایی آنی در هر سفارش.
+    <main style="max-width: 1320px; margin: 0 auto; padding: 2.4rem 5% 1rem;">
+
+        <!-- Serene Quiet-Luxury Editorial Hero -->
+        <section class="quiet-hero">
+            <img src="../images/hero_asiye_curated.jpg" alt="کلکسیون تخصصی پوست و مو ASIYE STORE" class="quiet-hero-bg">
+            <div class="quiet-hero-overlay"></div>
+            <div class="quiet-hero-content">
+                <div class="hero-eyebrow">اصالت تضمین‌شده • گلچین تخصصی سلامت پوست و مو</div>
+                <h1 class="quiet-hero-title">زیبایی اصیل، با انتخاب‌های <span>علمی و ماندگار</span></h1>
+                <p class="quiet-hero-sub">
+                    کلکسیونی دست‌چین‌شده از برترین فرمولاسیون‌های درماتولوژی و گیاهی؛ از کرم‌های تخصصی گاتیو و پنکک مخملی لاکچری کوین تا تونر اوردینری و تونیک تقویت مو هیرفرند.
                 </p>
-                <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
-                    <a href="#atelier-concierge" class="btn-luxury" style="text-decoration: none;">ورود به آتلیه هوشمند زیبایی (AI)</a>
-                    <a href="#catalog-section" class="btn-dark" style="text-decoration: none;">کاوش کلکسیون سلطنتی</a>
-                    <a href="/download/ASIYE_STORE_LUXURY_FINAL.apk" class="btn-outline-gold" style="text-decoration: none; color:#F5EBDC; border-color:#C6A16C; background:rgba(198,161,108,0.14); padding:0.8rem 1.4rem; border-radius:999px;">⬇ دانلود اپلیکیشن اندروید (نسخه ۳.۰ امپریال)</a>
+                <div style="display:flex; flex-wrap:wrap; gap:0.9rem;">
+                    <a href="#collection" class="btn-gold-3d">
+                        <span id="hero-sparkle-icon"></span>
+                        <span>مشاهده محصولات منتخب</span>
+                    </a>
+                    <a href="/download/ASIYE_STORE_LUXURY_FINAL.apk" class="btn-obsidian-3d">
+                        <span id="hero-crown-icon"></span>
+                        <span>دانلود اپلیکیشن اختصاصی اندروید</span>
+                    </a>
                 </div>
             </div>
         </section>
 
-        <!-- 4 Luxury Maison Guarantees -->
-        <section class="trust-pillars">
-            <div class="trust-card">
-                <div class="trust-icon-circle">✦</div>
+        <!-- Curated Instagram Collection Section -->
+        <section id="collection">
+            <div class="section-head">
                 <div>
-                    <strong>هوش مصنوعی زیبایی (AI)</strong>
-                    <div style="font-size:0.8rem; color:#6E675F;">آنالیز پوست، تست مجازی لب و عطرشناس</div>
+                    <div class="section-kicker">CURATED SELECTION</div>
+                    <h2>محصولات شاخص مجموعه ASIYE STORE</h2>
+                </div>
+                <div class="filter-pills" id="category-filters">
+                    <button class="filter-pill active" data-cat="all">همه محصولات</button>
+                    <button class="filter-pill" data-cat="مراقبت تخصصی پوست">مراقبت تخصصی پوست</button>
+                    <button class="filter-pill" data-cat="میکاپ لوکس">میکاپ لوکس</button>
+                    <button class="filter-pill" data-cat="تقویت و درمان مو">تقویت و درمان مو</button>
                 </div>
             </div>
-            <div class="trust-card">
-                <div class="trust-icon-circle">🛡</div>
-                <div>
-                    <strong>ضمانت اصالت ضدجعل TTAC</strong>
-                    <div style="font-size:0.8rem; color:#6E675F;">استعلام زنده بچ‌کد و گواهی دیجیتال مالکیت</div>
+
+            <div class="product-gallery" id="product-gallery"></div>
+        </section>
+
+        <!-- Calm, Uncluttered Skin Advisor & Originality Studio -->
+        <section id="routine-studio" class="concierge-studio">
+            <div class="section-kicker" style="color:var(--gold-light);">INTELLIGENT CARE & AUTHENTICITY</div>
+            <h2 style="margin:0.3rem 0 0; font-size:1.6rem; color:#FFF;">مشاور هوشمند روتین و استعلام اصالت کالا</h2>
+            <p style="margin:0.4rem 0 0; color:#CBC3B5; font-size:0.92rem;">دغدغه پوست یا موی خود را انتخاب کنید تا دقیق‌ترین محصول مجموعه به شما پیشنهاد شود، یا کد اصالت محصول را بررسی نمایید.</p>
+
+            <div class="studio-grid">
+                <div class="studio-panel">
+                    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                        <span id="studio-advisor-icon"></span>
+                        <h3 style="margin:0; font-size:1.1rem; color:var(--gold-light);">پیشنهاد هوشمند محصول متناسب با نیاز شما</h3>
+                    </div>
+                    <select id="concern-select" class="lux-select">
+                        <option value="whitening">تیرگی، لک‌های پوستی و ناهماهنگی تناژ پوست</option>
+                        <option value="wrinkle">خطوط ظریف، چروک صورت و افت استحکام پوست</option>
+                        <option value="pores">منافذ باز، کدری پوست و جای جوش</option>
+                        <option value="hairloss">ریزش مو، نازکی تار مو و تقویت ریشه</option>
+                        <option value="coverage">پوشش مخملی، ضدآب و محافظت روزانه پوست</option>
+                    </select>
+                    <div id="advisor-result" style="margin:1.15rem 0; padding:1rem 1.15rem; border-radius:14px; background:rgba(200,164,107,0.1); border:1px solid rgba(231,204,155,0.3); font-size:0.88rem; color:#F5EFE4;"></div>
+                    <button class="btn-gold-3d" id="advisor-add-btn" style="width:100%;">افزودن محصول پیشنهادی به سبد خرید</button>
                 </div>
-            </div>
-            <div class="trust-card">
-                <div class="trust-icon-circle">❄</div>
-                <div>
-                    <strong>لجستیک زنجیره سرد VIP</strong>
-                    <div style="font-size:0.8rem; color:#6E675F;">کیف عایق دمایی + جعبه مخمل با مهر طلایی</div>
-                </div>
-            </div>
-            <div class="trust-card">
-                <div class="trust-icon-circle">💎</div>
-                <div>
-                    <strong>۴ درگاه اقساط + کیف پول طلایی</strong>
-                    <div style="font-size:0.8rem; color:#6E675F;">اسنپ‌پی، تارا، دیجی‌پی، ازکی‌وام + ۵٪ کش‌بک</div>
+
+                <div class="studio-panel">
+                    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                        <span id="studio-shield-icon"></span>
+                        <h3 style="margin:0; font-size:1.1rem; color:var(--gold-light);">بررسی ضمانت اصالت و بچ‌کد محصول</h3>
+                    </div>
+                    <input id="ttac-input" type="text" class="lux-input ltr-num" value="AS-GAT-150" placeholder="کد اصالت یا شناسه کالا (مثلاً AS-GAT-150)">
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin:0.75rem 0;">
+                        <button class="filter-pill" style="font-size:0.76rem; padding:0.28rem 0.75rem;" onclick="window.checkCode('AS-GAT-150')">AS-GAT-150</button>
+                        <button class="filter-pill" style="font-size:0.76rem; padding:0.28rem 0.75rem;" onclick="window.checkCode('AS-LC-104')">AS-LC-104</button>
+                        <button class="filter-pill" style="font-size:0.76rem; padding:0.28rem 0.75rem;" onclick="window.checkCode('AS-ORD-240')">AS-ORD-240</button>
+                        <button class="filter-pill" style="font-size:0.76rem; padding:0.28rem 0.75rem;" onclick="window.checkCode('AS-HF-300')">AS-HF-300</button>
+                    </div>
+                    <button class="btn-obsidian-3d" id="verify-code-btn" style="width:100%; margin-bottom:0.9rem;">استعلام اصالت کالا</button>
+                    <div id="ttac-result" style="font-size:0.86rem; color:#DCEFE6;"></div>
                 </div>
             </div>
         </section>
 
-        <!-- INTERACTIVE AI BEAUTY & AUTHENTICITY ATELIER -->
-        <section id="atelier-concierge" class="atelier-section">
-            <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:1rem;">
+        <!-- Executive Owner & Direct Smart Concierge Hub: سرکار خانم زنگنه -->
+        <section id="concierge-hub" class="owner-sanctuary">
+            <div class="owner-top-grid">
                 <div>
-                    <div style="color:#C6A16C; font-weight:700; font-size:0.85rem; letter-spacing:1px;">ASIYE INTELLIGENT CONCIERGE</div>
-                    <h2 style="margin:0.3rem 0 0; font-size:1.95rem; color:#FFFFFF;">آتلیه هوشمند شخصی‌سازی زیبایی و اصالت‌سنجی</h2>
-                </div>
-                <span style="color:#B9B6B0; font-size:0.88rem;">ابزار مورد نظر خود را جهت تجربه زنده انتخاب نمایید:</span>
-            </div>
-
-            <div class="atelier-tabs">
-                <button class="atelier-tab-btn active" data-atelier-tab="panel-skin">۱. مشاور هوشمند پوست (AI Skin)</button>
-                <button class="atelier-tab-btn" data-atelier-tab="panel-lip">۲. تست مجازی رژ لب (Virtual Try-On)</button>
-                <button class="atelier-tab-btn" data-atelier-tab="panel-frag">۳. عطرشناس سلطنتی (Sommelier)</button>
-                <button class="atelier-tab-btn" data-atelier-tab="panel-ttac">۴. استعلام اصالت TTAC و بچ‌کد</button>
-            </div>
-
-            <!-- Tab 1: AI Skin Analyzer -->
-            <div id="panel-skin" class="atelier-panel active">
-                <div class="atelier-card-dark">
-                    <h3 style="margin-top:0; color:#E2C28E;">پارامترهای پوست خود را مشخص کنید</h3>
-                    <label style="display:block; margin-bottom:0.4rem; font-size:0.88rem;">نوع پوست شما:</label>
-                    <select id="ai-skin-type" class="luxury-select" style="width:100%; margin-bottom:1rem;">
-                        <option value="dry">پوست خشک و کم‌آب (نیازمند تغذیه عمقی)</option>
-                        <option value="combination">پوست مختلط (ناحیه T چرب)</option>
-                        <option value="oily">پوست چرب و مستعد منافذ باز</option>
-                        <option value="normal">پوست نرمال (حفظ جوانی و درخشش)</option>
-                    </select>
-                    <label style="display:block; margin-bottom:0.4rem; font-size:0.88rem;">دغدغه اصلی زیبایی:</label>
-                    <select id="ai-skin-concern" class="luxury-select" style="width:100%;">
-                        <option value="aging">خطوط ظریف، افتادگی و نیاز به لیفتینگ</option>
-                        <option value="dullness">کدری، خستگی و عدم شفافیت پوست</option>
-                        <option value="dehydration">دهیدراتاسیون و کشیدگی پوست</option>
-                    </select>
-                    <p style="font-size:0.82rem; color:#B9B6B0; margin-top:1rem;">
-                        موتور تشخیص ASIYE بر اساس هم‌افزایی طلای کلوئیدی ۲۴ عیار و پپتیدهای خاویار، دقیق‌ترین روتین صبح و شب را تجویز می‌کند.
+                    <div class="section-kicker" style="color:var(--gold-light);">EXECUTIVE MANAGEMENT & VIP CONCIERGE</div>
+                    <h2 style="margin:0.35rem 0 0.6rem; font-size:1.75rem; color:#FFF;">مدیریت مجموعه: سرکار خانم زنگنه</h2>
+                    <p style="color:#D8D0C2; font-size:0.94rem; margin:0 0 1.2rem; max-width:540px;">
+                        جهت دریافت مشاوره تخصصی پیش از خرید، استعلام موجودی روز و ثبت سفارش مستقیم، راه‌های ارتباطی زیر به صورت مستقیم به خط اختصاصی مدیریت متصل شده‌اند. در ارسال پیام واتس‌اپ، شناسه هوشمند سایت به صورت خودکار درج می‌گردد.
                     </p>
-                </div>
-                <div id="ai-skin-result" class="atelier-card-dark"></div>
-            </div>
 
-            <!-- Tab 2: Virtual Lip Shade Studio -->
-            <div id="panel-lip" class="atelier-panel">
-                <div class="atelier-card-dark" style="text-align:center;">
-                    <canvas id="virtual-lip-canvas" width="440" height="250" style="width:100%; max-width:440px; border-radius:14px;"></canvas>
-                    <div id="selected-shade-label" style="margin-top:0.8rem; font-weight:800; color:#E2C28E;"></div>
-                </div>
-                <div class="atelier-card-dark">
-                    <h3 style="margin-top:0; color:#E2C28E;">آتلیه تست مجازی شیدهای رژ لب مخملی</h3>
-                    <div style="font-size:0.85rem; margin-bottom:0.5rem;">۱. انتخاب تناژ رنگ پوست (Undertone):</div>
-                    <div id="skin-tone-buttons" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.2rem;"></div>
-                    <div style="font-size:0.85rem; margin-bottom:0.65rem;">۲. انتخاب شید کوتور ASIYE روی لب:</div>
-                    <div id="shade-swatches" style="display:flex; flex-wrap:wrap; gap:0.85rem; margin-bottom:1.4rem;"></div>
-                    <button class="btn-luxury" id="add-selected-shade-btn" style="width:100%;">
-                        افزودن همین شید اختصاصی به سبد تشریفاتی (۴۵۰,۰۰۰ تومان)
-                    </button>
-                </div>
-            </div>
-
-            <!-- Tab 3: Digital Fragrance Sommelier -->
-            <div id="panel-frag" class="atelier-panel">
-                <div class="atelier-card-dark">
-                    <h3 style="margin-top:0; color:#E2C28E;">انتخاب سلیقه و امضای بویایی</h3>
-                    <label style="display:block; margin-bottom:0.4rem; font-size:0.88rem;">موقعیت و حال‌وهوای عطر:</label>
-                    <select id="frag-mood" class="luxury-select" style="width:100%; margin-bottom:1rem;">
-                        <option value="imperial_night">مجلسی شبانه، مرموز و خیره‌کننده</option>
-                        <option value="velvet_romance">رمانتیک، مخملی و اغواگر</option>
-                        <option value="parisian_day">روزانه شیک، پاریسی و باوقار</option>
-                    </select>
-                    <label style="display:block; margin-bottom:0.4rem; font-size:0.88rem;">نت غالب مورد علاقه:</label>
-                    <select id="frag-note" class="luxury-select" style="width:100%;">
-                        <option value="oud_saffron">زعفران سلطنتی، چوب صندل و کهربا</option>
-                        <option value="damask_rose">رز دمشقی و گل‌های سفید</option>
-                        <option value="white_bergamot">ترنج تازه و مشک ابریشمی</option>
-                    </select>
-                </div>
-                <div id="frag-result" class="atelier-card-dark"></div>
-            </div>
-
-            <!-- Tab 4: TTAC & Hologram Authenticity Vault -->
-            <div id="panel-ttac" class="atelier-panel">
-                <div class="atelier-card-dark">
-                    <h3 style="margin-top:0; color:#E2C28E;">استعلام اصالت هولوگرام و شناسه TTAC</h3>
-                    <p style="font-size:0.86rem; color:#E8D8CE;">
-                        کد درج‌شده زیر لایه اسکرچ طلایی جعبه یا شناسه رهگیری را وارد کنید (یا روی یکی از نمونه‌های زیر کلیک کنید):
-                    </p>
-                    <div style="display:flex; gap:0.5rem; margin-bottom:0.85rem;">
-                        <input id="ttac-serial-input" class="search-input" style="flex:1;" value="AS-AUTH-2026-9901" placeholder="مثلا AS-AUTH-2026-9901">
-                        <button class="btn-luxury" id="ttac-verify-btn">بررسی اصالت</button>
+                    <div style="margin-bottom:1.25rem;">
+                        <label style="display:block; font-size:0.8rem; color:var(--gold-light); margin-bottom:0.45rem;">موضوع پیام هوشمند واتس‌اپ یا پیامک خود را انتخاب نمایید:</label>
+                        <select id="wa-topic-select" class="lux-select" style="max-width:440px;">
+                            <option value="مشاوره تخصصی انتخاب محصول مناسب پوست و مو">مشاوره تخصصی انتخاب محصول مناسب پوست و مو</option>
+                            <option value="ثبت سفارش مستقیم محصولات گاتیو / لاکچری کوین / اوردینری">ثبت سفارش مستقیم محصولات گاتیو / لاکچری کوین / اوردینری</option>
+                            <option value="استعلام موجودی، قیمت روز و شرایط ارسال فوری">استعلام موجودی، قیمت روز و شرایط ارسال فوری</option>
+                        </select>
                     </div>
-                    <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
-                        <button class="chip" data-sample-serial="AS-AUTH-2026-9901">تست سرم طلا: AS-AUTH-2026-9901</button>
-                        <button class="chip" data-sample-serial="TTAC-8849201140">تست عطر: TTAC-8849201140</button>
-                        <button class="chip" data-sample-serial="AS-CRM-108">تست کرم خاویار: AS-CRM-108</button>
+
+                    <div style="display:inline-flex; align-items:center; gap:0.75rem; padding:0.55rem 1.1rem; border-radius:999px; background:rgba(255,255,255,0.05); border:1px solid rgba(231,204,155,0.3);">
+                        <span style="font-size:0.82rem; color:#CBC3B5;">شماره تماس مستقیم مدیریت:</span>
+                        <strong class="ltr-num" style="color:var(--gold-light); font-size:1rem; letter-spacing:1px;">+98 904 420 0993</strong>
                     </div>
                 </div>
-                <div id="ttac-result" class="atelier-card-dark">
-                    <div style="color:#E2C28E; font-weight:700;">گواهی اصالت دیجیتال آماده استعلام است. روی دکمه «بررسی اصالت» کلیک کنید.</div>
-                </div>
-            </div>
-        </section>
 
-        <!-- SIGNATURE CATALOG SECTION -->
-        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:1rem;">
-            <h2 style="margin:0; font-size:1.9rem;">کلکسیون سلطنتی ASIYE SIGNATURE</h2>
-            <span style="color:#9B7844; font-weight:700; font-size:0.9rem;">تمامی محصولات دارای ۵٪ کش‌بک کیف پول طلایی</span>
-        </div>
+                <!-- 4 Bespoke 3D Obsidian-Gold Contact Medallions -->
+                <div class="contact-medallions-grid">
+                    <a href="tel:+989044200993" class="medallion-card">
+                        <span id="medallion-phone"></span>
+                        <div>
+                            <span class="medallion-title">تماس تلفنی مستقیم</span>
+                            <span class="medallion-sub ltr-num">+98 904 420 0993</span>
+                        </div>
+                    </a>
 
-        <section id="catalog-section" class="catalog-toolbar">
-            <div class="filter-chips">
-                <button class="chip active" data-category-filter="all">همه کلکسیون‌ها (۶)</button>
-                <button class="chip" data-category-filter="1">مراقبت سلولی پوست</button>
-                <button class="chip" data-category-filter="2">آرایش کوتور لب</button>
-                <button class="chip" data-category-filter="3">عطر و کافره هدیه VIP</button>
-                <button class="chip" data-category-filter="4">الکسیر طلایی مو</button>
-            </div>
-            <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
-                <input type="search" id="catalog-search" class="search-input" placeholder="جستجوی نام محصول یا SKU...">
-                <select id="catalog-sort" class="sort-select">
-                    <option value="newest">چیدمان: منتخب مزون</option>
-                    <option value="price_desc">لوکس‌ترین کلکسیون</option>
-                    <option value="price_asc">قیمت: کم به زیاد</option>
-                    <option value="discount">بیشترین امتیاز تخفیف</option>
-                </select>
-            </div>
-        </section>
+                    <a href="#" id="smart-sms-link" class="medallion-card">
+                        <span id="medallion-sms"></span>
+                        <div>
+                            <span class="medallion-title">ارسال پیامک مستقیم</span>
+                            <span class="medallion-sub">متن هوشمند آماده ارسال</span>
+                        </div>
+                    </a>
 
-        <div id="product-grid" class="product-grid"></div>
+                    <a href="#" id="smart-wa-link" target="_blank" rel="noopener" class="medallion-card">
+                        <span id="medallion-wa"></span>
+                        <div>
+                            <span class="medallion-title">پیام هوشمند واتس‌اپ</span>
+                            <span class="medallion-sub">با کد مرجع رسمی وب‌سایت</span>
+                        </div>
+                    </a>
 
-        <!-- SMART REPLENISHMENT & BLACK DIAMOND VIP CLUB -->
-        <section id="vip-replenish" class="vip-club-grid">
-            <div class="black-diamond-card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                    <span style="color:#E2C28E; font-weight:800; letter-spacing:1.5px;">ASIYE BLACK DIAMOND PRIVÉE</span>
-                    <span style="background:rgba(198,161,108,0.2); border:1px solid #C6A16C; padding:0.25rem 0.8rem; border-radius:999px; font-size:0.78rem; color:#E2C28E;">سطح تشریفاتی فعال</span>
-                </div>
-                <h3 style="font-size:1.6rem; margin:0 0 0.6rem; color:#fff;">کیف پول طلایی و باشگاه مشتریان سلطنتی</h3>
-                <p style="color:#E8D8CE; font-size:0.9rem; margin-bottom:1.4rem;">
-                    در هر سفارش ۵٪ تا ۷٪ مبلغ پرداختی به صورت آنی به کیف پول طلایی شما بازمی‌گردد و برای سفارش‌های بعدی بدون هیچ محدودیتی قابل کسر است.
-                </p>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-                    <div style="background:rgba(255,255,255,0.06); padding:1rem; border-radius:12px; border:1px solid rgba(198,161,108,0.3);">
-                        <div style="font-size:0.8rem; color:#B9B6B0;">موجودی کیف پول طلایی</div>
-                        <div id="club-wallet-balance" style="font-size:1.3rem; font-weight:900; color:#E2C28E; margin-top:0.25rem;">۲۵۰,۰۰۰ تومان</div>
-                    </div>
-                    <div style="background:rgba(255,255,255,0.06); padding:1rem; border-radius:12px; border:1px solid rgba(198,161,108,0.3);">
-                        <div style="font-size:0.8rem; color:#B9B6B0;">امتیاز وفاداری اندوخته</div>
-                        <div id="club-loyalty-points" style="font-size:1.15rem; font-weight:800; color:#FFFFFF; margin-top:0.25rem;">۱,۴۸۰ امتیاز الماس سیاه</div>
-                    </div>
+                    <a href="https://www.instagram.com/asiyeh.store?psln=MnoxdzRzcXcxOGtz" target="_blank" rel="noopener" class="medallion-card">
+                        <span id="medallion-ig"></span>
+                        <div>
+                            <span class="medallion-title">اینستاگرام مجموعه</span>
+                            <span class="medallion-sub ltr-num">@asiyeh.store</span>
+                        </div>
+                    </a>
                 </div>
             </div>
 
-            <div class="refill-card">
-                <div style="color:#9B7844; font-weight:800; font-size:0.82rem;">SMART REPLENISHMENT CRM</div>
-                <h3 style="margin:0.3rem 0 0.7rem; font-size:1.45rem;">یادآور هوشمند چرخه مصرف محصولات شما</h3>
-                <p style="font-size:0.88rem; color:#6E675F; margin-bottom:1.1rem;">
-                    بر اساس دوره استاندارد مصرف ۴۵ روزه سرم طلای ۳۰ میلی‌لیتر، ذخیره فعلی شما رو به اتمام است:
-                </p>
-                <div style="background:var(--ivory); border:1px solid var(--gold-border); border-radius:12px; padding:1rem; margin-bottom:1.2rem;">
-                    <div style="display:flex; justify-content:space-between; font-weight:800; font-size:0.9rem;">
-                        <span>سرم طلایی احیاکننده ۲۴ عیار</span>
-                        <span style="color:#9E2A2B;">۸۴٪ مصرف‌شده (۷ روز باقی‌مانده)</span>
-                    </div>
-                    <div class="score-bar-track" style="background:#E5DFD5; margin-top:0.55rem;">
-                        <div class="score-bar-fill" style="width:84%;"></div>
+            <!-- Subtle, Zero-Clutter Instagram Atelier Strip -->
+            <div class="insta-whisper-bar">
+                <div style="display:flex; align-items:center; gap:0.8rem;">
+                    <span style="color:var(--gold-light); font-weight:700; font-size:0.9rem;">هایلایت‌های منتخب پیج رسمی <span class="ltr-num">@asiyeh.store</span>:</span>
+                    <div class="insta-highlights">
+                        <span class="insta-ring-chip">گاتیو و لاکچری</span>
+                        <span class="insta-ring-chip">اوردینری اصل</span>
+                        <span class="insta-ring-chip">مکمل و تونیک مو</span>
+                        <span class="insta-ring-chip">رضایت خرید مشتریان</span>
                     </div>
                 </div>
-                <button class="btn-luxury" id="one-click-refill-btn" style="width:100%;">
-                    شارژ مجدد یک‌کلیکه + ۱۰٪ تخفیف وفاداری (کد REFILL10)
-                </button>
+                <a href="https://www.instagram.com/asiyeh.store?psln=MnoxdzRzcXcxOGtz" target="_blank" rel="noopener" class="btn-obsidian-3d" style="padding:0.5rem 1.1rem; font-size:0.84rem;">
+                    مشاهده ویدیوهای معرفی محصول در اینستاگرام ↗
+                </a>
             </div>
         </section>
     </main>
 
-    <!-- Slide-Over White-Glove Concierge Checkout Drawer -->
-    <div id="drawer-backdrop" class="drawer-backdrop"></div>
-    <aside id="cart-drawer" class="cart-drawer" aria-label="سبد تشریفاتی">
-        <div class="drawer-header">
-            <strong>✦ سبد تشریفاتی و کانسیرژ هدیه ASIYE</strong>
-            <button id="close-cart-btn" class="btn-dark" style="padding:0.3rem 0.8rem;">بستن ×</button>
+    <!-- Exquisite Designer Colophon — Milad Yaghoobi -->
+    <footer class="designer-colophon">
+        <div style="font-weight:800; color:#FFF; letter-spacing:2px; font-size:1.05rem;">ASIYE STORE</div>
+        <div style="font-size:0.84rem; color:#9E9689; margin-top:0.25rem;">
+            مجموعه تخصصی مراقبت پوست، مو و زیبایی به مدیریت سرکار خانم زنگنه • تمامی حقوق محفوظ است
         </div>
-        <div id="cart-drawer-body" class="drawer-body"></div>
-        <div id="cart-drawer-summary" class="drawer-footer"></div>
-    </aside>
 
-    <!-- Imperial Footer -->
-    <footer style="background:#11100F; color:#F8F6F1; padding:3.5rem 5%; margin-top:4rem; border-top:2px solid #C6A16C;">
-        <div style="max-width:1420px; margin:0 auto; display:flex; flex-wrap:wrap; gap:2rem; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:1.1rem;">
-                <img src="../images/logo_horizontal_luxury.png" alt="ASIYE STORE" style="height:68px; border-radius:10px; border:1px solid rgba(198,161,108,0.4);">
-                <div>
-                    <h3 style="color:#E2C28E; margin:0 0 0.3rem;">ASIYE STORE — MAISON DE BEAUTÉ</h3>
-                    <p style="margin:0; font-size:0.86rem; color:#B9B6B0;">مجهز به فید رسمی ترب و ایمالز • اصالت‌سنجی TTAC • لجستیک زنجیره سرد</p>
-                </div>
-            </div>
-            <div style="font-size:0.84rem; color:#B9B6B0;">
-                تمامی حقوق برای اکوسیستم زیبایی فوق‌لوکس ASIYE STORE محفوظ است © ۲۰۲۶
+        <div class="designer-plaque">
+            <div id="designer-crest-slot" style="display:flex; justify-content:center; margin-bottom:0.5rem;"></div>
+            <div class="designer-kicker">Designed &amp; Architected By</div>
+            <div class="designer-name">MILAD YAGHOOBI</div>
+            <div style="font-size:0.8rem; color:#C4BBAE;">
+                طراحی رابط کاربری لوکس و معماری اکوسیستم وب و اپلیکیشن اختصاصی
             </div>
         </div>
     </footer>
 
-    <script src="src/api/client.js"></script>
+    <!-- Slide-Over Bag & Smart Checkout Drawer -->
+    <div class="drawer-backdrop" id="bag-backdrop"></div>
+    <aside class="bag-drawer" id="bag-drawer">
+        <div style="background:var(--obsidian); color:#FFF; padding:1.25rem 1.5rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(200,164,107,0.35);">
+            <strong style="color:var(--gold-light); font-size:1.05rem;">سبد خرید اختصاصی شما</strong>
+            <button id="close-bag-btn" style="background:none; border:1px solid rgba(231,204,155,0.4); color:#FFF; border-radius:10px; padding:0.3rem 0.7rem; cursor:pointer; font-family:inherit;">بستن ✕</button>
+        </div>
+        <div id="bag-items-box" style="flex:1; overflow-y:auto; padding:1.25rem 1.5rem;"></div>
+        <div style="padding:1.25rem 1.5rem; background:#FFF; border-top:1px solid rgba(200,164,107,0.25);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; font-weight:800; font-size:1.05rem;">
+                <span>جمع کل قابل پرداخت:</span>
+                <span id="bag-total">۰ تومان</span>
+            </div>
+            <div id="bag-installment-note" style="font-size:0.8rem; color:#1E6B4B; margin-bottom:1rem;"></div>
+            <div style="display:grid; gap:0.65rem;">
+                <button class="btn-gold-3d" id="online-checkout-btn" style="width:100%;">پرداخت امن آنلاین / اقساطی</button>
+                <button class="btn-obsidian-3d" id="whatsapp-order-btn" style="width:100%;">ارسال هوشمند همین سبد در واتس‌اپ مدیریت</button>
+            </div>
+        </div>
+    </aside>
+
+    <script type="module">
+        import {
+            injectLuxury3DSvgDefs,
+            icon3D,
+            buildSmartWhatsAppUrl,
+            buildSmartSmsUrl
+        } from './src/styles/icons3d.js';
+
+        injectLuxury3DSvgDefs();
+
+        // Curated Catalog Directly Matching @asiyeh.store Instagram Page
+        const CATALOG = [
+            {
+                id: 1,
+                sku: 'AS-GAT-150',
+                brand: 'GATIEAU • فرانسه / تخصصی پوست',
+                category: 'مراقبت تخصصی پوست',
+                name_fa: 'کرم روشن‌کننده و ضدلک تخصصی گاتیو (۱۵۰ میل)',
+                price: 1550000,
+                old_price: 2380000,
+                badge: 'پرفروش‌ترین پیج',
+                batch: 'LOT-GTW-2026',
+                origin: 'فرمولاسیون لیپوویت و Hentowhite AF',
+                image: '../images/insta_gatieau_whitening.jpg',
+                desc: 'فرمولاسیون پیشرفته حاوی سرامید، کمپلکس ضدلک Hentowhite AF و ویتامین‌های A، C و E جهت رفع تیرگی نواحی مختلف، کاهش لک‌های آفتاب و یکدست‌سازی درخشان تناژ پوست.'
+            },
+            {
+                id: 2,
+                sku: 'AS-GAT-050',
+                brand: 'GATIEAU • کمپلکس پپتیدی جوان‌ساز',
+                category: 'مراقبت تخصصی پوست',
+                name_fa: 'کرم ضدچروک و لیفتینگ تخصصی گاتیو (۵۰ میل)',
+                price: 1390000,
+                old_price: 1610000,
+                badge: 'جوان‌ساز و لیفتینگ',
+                batch: 'LOT-GTA-2026',
+                origin: 'تست درماتولوژی • غنی از پپتید',
+                image: '../images/insta_gatieau_antiwrinkle.jpg',
+                desc: 'کاهش‌دهنده هدفمند خطوط پنجه کلاغی، خط لبخند و چروک‌های پیشانی با تحریک کلاژن‌سازی طبیعی و بازگرداندن قوام و لطافت ابریشمی به پوست صورت و گردن.'
+            },
+            {
+                id: 3,
+                sku: 'AS-LC-104',
+                brand: 'LUXURY COIN • تحت لیسانس فرانسه',
+                category: 'میکاپ لوکس',
+                name_fa: 'پنکک ضدآب و مخملی لاکچری کوین SPF 25',
+                price: 920000,
+                old_price: 1210000,
+                badge: 'کاور مخملی ضدآب',
+                batch: 'LOT-LCP-104',
+                origin: 'حاوی کلاژن و ویتامین E • بدون تغییر رنگ',
+                image: '../images/insta_luxury_coin_powder.jpg',
+                desc: 'پودر میکرونیزه فوق‌سبک با پوشانندگی یکدست و مات مخملی، کاملاً واترپروف و قابل استفاده با پد مرطوب بدون ماسیدگی یا افتادگی، غنی‌شده با کلاژن و آلوئه‌ورا.'
+            },
+            {
+                id: 4,
+                sku: 'AS-HF-300',
+                brand: 'HAIR FRIEND • عصاره خالص گیاهی',
+                category: 'تقویت و درمان مو',
+                name_fa: 'تونیک گیاهی تقویت و رویش مجدد مو هیرفرند (۳۰۰ میل)',
+                price: 1560000,
+                old_price: 1950000,
+                badge: 'توقف ریزش و رویش مجدد',
+                batch: 'LOT-HFT-300',
+                origin: 'چای سبز، شلتوک برنج و برگ زیتون',
+                image: '../images/insta_hair_friend_tonic.jpg',
+                desc: 'محلول تغذیه‌کننده مستقیم فولیکول و پیاز مو سرشار از عصاره چای سبز، شلتوک برنج و همیشه‌بهار؛ موثر در کنترل ریزش، افزایش ضخامت تارهای نازک و تحریک رشد مو.'
+            },
+            {
+                id: 5,
+                sku: 'AS-ORD-240',
+                brand: 'THE ORDINARY • کانادا (اورجینال)',
+                category: 'مراقبت تخصصی پوست',
+                name_fa: 'تونر لایه‌بردار گلیکولیک اسید ۷٪ اوردینری (۲۴۰ میل)',
+                price: 2890000,
+                old_price: 3450000,
+                badge: 'اورجینال کانادا',
+                batch: 'LOT-ORD-771',
+                origin: 'AHA 7% + ریشه جینسینگ و آلوئه‌ورا',
+                image: '../images/insta_ordinary_glycolic.jpg',
+                desc: 'تونر شفاف‌کننده و لایه‌بردار ملایم سطح پوست با pH استاندارد ۳.۶؛ پاکسازی عمقی منافذ باز، رفع کدری و جای جوش و ایجاد درخشش آینه‌ای بدون الکل و پارابن.'
+            },
+            {
+                id: 6,
+                sku: 'AS-MRG-500',
+                brand: 'MORINGA EMO & VITABELLA • فاقد سولفات',
+                category: 'تقویت و درمان مو',
+                name_fa: 'پک تخصصی شامپو درخت چای ویتابلا و مورینگا امو',
+                price: 680000,
+                old_price: 840000,
+                badge: 'پک کامل مراقبت مو',
+                batch: 'LOT-MVB-502',
+                origin: 'روغن هسته مورینگا + برگ درخت چای',
+                image: '../images/insta_moringa_teatree_set.jpg',
+                desc: 'ترکیب مکمل شامپو پاکسازی‌کننده درخت چای ویتابلا برای تنظیم چربی و رفع شوره کف سر به همراه شامپو مغذی روغن مورینگا امو جهت احیا و درخشش ساقه مو.'
+            }
+        ];
+
+        const toFa = (n) => Number(n).toLocaleString('fa-IR');
+        let activeCategory = 'all';
+        let bag = [{ ...CATALOG[0], quantity: 1 }];
+
+        // Mount 3D SVG Icons
+        document.getElementById('header-wa-slot').innerHTML = icon3D('whatsapp', 42);
+        document.getElementById('header-bag-slot').innerHTML = icon3D('bag', 42);
+        document.getElementById('hero-sparkle-icon').innerHTML = icon3D('sparkle', 30);
+        document.getElementById('hero-crown-icon').innerHTML = icon3D('crown', 30);
+        document.getElementById('studio-advisor-icon').innerHTML = icon3D('sparkle', 38);
+        document.getElementById('studio-shield-icon').innerHTML = icon3D('shield', 38);
+        document.getElementById('medallion-phone').innerHTML = icon3D('phone', 48);
+        document.getElementById('medallion-sms').innerHTML = icon3D('sms', 48);
+        document.getElementById('medallion-wa').innerHTML = icon3D('whatsapp', 48);
+        document.getElementById('medallion-ig').innerHTML = icon3D('instagram', 48);
+        document.getElementById('designer-crest-slot').innerHTML = icon3D('crown', 40);
+
+        function renderGallery() {
+            const box = document.getElementById('product-gallery');
+            const list = activeCategory === 'all'
+                ? CATALOG
+                : CATALOG.filter((p) => p.category === activeCategory);
+
+            box.innerHTML = list.map((p) => `
+                <article class="gallery-card">
+                    <div class="gallery-media">
+                        <img src="${p.image}" alt="${p.name_fa}" loading="lazy">
+                        <span class="gallery-badge">${p.badge}</span>
+                    </div>
+                    <div class="gallery-body">
+                        <div class="gallery-brand">${p.brand}</div>
+                        <h3 class="gallery-title">${p.name_fa}</h3>
+                        <p class="gallery-desc">${p.desc}</p>
+                        <div class="gallery-price-row">
+                            <span class="price-current">${toFa(p.price)} تومان</span>
+                            <span class="price-old">${toFa(p.old_price)} تومان</span>
+                        </div>
+                        <div class="gallery-actions">
+                            <button class="btn-gold-3d" onclick="window.addToBag(${p.id})" style="padding:0.55rem 0.9rem; font-size:0.85rem;">
+                                ${icon3D('plus', 26)}
+                                <span>افزودن به سبد</span>
+                            </button>
+                            <a class="btn-obsidian-3d" href="${buildSmartWhatsAppUrl({ topic: 'مشاوره و ثبت سفارش محصول', productName: p.name_fa })}" target="_blank" rel="noopener" style="padding:0.55rem 0.85rem; font-size:0.83rem;">
+                                ${icon3D('whatsapp', 26)}
+                                <span>سفارش واتس‌اپ</span>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        // Category Filter
+        document.querySelectorAll('#category-filters .filter-pill').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#category-filters .filter-pill').forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeCategory = btn.dataset.cat;
+                renderGallery();
+            });
+        });
+
+        // Routine Advisor
+        const concernMap = {
+            whitening: CATALOG[0],
+            wrinkle: CATALOG[1],
+            coverage: CATALOG[2],
+            hairloss: CATALOG[3],
+            pores: CATALOG[4],
+        };
+        let recommendedProduct = CATALOG[0];
+
+        function updateAdvisor() {
+            const key = document.getElementById('concern-select').value;
+            recommendedProduct = concernMap[key] || CATALOG[0];
+            document.getElementById('advisor-result').innerHTML = `
+                <strong style="color:var(--gold-light); display:block; margin-bottom:0.3rem;">پیشنهاد اختصاصی: ${recommendedProduct.name_fa}</strong>
+                <span>${recommendedProduct.desc}</span>
+                <div style="margin-top:0.5rem; color:#FFF; font-weight:700;">بهای ویژه مجموعه: ${toFa(recommendedProduct.price)} تومان</div>
+            `;
+        }
+        document.getElementById('concern-select').addEventListener('change', updateAdvisor);
+        document.getElementById('advisor-add-btn').addEventListener('click', () => window.addToBag(recommendedProduct.id));
+
+        // Originality Verifier
+        window.checkCode = (code) => {
+            document.getElementById('ttac-input').value = code;
+            const clean = String(code || '').trim().toUpperCase();
+            const found = CATALOG.find((p) => p.sku === clean || p.batch === clean);
+            const box = document.getElementById('ttac-result');
+            if (found) {
+                box.innerHTML = `
+                    <div style="padding:0.95rem 1.1rem; border-radius:14px; background:rgba(36,120,84,0.2); border:1px solid rgba(110,231,183,0.4);">
+                        <strong style="color:#86EFAC;">✓ اصالت کالا در سامانه ASIYE STORE تایید شد</strong>
+                        <div style="margin-top:0.35rem; color:#F5EFE4;">محصول: ${found.name_fa}</div>
+                        <div style="color:#D8D0C2; font-size:0.8rem;">شناسه بچ: <span class="ltr-num">${found.batch}</span> • ${found.origin}</div>
+                    </div>`;
+            } else {
+                box.innerHTML = `<div style="padding:0.85rem 1rem; border-radius:12px; background:rgba(180,50,50,0.22); color:#FCA5A5;">شناسه واردشده یافت نشد؛ لطفاً کد روی بسته یا شناسه کاتالوگ را بررسی نمایید.</div>`;
+            }
+        };
+        document.getElementById('verify-code-btn').addEventListener('click', () => {
+            window.checkCode(document.getElementById('ttac-input').value);
+        });
+
+        // Smart Contact Links Updater
+        function syncSmartContactLinks() {
+            const topic = document.getElementById('wa-topic-select').value;
+            document.getElementById('smart-wa-link').href = buildSmartWhatsAppUrl({ topic, cartItems: bag });
+            document.getElementById('smart-sms-link').href = buildSmartSmsUrl(topic);
+        }
+        document.getElementById('wa-topic-select').addEventListener('change', syncSmartContactLinks);
+
+        // Bag Drawer Logic
+        function renderBag() {
+            const count = bag.reduce((s, i) => s + i.quantity, 0);
+            const total = bag.reduce((s, i) => s + i.price * i.quantity, 0);
+            document.getElementById('bag-count').textContent = toFa(count);
+            document.getElementById('bag-total').textContent = `${toFa(total)} تومان`;
+            document.getElementById('bag-installment-note').textContent = total > 0
+                ? `امکان پرداخت در ۴ قسط بدون کارمزد: هر قسط ${toFa(Math.round(total / 4))} تومان`
+                : '';
+
+            const box = document.getElementById('bag-items-box');
+            if (bag.length === 0) {
+                box.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:2rem;">سبد خرید شما خالی است.</p>`;
+            } else {
+                box.innerHTML = bag.map((item, idx) => `
+                    <div style="display:flex; gap:0.85rem; align-items:center; background:#FFF; padding:0.9rem; border-radius:16px; border:1px solid rgba(200,164,107,0.22); margin-bottom:0.8rem;">
+                        <img src="${item.image}" alt="" style="width:62px; height:62px; border-radius:12px; object-fit:cover;">
+                        <div style="flex:1;">
+                            <div style="font-weight:700; font-size:0.88rem;">${item.name_fa}</div>
+                            <div style="color:var(--gold-deep); font-size:0.82rem; font-weight:700;">${toFa(item.price * item.quantity)} تومان</div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.45rem;">
+                            <button onclick="window.changeQty(${idx}, 1)" style="width:28px; height:28px; border-radius:50%; border:1px solid var(--gold-24k); background:var(--silk-cream); cursor:pointer;">+</button>
+                            <strong style="font-size:0.88rem;">${toFa(item.quantity)}</strong>
+                            <button onclick="window.changeQty(${idx}, -1)" style="width:28px; height:28px; border-radius:50%; border:1px solid var(--gold-24k); background:var(--silk-cream); cursor:pointer;">−</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            syncSmartContactLinks();
+        }
+
+        window.addToBag = (id) => {
+            const p = CATALOG.find((x) => x.id === id);
+            if (!p) return;
+            const ex = bag.find((x) => x.id === id);
+            if (ex) ex.quantity += 1;
+            else bag.push({ ...p, quantity: 1 });
+            renderBag();
+            openBag();
+        };
+
+        window.changeQty = (idx, delta) => {
+            bag[idx].quantity += delta;
+            if (bag[idx].quantity <= 0) bag.splice(idx, 1);
+            renderBag();
+        };
+
+        function openBag() {
+            document.getElementById('bag-backdrop').classList.add('open');
+            document.getElementById('bag-drawer').classList.add('open');
+        }
+        function closeBag() {
+            document.getElementById('bag-backdrop').classList.remove('open');
+            document.getElementById('bag-drawer').classList.remove('open');
+        }
+        document.getElementById('open-bag-btn').addEventListener('click', openBag);
+        document.getElementById('close-bag-btn').addEventListener('click', closeBag);
+        document.getElementById('bag-backdrop').addEventListener('click', closeBag);
+
+        document.getElementById('whatsapp-order-btn').addEventListener('click', () => {
+            if (bag.length === 0) return;
+            window.open(buildSmartWhatsAppUrl({
+                topic: 'تکمیل و ثبت نهایی سفارش سبد خرید وب‌سایت',
+                cartItems: bag
+            }), '_blank');
+        });
+
+        document.getElementById('online-checkout-btn').addEventListener('click', () => {
+            if (bag.length === 0) return;
+            alert('سفارش شما با کد پیگیری AS-' + String(Date.now()).slice(-5) + ' ثبت اولیه شد. همچنین می‌توانید از دکمه واتس‌اپ جهت هماهنگی مستقیم ارسال با سرکار خانم زنگنه استفاده فرمایید.');
+        });
+
+        renderGallery();
+        updateAdvisor();
+        window.checkCode('AS-GAT-150');
+        renderBag();
+    </script>
 </body>
 </html>
