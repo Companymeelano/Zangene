@@ -146,6 +146,20 @@ export function icon3D(name, size = 44) {
           <line x1="32" y1="25.5" x2="32" y2="46" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linecap="round"/>
           <path d="M32 25.5c-2.8-4.4-9.4-5.2-9.4-1.2 0 2.1 3 3.2 9.4 1.2z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2" stroke-linejoin="round"/>
           <path d="M32 25.5c2.8-4.4 9.4-5.2 9.4-1.2 0 2.1-3 3.2-9.4 1.2z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2" stroke-linejoin="round"/>`,
+        installment: `
+          <circle cx="32" cy="32" r="13" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.4"/>
+          <line x1="32" y1="23" x2="32" y2="32" stroke="url(#gold3dGlyph)" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="32" y1="32" x2="38.5" y2="36" stroke="url(#gold3dGlyph)" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="32" cy="32" r="2" fill="url(#gold3dGlyph)"/>`,
+        card: `
+          <rect x="17.5" y="23" width="29" height="20" rx="3.4" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.4"/>
+          <line x1="17.5" y1="30" x2="46.5" y2="30" stroke="url(#gold3dGlyph)" stroke-width="2.4"/>
+          <line x1="23" y1="37" x2="31.5" y2="37" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="41" cy="37" r="1.8" fill="url(#gold3dGlyph)"/>`,
+        wallet: `
+          <path d="M19 26h22c2.2 0 4 1.8 4 4v13c0 2.2-1.8 4-4 4H21.5C19.6 47 18 45.4 18 43.5V28.5C18 27.1 18.9 26 19 26z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.4" stroke-linejoin="round"/>
+          <line x1="18" y1="32" x2="45" y2="32" stroke="url(#gold3dGlyph)" stroke-width="2.2"/>
+          <circle cx="39.5" cy="39" r="2" fill="url(#gold3dGlyph)"/>`,
         check: `
           <path d="M22.5 32.5l6.5 6.5 12.5-13" fill="none" stroke="url(#gold3dGlyph)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
     };

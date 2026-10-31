@@ -38,6 +38,8 @@
             <a href="#collection" class="nav-item active">کلکسیون منتخب</a>
             <a href="#routine-studio" class="nav-item">مشاور پوست و اصالت</a>
             <a href="#vip-services" class="nav-item">سرویس‌های VIP</a>
+            <a href="#payment-studio" class="nav-item">قسط و پرداخت</a>
+            <a href="#caption-studio" class="nav-item">استودیو کپشن</a>
             <a href="#concierge-hub" class="nav-item">ارتباط مستقیم با مدیریت</a>
             <a href="product_and_admin_prototype.html" class="nav-item">پنل مدیریت</a>
         </nav>
@@ -179,6 +181,82 @@
             </div>
         </section>
 
+
+        <!-- v6.0 · BNPL & Online Payment Studio (own dedicated place) -->
+        <section id="payment-studio" class="pay-studio">
+            <div class="section-head" style="margin-bottom:1.6rem;">
+                <div class="section-kicker">CHECKOUT &amp; FINANCING</div>
+                <h2 class="section-title">فروش اقساطی و پرداخت آنلاین</h2>
+                <p class="section-sub">مبلغ سبد را وارد کنید تا طرح اقساطی واقعی، کارمزد و درگاه‌های فعال به‌صورت شفاف محاسبه شود.</p>
+            </div>
+
+            <div class="pay-grid">
+                <article class="vip-card">
+                    <div class="vip-icon" id="pay-icon-inst"></div>
+                    <h3>ماشین‌حساب فروش اقساطی</h3>
+                    <p>مبلغ خرید خود را وارد کنید؛ تعداد اقساط، پیش‌پرداخت و کارمزد به‌صورت لحظه‌ای نمایش داده می‌شود.</p>
+                    <div class="vip-inline">
+                        <input id="inst-amount" class="vip-input" type="text" inputmode="numeric" value="3,110,000" aria-label="مبلغ خرید">
+                        <button class="vip-btn" onclick="window.calcInstallments()">محاسبه</button>
+                    </div>
+                    <div id="inst-result" class="vip-result" style="display:none;"></div>
+                </article>
+
+                <article class="vip-card">
+                    <div class="vip-icon" id="pay-icon-gateway"></div>
+                    <h3>درگاه پرداخت آنلاین</h3>
+                    <p>درگاه مورد نظر را انتخاب کنید. تمام تراکنش‌ها روی بستر امن شاپرک و با تأیید مدیریت مجموعه انجام می‌شود.</p>
+                    <div class="vip-badges" id="gateway-list"></div>
+                    <div id="gateway-note" class="vip-note">درگاه فعال: زرین‌پال — حالت آزمایشی</div>
+                </article>
+
+                <article class="vip-card">
+                    <div class="vip-icon" id="pay-icon-wallet"></div>
+                    <h3>سایر روش‌های تسویه</h3>
+                    <p>کارت‌به‌کارت با تأیید مدیریت، پرداخت در محل و کیف پول اعتباری مجموعه نیز در دسترس است.</p>
+                    <div class="vip-badges">
+                        <span class="vip-badge">کارت‌به‌کارت</span>
+                        <span class="vip-badge">پرداخت در محل</span>
+                        <span class="vip-badge">۱٪ اعتبار بازگشتی</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- v6.0 · AI Caption & SEO Studio -->
+        <section id="caption-studio" class="caption-studio">
+            <div class="section-head" style="margin-bottom:1.6rem;">
+                <div class="section-kicker">AI PRODUCT STUDIO</div>
+                <h2 class="section-title">استودیو هوشمند کپشن، سئو و توضیحات محصول</h2>
+                <p class="section-sub">فقط نام و برند محصول را وارد کنید؛ عنوان سئو، توضیح متا، کلمات کلیدی و کپشن آماده اینستاگرام به‌صورت خودکار ساخته می‌شود.</p>
+            </div>
+
+            <div class="caption-grid">
+                <div class="vip-card">
+                    <div class="vip-icon" id="ai-icon"></div>
+                    <h3>ورودی‌های سه‌گانه</h3>
+                    <p>نام محصول و برند را بنویسید. عکس محصول در نسخه اندروید تحلیل و به تصویر استودیویی ابسیدین–طلایی تبدیل می‌شود.</p>
+                    <input id="ai-name" class="vip-input" type="text" placeholder="مثال: کرم روشن‌کننده گاتیو" value="کرم روشن‌کننده گاتیو">
+                    <input id="ai-brand" class="vip-input" type="text" placeholder="مثال: گاتیو" value="گاتیو" style="margin-top:.6rem;">
+                    <button class="vip-btn" style="margin-top:.7rem;" onclick="window.generateListing()">تحلیل و تولید خودکار</button>
+                    <div id="ai-confidence" class="vip-note" style="display:none;"></div>
+                </div>
+
+                <div class="vip-card caption-output">
+                    <div id="ai-output" class="caption-empty">
+                        پس از وارد کردن نام و برند، تمام بخش‌های فروش محصول در همین ستون ساخته می‌شود:
+                        <br><br>
+                        • عنوان سئو و توضیح متا<br>
+                        • توضیح کوتاه ویترین<br>
+                        • معرفی کامل و ترغیب‌کننده<br>
+                        • مزیت‌های کلیدی<br>
+                        • کلمات کلیدی<br>
+                        • کپشن آماده اینستاگرام
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Executive Owner & Direct Smart Concierge Hub: سرکار خانم زنگنه -->
         <section id="concierge-hub" class="owner-sanctuary">
             <div class="owner-top-grid">
@@ -304,6 +382,7 @@
             buildSmartWhatsAppUrl,
             buildSmartSmsUrl
         } from './src/styles/icons3d.js';
+        import { analyzeProduct, composeListing } from './src/studio/ai_caption_studio.js';
 
         injectLuxury3DSvgDefs();
 
@@ -414,6 +493,10 @@
         document.getElementById('vip-icon-track').innerHTML = icon3D('bag', 44);
         document.getElementById('vip-icon-club').innerHTML = icon3D('crown', 44);
         document.getElementById('vip-icon-coupon').innerHTML = icon3D('gift', 44);
+        document.getElementById('pay-icon-inst').innerHTML = icon3D('installment', 44);
+        document.getElementById('pay-icon-gateway').innerHTML = icon3D('card', 44);
+        document.getElementById('pay-icon-wallet').innerHTML = icon3D('wallet', 44);
+        document.getElementById('ai-icon').innerHTML = icon3D('sparkle', 44);
 
         function renderGallery() {
             const box = document.getElementById('product-gallery');
@@ -643,6 +726,117 @@
                 done();
             }
         };
+
+        // ── v6.0 · BNPL calculator ────────────────────────────────────────
+        const INST_CONFIG = {
+            zeroMonths: 4,
+            extended: [{ months: 6, rate: 18 }, { months: 12, rate: 18 }],
+            downPercent: 0,
+            minAmount: 1000000,
+            maxAmount: 20000000
+        };
+
+        window.calcInstallments = () => {
+            const input = document.getElementById('inst-amount');
+            const box = document.getElementById('inst-result');
+            const amount = Number((input.value || '').replace(/[^\d]/g, ''));
+            box.style.display = 'block';
+            if (!amount || amount < INST_CONFIG.minAmount) {
+                box.innerHTML = '<span style="color:#F0B4AC;">حداقل مبلغ خرید اقساطی ۱,۰۰۰,۰۰۰ تومان است.</span>';
+                return;
+            }
+            if (amount > INST_CONFIG.maxAmount) {
+                box.innerHTML = '<span style="color:#F0B4AC;">حداکثر مبلغ خرید اقساطی ۲۰,۰۰۰,۰۰۰ تومان است؛ برای مبالغ بالاتر با مدیریت تماس بگیرید.</span>';
+                return;
+            }
+            const down = Math.round(amount * INST_CONFIG.downPercent / 100);
+            const rows = [];
+            const zeroMonthly = Math.ceil((amount - down) / INST_CONFIG.zeroMonths);
+            rows.push(`<div style="display:flex;justify-content:space-between;gap:.6rem;padding:.25rem 0;">
+                <span>${INST_CONFIG.zeroMonths} قسط بدون کارمزد</span>
+                <strong style="color:#EBD6B0;">${zeroMonthly.toLocaleString('fa-IR')} تومان / ماه</strong></div>`);
+            INST_CONFIG.extended.forEach((plan) => {
+                const financed = amount - down;
+                const fee = Math.round(financed * (plan.rate / 100) * (plan.months / 12));
+                const monthly = Math.ceil((financed + fee) / plan.months);
+                rows.push(`<div style="display:flex;justify-content:space-between;gap:.6rem;padding:.25rem 0;">
+                    <span>${plan.months} قسط (کارمزد ${plan.rate}٪ سالانه)</span>
+                    <strong style="color:#EBD6B0;">${monthly.toLocaleString('fa-IR')} تومان / ماه</strong></div>`);
+            });
+            box.innerHTML = `<div style="margin-bottom:.35rem;color:#BEB6AA;">مبلغ خرید: ${amount.toLocaleString('fa-IR')} تومان</div>${rows.join('')}
+                <div style="margin-top:.45rem;font-size:.72rem;color:#8F8779;">تأیید نهایی اقساط پس از بررسی هویت توسط مدیریت مجموعه انجام می‌شود.</div>`;
+        };
+
+        // ── v6.0 · online gateways ────────────────────────────────────────
+        const GATEWAYS = [
+            { code: 'zarinpal', label: 'زرین‌پال', enabled: true },
+            { code: 'shaparak', label: 'شاپرک', enabled: true },
+            { code: 'idpay', label: 'آیدی‌پی', enabled: false }
+        ];
+        let activeGateway = 'zarinpal';
+        window.selectGateway = (code) => {
+            activeGateway = code;
+            const note = document.getElementById('gateway-note');
+            const gw = GATEWAYS.find((g) => g.code === code);
+            note.textContent = `درگاه فعال: ${gw ? gw.label : code} — حالت آزمایشی (Sandbox)`;
+            document.querySelectorAll('#gateway-list .vip-coupon').forEach((el) => {
+                const on = el.dataset.code === code;
+                el.style.background = on ? '#F6EBD4' : '#FBF6EA';
+                el.style.borderStyle = on ? 'solid' : 'dashed';
+            });
+        };
+        document.getElementById('gateway-list').innerHTML = GATEWAYS.filter((g) => g.enabled)
+            .map((g) => `<button class="vip-coupon" data-code="${g.code}" onclick="window.selectGateway('${g.code}')" style="direction:rtl;">${g.label}</button>`)
+            .join('');
+
+        // ── v6.0 · AI caption studio ──────────────────────────────────────
+        window.generateListing = () => {
+            const name = document.getElementById('ai-name').value;
+            const brand = document.getElementById('ai-brand').value;
+            if (!name || name.trim().length < 3) {
+                document.getElementById('ai-confidence').style.display = 'block';
+                document.getElementById('ai-confidence').textContent = 'نام محصول را کامل‌تر وارد کنید.';
+                return;
+            }
+            const analysis = analyzeProduct(name, brand);
+            const listing = composeListing(analysis, name, brand);
+
+            const conf = document.getElementById('ai-confidence');
+            conf.style.display = 'block';
+            conf.textContent = `تشخیص: ${analysis.title} — اطمینان ${analysis.confidence}٪`;
+
+            const block = (title, body) => `
+                <div class="caption-block">
+                    <div class="caption-head">
+                        <span>${title}</span>
+                        <button class="vip-coupon" style="font-size:.7rem;padding:.22rem .6rem;" onclick="window.copyText(this)" data-copy="${encodeURIComponent(body)}">کپی</button>
+                    </div>
+                    <div class="caption-body">${body.replace(/\n/g, '<br>')}</div>
+                </div>`;
+
+            document.getElementById('ai-output').innerHTML =
+                block('عنوان سئو (SEO Title)', listing.seoTitle) +
+                block('توضیح متا (SEO Description)', listing.seoDescription) +
+                block('توضیح کوتاه ویترین', listing.description) +
+                block('معرفی کامل محصول', listing.longDescription) +
+                block('مزیت‌های کلیدی', listing.benefits.map((b) => `• ${b}`).join('\n')) +
+                block('کلمات کلیدی', listing.keywords) +
+                block('کپشن آماده اینستاگرام', listing.instagramCaption);
+            document.getElementById('ai-output').classList.remove('caption-empty');
+        };
+
+        window.copyText = (btn) => {
+            const text = decodeURIComponent(btn.dataset.copy || '');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).catch(() => {});
+            }
+            btn.textContent = 'کپی شد ✓';
+            setTimeout(() => { btn.textContent = 'کپی'; }, 1600);
+        };
+
+        window.calcInstallments();
+        window.selectGateway('zarinpal');
+        window.generateListing();
 
         window.trackOrder();
 

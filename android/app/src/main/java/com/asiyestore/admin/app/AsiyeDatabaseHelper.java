@@ -19,7 +19,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public static final long STANDARD_SHIPPING_COST  = 65_000L;
 
     private static final String DB_NAME = "asiye_royal_v5.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 2;
 
     public AsiyeDatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -50,7 +50,15 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "low_stock_threshold INTEGER NOT NULL DEFAULT 5," +
                 "published INTEGER NOT NULL DEFAULT 1," +
                 "image_key TEXT NOT NULL DEFAULT 'gatieau_whitening'," +
-                "wishlisted INTEGER NOT NULL DEFAULT 0" +
+                "wishlisted INTEGER NOT NULL DEFAULT 0," +
+                "benefits TEXT," +
+                "long_description TEXT," +
+                "seo_title TEXT," +
+                "seo_description TEXT," +
+                "keywords TEXT," +
+                "instagram_caption TEXT," +
+                "image_path TEXT," +
+                "ai_generated INTEGER NOT NULL DEFAULT 0" +
                 ")");
 
         db.execSQL("CREATE TABLE coupons (" +
@@ -119,6 +127,19 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion < 2) {
+            // Non-destructive v6.0 migration: keep catalog, orders and settings intact.
+            alterAdd(db, "products", "benefits", "TEXT");
+            alterAdd(db, "products", "long_description", "TEXT");
+            alterAdd(db, "products", "seo_title", "TEXT");
+            alterAdd(db, "products", "seo_description", "TEXT");
+            alterAdd(db, "products", "keywords", "TEXT");
+            alterAdd(db, "products", "instagram_caption", "TEXT");
+            alterAdd(db, "products", "image_path", "TEXT");
+            alterAdd(db, "products", "ai_generated", "INTEGER NOT NULL DEFAULT 0");
+            seedV6Settings(db);
+            return;
+        }
         db.execSQL("DROP TABLE IF EXISTS order_items");
         db.execSQL("DROP TABLE IF EXISTS orders");
         db.execSQL("DROP TABLE IF EXISTS stock_movements");
@@ -126,6 +147,64 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS products");
         db.execSQL("DROP TABLE IF EXISTS settings");
         onCreate(db);
+    }
+
+    private void alterAdd(SQLiteDatabase db, String table, String column, String type) {
+        try (Cursor c = db.rawQuery("PRAGMA table_info(" + table + ")", null)) {
+            while (c.moveToNext()) {
+                if (column.equalsIgnoreCase(c.getString(c.getColumnIndexOrThrow("name")))) return;
+            }
+        } catch (Exception ignored) { }
+        try {
+            db.execSQL("ALTER TABLE " + table + " ADD COLUMN " + column + " " + type);
+        } catch (Exception ignored) { }
+    }
+
+    /** Payment-gateway, installment and AI-studio defaults (editable from the admin panel). */
+    public static void seedV6Settings(SQLiteDatabase db) {
+        String[][] defaults = {
+                // ── Online payment ──
+                {"pay_online_enabled", "1"},
+                {"pay_gateway_zarinpal", "1"},
+                {"pay_gateway_shaparak", "1"},
+                {"pay_gateway_idpay", "0"},
+                {"pay_gateway_nextpay", "0"},
+                {"pay_cod_enabled", "1"},
+                {"pay_card_to_card", "1"},
+                {"pay_card_number", "6037-9975-0000-0000"},
+                {"pay_card_holder", "سرکار خانم زنگنه"},
+                {"pay_merchant_id", "ASIYE-STORE-ZP"},
+                {"pay_callback_url", "https://asiyestore.ir/api/v1/payment/callback"},
+                {"pay_sandbox", "1"},
+                {"pay_min_amount", "50000"},
+                {"pay_auto_capture", "1"},
+                {"pay_currency", "IRR"},
+                {"pay_description", "خرید از مجموعه ASIYE STORE"},
+                // ── Installments / BNPL ──
+                {"inst_enabled", "1"},
+                {"inst_zero_months", "4"},
+                {"inst_extended_months", "6,12"},
+                {"inst_interest_percent", "18"},
+                {"inst_min_amount", "1000000"},
+                {"inst_max_amount", "20000000"},
+                {"inst_down_percent", "0"},
+                {"inst_provider", "snapp_pay"},
+                {"inst_verify_kyc", "1"},
+                {"inst_auto_approve", "0"},
+                {"inst_fee_payer", "merchant"},
+                // ── AI studio ──
+                {"ai_auto_caption", "1"},
+                {"ai_tone", "لوکس و تخصصی"},
+                {"ai_seo_city", "تهران"},
+                {"ai_instagram_handle", "asiyeh.store"},
+                {"ai_endpoint", ""}
+        };
+        for (String[] row : defaults) {
+            ContentValues cv = new ContentValues();
+            cv.put("key", row[0]);
+            cv.put("value", row[1]);
+            db.insertWithOnConflict("settings", null, cv, SQLiteDatabase.CONFLICT_IGNORE);
+        }
     }
 
     private void seedSignatureCatalog(SQLiteDatabase db) {
@@ -261,6 +340,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         putSettingInternal(db, "customer_name", "");
         putSettingInternal(db, "customer_mobile", "");
         putSettingInternal(db, "customer_address", "");
+        seedV6Settings(db);
     }
 
     private void ignored(long v) {}
@@ -417,6 +497,116 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         getWritableDatabase().update("products", cv, "id = ?", new String[]{String.valueOf(productId)});
     }
 
+    private String safeString(Cursor c, String column) {
+        int idx = c.getColumnIndex(column);
+        return idx >= 0 ? c.getString(idx) : null;
+    }
+
+    private int safeInt(Cursor c, String column) {
+        int idx = c.getColumnIndex(column);
+        return idx >= 0 ? c.getInt(idx) : 0;
+    }
+
+    /**
+     * Saves a fully AI-composed product (copy, SEO, Instagram caption and studio artwork path).
+     * Returns null on success or a Persian error message.
+     */
+    public String saveAiProduct(Long existingId, String sku, String nameFa, String nameEn,
+                                String category, String description, String longDescription,
+                                String benefits, String ingredients, String usage, String country,
+                                String volume, long origPrice, long salePrice, int stock,
+                                boolean published, String imageKey, String imagePath,
+                                String seoTitle, String seoDescription, String keywords,
+                                String instagramCaption) {
+        if (nameFa == null || nameFa.trim().isEmpty()) return "نام محصول را وارد کنید.";
+        if (salePrice <= 0) return "قیمت فروش معتبر نیست.";
+        if (origPrice < salePrice) origPrice = salePrice;
+        int disc = origPrice > 0 ? (int) Math.round(((origPrice - salePrice) * 100.0) / origPrice) : 0;
+        String normSku = (sku == null || sku.trim().isEmpty())
+                ? ("AS-AI-" + (100 + new Random().nextInt(8999)))
+                : sku.trim().toUpperCase(Locale.US);
+
+        ContentValues cv = new ContentValues();
+        cv.put("sku", normSku);
+        cv.put("name_fa", nameFa.trim());
+        cv.put("name_en", nameEn);
+        cv.put("category", category);
+        cv.put("description", description);
+        cv.put("long_description", longDescription);
+        cv.put("benefits", benefits);
+        cv.put("ingredients", ingredients);
+        cv.put("usage_method", usage);
+        cv.put("country", country);
+        cv.put("volume", volume);
+        cv.put("original_price", origPrice);
+        cv.put("sale_price", salePrice);
+        cv.put("discount_percent", Math.max(0, disc));
+        cv.put("stock", Math.max(0, stock));
+        cv.put("published", published ? 1 : 0);
+        cv.put("image_key", imageKey);
+        cv.put("image_path", imagePath);
+        cv.put("seo_title", seoTitle);
+        cv.put("seo_description", seoDescription);
+        cv.put("keywords", keywords);
+        cv.put("instagram_caption", instagramCaption);
+        cv.put("ai_generated", 1);
+
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+            if (existingId == null) {
+                cv.put("ttac_serial", normSku);
+                cv.put("batch_code", "LOT-AI-" + (100 + new Random().nextInt(899)));
+                cv.put("expiry_label", "۱۴۰۹/۰۳");
+                cv.put("low_stock_threshold", 5);
+                long id = db.insertOrThrow("products", null, cv);
+                insertMovementInternal(db, id, nameFa.trim(), Math.max(0, stock), "in",
+                        "افزودن هوشمند کالا توسط استودیو هوش مصنوعی", "مدیریت");
+            } else {
+                db.update("products", cv, "id = ?", new String[]{String.valueOf(existingId)});
+            }
+            return null;
+        } catch (Exception e) {
+            return "کد کالا تکراری است؛ کد دیگری انتخاب کنید.";
+        }
+    }
+
+    public List<Models.PaymentGatewayRecord> getPaymentGateways() {
+        List<Models.PaymentGatewayRecord> list = new ArrayList<>();
+        list.add(gateway("zarinpal", "درگاه امن زرین‌پال", "کارت‌های شتاب • تسویه لحظه‌ای", "pay_gateway_zarinpal", 0));
+        list.add(gateway("shaparak", "درگاه مستقیم شاپرک", "اتصال بانکی رسمی • بدون واسطه", "pay_gateway_shaparak", 0));
+        list.add(gateway("idpay", "درگاه آیدی‌پی", "پرداخت سریع با کارت‌های عضو شتاب", "pay_gateway_idpay", 1));
+        list.add(gateway("nextpay", "درگاه نکست‌پی", "مناسب پرداخت‌های سازمانی", "pay_gateway_nextpay", 1));
+        list.add(gateway("cod", "پرداخت در محل (پس‌کرایه)", "پرداخت نقدی هنگام تحویل مرسوله", "pay_cod_enabled", 0));
+        return list;
+    }
+
+    private Models.PaymentGatewayRecord gateway(String code, String title, String sub, String key, int fee) {
+        Models.PaymentGatewayRecord g = new Models.PaymentGatewayRecord();
+        g.code = code;
+        g.titleFa = title;
+        g.subtitleFa = sub;
+        g.enabled = "1".equals(getSetting(key, "0"));
+        g.feePercent = fee;
+        return g;
+    }
+
+    public long getSettingLong(String key, long fallback) {
+        try {
+            return Long.parseLong(PersianFormatter.toAsciiDigits(getSetting(key, String.valueOf(fallback))).trim());
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    public int getSettingInt(String key, int fallback) {
+        return (int) getSettingLong(key, fallback);
+    }
+
+    public boolean getSettingBool(String key, boolean fallback) {
+        String v = getSetting(key, fallback ? "1" : "0");
+        return "1".equals(v) || "true".equalsIgnoreCase(v);
+    }
+
     private Models.Product readProduct(Cursor c) {
         Models.Product p = new Models.Product();
         p.id = c.getLong(c.getColumnIndexOrThrow("id"));
@@ -442,6 +632,14 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         p.published = c.getInt(c.getColumnIndexOrThrow("published")) == 1;
         p.imageKey = c.getString(c.getColumnIndexOrThrow("image_key"));
         p.wishlisted = c.getInt(c.getColumnIndexOrThrow("wishlisted")) == 1;
+        p.benefits = safeString(c, "benefits");
+        p.longDescription = safeString(c, "long_description");
+        p.seoTitle = safeString(c, "seo_title");
+        p.seoDescription = safeString(c, "seo_description");
+        p.keywords = safeString(c, "keywords");
+        p.instagramCaption = safeString(c, "instagram_caption");
+        p.imagePath = safeString(c, "image_path");
+        p.aiGenerated = safeInt(c, "ai_generated") == 1;
         return p;
     }
 
@@ -690,6 +888,87 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             ord.put("gift_message", giftMessage != null ? giftMessage.trim() : "");
             ord.put("certificate_code", "AS-CERT-" + (1000 + new Random().nextInt(8999)));
             ord.put("status", "paid");
+            ord.put("tracking_code", "");
+            ord.put("created_at_label", nowTimeLabel());
+
+            long orderId = db.insertOrThrow("orders", null, ord);
+            for (Models.CartItem item : cart) {
+                insertSeedOrderItem(db, orderId, item.product.id, item.product.nameFa,
+                        item.selectedVariant, item.quantity, item.product.salePrice);
+                ContentValues up = new ContentValues();
+                up.put("stock", item.product.stock - item.quantity);
+                db.update("products", up, "id = ?", new String[]{String.valueOf(item.product.id)});
+                insertMovementInternal(db, item.product.id, item.product.nameFa, -item.quantity, "out",
+                        "سفارش " + orderNumber, customerName);
+            }
+
+            db.setTransactionSuccessful();
+            return getOrderById(orderId);
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    /**
+     * v6.0 checkout used by the professional installment / online-payment flow.
+     * Keeps the same transactional guarantees while accepting the BNPL fee,
+     * the human-readable payment label and the initial order status.
+     */
+    public Models.OrderRecord executeCheckoutAdvanced(List<Models.CartItem> cart,
+                                                      String customerName,
+                                                      String customerMobile,
+                                                      String addressSummary,
+                                                      String paymentLabel,
+                                                      int installmentsCount,
+                                                      String couponCode,
+                                                      boolean vipGiftBox,
+                                                      String giftMessage,
+                                                      long extraFinancingFee,
+                                                      String initialStatus) throws IllegalStateException {
+        if (cart == null || cart.isEmpty()) throw new IllegalStateException("سبد خرید خالی است.");
+        SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        try {
+            long subtotal = 0L;
+            for (Models.CartItem item : cart) {
+                Models.Product fresh = getProductById(item.product.id);
+                if (fresh == null || fresh.stock < item.quantity) {
+                    throw new IllegalStateException("موجودی کافی برای «" + item.product.nameFa + "» در انبار نیست.");
+                }
+                item.product = fresh;
+                subtotal += fresh.salePrice * item.quantity;
+            }
+            long discount = 0L;
+            if (couponCode != null && !couponCode.trim().isEmpty()) {
+                long eval = evaluateCouponDiscount(couponCode, subtotal);
+                if (eval > 0) discount = eval;
+            }
+            long afterDisc = Math.max(0L, subtotal - discount);
+            long shipping = afterDisc >= FREE_SHIPPING_THRESHOLD ? 0L : STANDARD_SHIPPING_COST;
+            long fee = Math.max(0L, extraFinancingFee);
+            long total = afterDisc + shipping + fee;
+            String orderNumber = "AS-1405-" + (1000 + new Random().nextInt(8999));
+
+            ContentValues ord = new ContentValues();
+            ord.put("order_number", orderNumber);
+            ord.put("customer_name", customerName);
+            ord.put("customer_mobile", customerMobile);
+            ord.put("address_summary", addressSummary);
+            ord.put("shipping_method", "پست پیشتاز VIP");
+            ord.put("payment_method", paymentLabel);
+            ord.put("installments_count", Math.max(1, installmentsCount));
+            ord.put("subtotal", subtotal);
+            ord.put("discount", discount);
+            ord.put("wallet_used", 0L);
+            ord.put("shipping_cost", shipping);
+            ord.put("total_amount", total);
+            ord.put("cashback_earned", Math.round(total * 0.01));
+            ord.put("vip_gift_box", vipGiftBox ? 1 : 0);
+            ord.put("cold_chain", 0);
+            ord.put("scented_tissue", "بسته‌بندی اختصاصی ASIYE");
+            ord.put("gift_message", giftMessage != null ? giftMessage.trim() : "");
+            ord.put("certificate_code", "AS-CERT-" + (1000 + new Random().nextInt(8999)));
+            ord.put("status", initialStatus == null ? "paid" : initialStatus);
             ord.put("tracking_code", "");
             ord.put("created_at_label", nowTimeLabel());
 

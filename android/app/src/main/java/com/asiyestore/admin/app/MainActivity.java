@@ -8,6 +8,8 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
@@ -15,6 +17,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -100,6 +103,13 @@ public final class MainActivity extends Activity {
     private static final int ADMIN_CATALOG   = 1;
     private static final int ADMIN_ORDERS    = 2;
     private static final int ADMIN_INVENTORY = 3;
+    private static final int ADMIN_SETTINGS  = 4;
+
+    private static final int REQ_PICK_PHOTO = 4401;
+
+    private static final String PAY_INSTALLMENT = "installment";
+    private static final String PAY_ONLINE      = "online";
+    private static final String PAY_COD         = "cod";
 
     // ── Session state ──────────────────────────────────────────────────────
     private AsiyeDatabaseHelper db;
@@ -124,6 +134,28 @@ public final class MainActivity extends Activity {
 
     private String adminOrderFilter = "all";
     private String trackingQuery = "";
+
+    // v6.0 · installments, gateways & AI studio
+    private String payMode = PAY_INSTALLMENT;
+    private String selectedInstallmentId = "";
+    private String selectedGateway = "zarinpal";
+    private AiProductStudio.Analysis aiAnalysis;
+    private AiProductStudio.Draft aiDraft;
+    private String aiName = "";
+    private String aiBrand = "";
+    private Bitmap aiSourceBitmap;
+    private String aiStudioPath = "";
+    private boolean aiBusy = false;
+    private boolean aiStudioOpen = false;
+    private EditText aiNameInput;
+    private EditText aiBrandInput;
+    private EditText aiPriceInput;
+    private EditText aiOldPriceInput;
+    private EditText aiStockInput;
+    private final List<String> settingsTextKeys = new ArrayList<>();
+    private final List<EditText> settingsTextInputs = new ArrayList<>();
+    private final List<String> settingsCheckKeys = new ArrayList<>();
+    private final List<CheckBox> settingsCheckInputs = new ArrayList<>();
 
     private EditText bagNameInput;
     private EditText bagMobileInput;
@@ -269,7 +301,7 @@ public final class MainActivity extends Activity {
             @Override public void run() { openSmartSearchDialog(); }
         }), actionLp(8));
 
-        FrameLayout gate = headerActionButton(Luxury3DIconView.ICON_KEY_ADMIN, new Runnable() {
+        FrameLayout gate = headerActionButton(Luxury3DIconView.ICON_LOCK, new Runnable() {
             @Override public void run() { handleAdminGate(); }
         });
         headerActionIcon = (Luxury3DIconView) gate.getTag();
@@ -310,7 +342,7 @@ public final class MainActivity extends Activity {
         if (adminAuthenticated) {
             adminMode = true;
             adminTab = ADMIN_REPORT;
-            headerSubtitle.setText("پنل مدیریت مجموعه • سرکار خانم زنگنه");
+            headerSubtitle.setText("پنل مدیریت • سرکار خانم زنگنه");
             renderCurrentScreen();
             return;
         }
@@ -351,7 +383,7 @@ public final class MainActivity extends Activity {
                     adminAuthenticated = true;
                     adminMode = true;
                     adminTab = ADMIN_REPORT;
-                    headerSubtitle.setText("پنل مدیریت مجموعه • سرکار خانم زنگنه");
+                    headerSubtitle.setText("پنل مدیریت • سرکار خانم زنگنه");
                     dialog.dismiss();
                     renderCurrentScreen();
                     toast("خوش آمدید خانم زنگنه — پنل مدیریت فعال شد.");
@@ -385,17 +417,22 @@ public final class MainActivity extends Activity {
     private void renderCurrentScreen() {
         if (headerActionIcon != null) {
             headerActionIcon.setIconState(adminMode ? Luxury3DIconView.ICON_CROWN
-                    : Luxury3DIconView.ICON_KEY_ADMIN, adminMode);
+                    : Luxury3DIconView.ICON_LOCK, adminMode);
         }
         contentContainer.removeAllViews();
         bottomNavContainer.removeAllViews();
 
         if (adminMode) {
-            switch (adminTab) {
-                case ADMIN_CATALOG:   renderAdminCatalog();   break;
-                case ADMIN_ORDERS:    renderAdminOrders();    break;
-                case ADMIN_INVENTORY: renderAdminInventory(); break;
-                default:              renderAdminReport();    break;
+            if (aiStudioOpen) {
+                renderAiStudio();
+            } else {
+                switch (adminTab) {
+                    case ADMIN_CATALOG:   renderAdminCatalog();   break;
+                    case ADMIN_ORDERS:    renderAdminOrders();    break;
+                    case ADMIN_INVENTORY: renderAdminInventory(); break;
+                    case ADMIN_SETTINGS:  renderAdminSettings();  break;
+                    default:              renderAdminReport();    break;
+                }
             }
             renderAdminNav();
         } else {
@@ -442,21 +479,25 @@ public final class MainActivity extends Activity {
     }
 
     private void renderAdminNav() {
-        bottomNavContainer.addView(navTab(Luxury3DIconView.ICON_CHART, "گزارش فروش",
+        bottomNavContainer.addView(navTab(Luxury3DIconView.ICON_CHART, "گزارش",
                 adminTab == ADMIN_REPORT, 0, new Runnable() {
-                    @Override public void run() { adminTab = ADMIN_REPORT; renderCurrentScreen(); }
+                    @Override public void run() { aiStudioOpen = false; adminTab = ADMIN_REPORT; renderCurrentScreen(); }
                 }));
         bottomNavContainer.addView(navTab(Luxury3DIconView.ICON_BOUTIQUE, "محصولات",
                 adminTab == ADMIN_CATALOG, 0, new Runnable() {
-                    @Override public void run() { adminTab = ADMIN_CATALOG; renderCurrentScreen(); }
+                    @Override public void run() { aiStudioOpen = false; adminTab = ADMIN_CATALOG; renderCurrentScreen(); }
                 }));
         bottomNavContainer.addView(navTab(Luxury3DIconView.ICON_BAG, "سفارش‌ها",
                 adminTab == ADMIN_ORDERS, 0, new Runnable() {
-                    @Override public void run() { adminTab = ADMIN_ORDERS; renderCurrentScreen(); }
+                    @Override public void run() { aiStudioOpen = false; adminTab = ADMIN_ORDERS; renderCurrentScreen(); }
                 }));
-        bottomNavContainer.addView(navTab(Luxury3DIconView.ICON_GIFT, "موجودی انبار",
+        bottomNavContainer.addView(navTab(Luxury3DIconView.ICON_GIFT, "انبار",
                 adminTab == ADMIN_INVENTORY, 0, new Runnable() {
-                    @Override public void run() { adminTab = ADMIN_INVENTORY; renderCurrentScreen(); }
+                    @Override public void run() { aiStudioOpen = false; adminTab = ADMIN_INVENTORY; renderCurrentScreen(); }
+                }));
+        bottomNavContainer.addView(navTab(Luxury3DIconView.ICON_SETTINGS, "تنظیمات",
+                adminTab == ADMIN_SETTINGS, 0, new Runnable() {
+                    @Override public void run() { aiStudioOpen = false; adminTab = ADMIN_SETTINGS; renderCurrentScreen(); }
                 }));
     }
 
@@ -628,11 +669,11 @@ public final class MainActivity extends Activity {
         body.addView(space(16));
 
         LinearLayout actions = row(Gravity.CENTER_VERTICAL);
-        actions.addView(primaryButton("مشاور روتین پوست", Luxury3DIconView.ICON_ADVISOR, new Runnable() {
+        actions.addView(primaryButton("مشاور روتین", Luxury3DIconView.ICON_ADVISOR, new Runnable() {
             @Override public void run() { switchCustomerTab(TAB_ADVISOR); }
         }), weight(1f));
         actions.addView(spaceH(10));
-        actions.addView(outlineGoldButton("ارتباط با مدیریت", Luxury3DIconView.ICON_CROWN, new Runnable() {
+        actions.addView(outlineGoldButton("ارتباط با مدیر", Luxury3DIconView.ICON_CROWN, new Runnable() {
             @Override public void run() { switchCustomerTab(TAB_CONCIERGE); }
         }), weight(1f));
         body.addView(actions);
@@ -703,7 +744,9 @@ public final class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(212)));
 
         ImageView image = new ImageView(this);
-        image.setImageResource(resolveProductImage(p.imageKey));
+        Bitmap cardBitmap = loadProductBitmap(p);
+        if (cardBitmap != null) image.setImageBitmap(cardBitmap);
+        else image.setImageResource(resolveProductImage(p.imageKey));
         image.setScaleType(ImageView.ScaleType.CENTER_CROP);
         imageWrap.addView(image, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -769,7 +812,7 @@ public final class MainActivity extends Activity {
         name.setPadding(0, dp(4), 0, dp(4));
 
         TextView desc = text(p.description, 11.8f, COL_TEXT_MUTED, false);
-        desc.setMaxLines(2);
+        desc.setMaxLines(3);
         desc.setEllipsize(android.text.TextUtils.TruncateAt.END);
         desc.setLineSpacing(dp(3), 1f);
 
@@ -787,7 +830,9 @@ public final class MainActivity extends Activity {
         }
 
         body.addView(priceRow(p));
-        body.addView(space(12));
+        body.addView(space(9));
+        body.addView(installmentStrip(p));
+        body.addView(space(11));
 
         LinearLayout actions = row(Gravity.CENTER_VERTICAL);
         actions.addView(primaryButton("افزودن به سبد", Luxury3DIconView.ICON_PLUS, new Runnable() {
@@ -810,29 +855,82 @@ public final class MainActivity extends Activity {
         return card;
     }
 
+    /**
+     * Two-tier price block. Because the strike-through price sits on its own
+     * baseline line, the current price can never be clipped or overlapped,
+     * even on narrow 360dp screens with 7-digit amounts.
+     */
     private View priceRow(Models.Product p) {
-        LinearLayout priceRow = row(Gravity.CENTER_VERTICAL);
+        LinearLayout block = new LinearLayout(this);
+        block.setOrientation(LinearLayout.VERTICAL);
+        block.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
+        LinearLayout top = row(Gravity.CENTER_VERTICAL);
         TextView price = new TextView(this);
         price.setText(PersianFormatter.formatToman(p.salePrice));
-        price.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16.5f);
+        price.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f);
         price.setTypeface(Typeface.DEFAULT_BOLD);
         price.setTextColor(COL_TEXT_MAIN);
         price.setSingleLine(true);
         price.setIncludeFontPadding(false);
+        price.setTextDirection(View.TEXT_DIRECTION_RTL);
+        top.addView(price);
 
-        TextView old = new TextView(this);
-        old.setText(PersianFormatter.formatToman(p.originalPrice));
-        old.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f);
-        old.setTextColor(COL_TEXT_FAINT);
-        old.setSingleLine(true);
-        old.setIncludeFontPadding(false);
-        old.setPaintFlags(old.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-        old.setPadding(dp(8), 0, 0, 0);
+        if (p.discountPercent > 0) {
+            TextView chip = new TextView(this);
+            chip.setText(PersianFormatter.toPersianDigits(String.valueOf(p.discountPercent)) + "٪");
+            chip.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9.5f);
+            chip.setTypeface(Typeface.DEFAULT_BOLD);
+            chip.setTextColor(COL_SUCCESS);
+            chip.setGravity(Gravity.CENTER);
+            chip.setPadding(dp(7), dp(2), dp(7), dp(2));
+            chip.setBackground(roundedShape(COL_SUCCESS_SOFT, dp(9), 0xFFBFDCCB, dp(1)));
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            clp.setMarginStart(dp(8));
+            top.addView(chip, clp);
+        }
+        block.addView(top);
 
-        priceRow.addView(price);
-        priceRow.addView(old);
-        return priceRow;
+        if (p.originalPrice > p.salePrice) {
+            TextView old = new TextView(this);
+            old.setText("قیمت پیش از تخفیف: " + PersianFormatter.formatToman(p.originalPrice));
+            old.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f);
+            old.setTextColor(COL_TEXT_FAINT);
+            old.setSingleLine(true);
+            old.setIncludeFontPadding(false);
+            old.setPaintFlags(old.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            old.setPadding(0, dp(4), 0, 0);
+            block.addView(old);
+        }
+        return block;
+    }
+
+    /** Compact, on-brand BNPL line under every price — its own dedicated slot. */
+    private View installmentStrip(Models.Product p) {
+        InstallmentEngine.Config cfg = InstallmentEngine.load(db);
+        List<Models.InstallmentPlan> plans = InstallmentEngine.build(cfg, p.salePrice);
+        if (plans.isEmpty()) return new View(this);
+
+        Models.InstallmentPlan zero = plans.get(0);
+        LinearLayout strip = row(Gravity.CENTER_VERTICAL);
+        strip.setBackground(roundedShape(0xFFF7F1E4, dp(11), 0xFFE9DCC2, dp(1)));
+        strip.setPadding(dp(9), dp(7), dp(9), dp(7));
+
+        FrameLayout icon = new FrameLayout(this);
+        icon.setLayoutParams(new LinearLayout.LayoutParams(dp(20), dp(20)));
+        icon.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_INSTALLMENT,
+                        Luxury3DIconView.PEDESTAL_IVORY),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        strip.addView(icon);
+
+        TextView txt = text(PersianFormatter.toPersianDigits(String.valueOf(zero.months)) + " قسط بدون کارمزد  •  ماهانه "
+                        + PersianFormatter.formatToman(zero.monthlyPayment),
+                9.2f, 0xFF7C5F31, false);
+        txt.setPadding(dp(6), 0, 0, 0);
+        txt.setSingleLine(true);
+        strip.addView(txt, weight(1f));
+        return strip;
     }
 
     private void showEditorialProductDialog(final Models.Product p) {
@@ -847,7 +945,9 @@ public final class MainActivity extends Activity {
         imageWrap.setClipToOutline(true);
         imageWrap.setBackground(roundedShape(COL_SILK_CREAM, dp(18), 0, 0));
         ImageView image = new ImageView(this);
-        image.setImageResource(resolveProductImage(p.imageKey));
+        Bitmap dialogBitmap = loadProductBitmapLarge(p);
+        if (dialogBitmap != null) image.setImageBitmap(dialogBitmap);
+        else image.setImageResource(resolveProductImage(p.imageKey));
         image.setScaleType(ImageView.ScaleType.CENTER_CROP);
         imageWrap.addView(image, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -866,6 +966,15 @@ public final class MainActivity extends Activity {
         title.setLineSpacing(dp(3), 1f);
         body.addView(title);
         body.addView(text(p.description, 12f, COL_TEXT_MUTED, false));
+
+        if (p.benefits != null && !p.benefits.trim().isEmpty()) {
+            body.addView(space(12));
+            body.addView(infoBlock("مزیت‌های کلیدی این محصول", p.benefits));
+        }
+        if (p.longDescription != null && !p.longDescription.trim().isEmpty()) {
+            body.addView(space(10));
+            body.addView(infoBlock("معرفی کامل محصول", p.longDescription));
+        }
         body.addView(space(14));
 
         body.addView(infoBlock("ترکیبات کلیدی", p.ingredients));
@@ -1144,7 +1253,7 @@ public final class MainActivity extends Activity {
             result.addView(resultLine("تاریخ انقضا", verifiedProduct.expiryLabel));
             result.addView(space(10));
 
-            result.addView(ghostGoldButton("کپی شناسه اصالت", new Runnable() {
+            result.addView(ghostGoldDarkButton("کپی شناسه اصالت", new Runnable() {
                 @Override public void run() {
                     copyToClipboard(verifiedProduct.ttacSerial);
                     toast("شناسه اصالت کپی شد.");
@@ -1381,25 +1490,42 @@ public final class MainActivity extends Activity {
         contentContainer.addView(infoCard);
         contentContainer.addView(space(12));
 
-        // ── Payment ──────────────────────────────────────────────────────
-        LinearLayout payCard = whiteCard();
-        payCard.addView(sectionLabel("روش پرداخت"));
-        payCard.addView(space(10));
-        payCard.addView(paymentOption("snapp_pay", "پرداخت اعتباری ۴ قسط بدون کارمزد",
-                "اسنپ‌پی / تارا — تقسیم مبلغ به چهار قسط ماهانه"));
-        payCard.addView(space(9));
-        payCard.addView(paymentOption("zarinpal", "پرداخت آنلاین نقدی",
-                "کلیه کارت‌های عضو شتاب — درگاه امن زرین‌پال"));
-        contentContainer.addView(payCard);
-        contentContainer.addView(space(14));
-
-        // ── Summary ──────────────────────────────────────────────────────
+        // ══ Checkout economics ═══════════════════════════════════════════
         long subtotal = calculateCartSubtotal();
         long shipping = subtotal >= AsiyeDatabaseHelper.FREE_SHIPPING_THRESHOLD
                 ? 0L : AsiyeDatabaseHelper.STANDARD_SHIPPING_COST;
-        long payable = Math.max(0L, subtotal - appliedCouponValue) + shipping;
-        long monthly = Math.round(payable / 4.0);
-        long cashback = Math.round(payable * 0.01);
+        long basePayable = Math.max(0L, subtotal - appliedCouponValue) + shipping;
+
+        InstallmentEngine.Config instCfg = InstallmentEngine.load(db);
+        List<Models.InstallmentPlan> plans = InstallmentEngine.build(instCfg, basePayable);
+        if (plans.isEmpty() && PAY_INSTALLMENT.equals(payMode)) {
+            payMode = PAY_ONLINE;
+        }
+        if (!plans.isEmpty() && selectedInstallmentId.isEmpty()) {
+            selectedInstallmentId = plans.get(0).id;
+        }
+        Models.InstallmentPlan activePlan = PAY_INSTALLMENT.equals(payMode)
+                ? InstallmentEngine.find(plans, selectedInstallmentId) : null;
+        if (activePlan == null && PAY_INSTALLMENT.equals(payMode) && !plans.isEmpty()) {
+            activePlan = plans.get(0);
+            selectedInstallmentId = activePlan.id;
+        }
+        if (activePlan == null) selectedInstallmentId = "";
+
+        long financingFee = activePlan == null ? 0L : activePlan.totalFee;
+        long payable = basePayable + financingFee;
+        long monthly = activePlan == null ? Math.round(basePayable / 4.0) : activePlan.monthlyPayment;
+        long cashback = Math.round(basePayable * 0.01);
+
+        // ══ Payment mode selector ════════════════════════════════════════
+        contentContainer.addView(buildPaymentModePanel(basePayable, plans, instCfg, activePlan));
+        contentContainer.addView(space(12));
+
+        // ══ Online gateway panel (only when online mode is selected) ═════
+        if (PAY_ONLINE.equals(payMode)) {
+            contentContainer.addView(buildGatewayPanel(payable));
+            contentContainer.addView(space(12));
+        }
 
         LinearLayout summary = new LinearLayout(this);
         summary.setOrientation(LinearLayout.VERTICAL);
@@ -1429,10 +1555,22 @@ public final class MainActivity extends Activity {
         totalRow.addView(total);
         summary.addView(totalRow);
 
-        if ("snapp_pay".equals(selectedPaymentMethod)) {
-            summary.addView(space(8));
-            summary.addView(summaryLine("هر قسط ماهانه (۴ قسط)",
-                    PersianFormatter.formatToman(monthly), false));
+        if (activePlan != null) {
+            summary.addView(space(4));
+            summary.addView(summaryLine("پیش‌پرداخت اولیه",
+                    PersianFormatter.formatToman(activePlan.downPayment), false));
+            if (financingFee > 0) {
+                summary.addView(summaryLine("کارمزد اقساط (" + PersianFormatter.toPersianDigits(String.valueOf(activePlan.months)) + " ماه)",
+                        PersianFormatter.formatToman(financingFee), false));
+            }
+            summary.addView(space(6));
+            LinearLayout instBox = row(Gravity.CENTER_VERTICAL);
+            instBox.setBackground(roundedShape(0x1FC8A46B, dp(12), 0x55C8A46B, dp(1)));
+            instBox.setPadding(dp(12), dp(10), dp(12), dp(10));
+            instBox.addView(text(PersianFormatter.toPersianDigits(String.valueOf(activePlan.months)) + " قسط ماهانه",
+                    10.5f, 0xFFCFC6B8, false), weight(1f));
+            instBox.addView(text(PersianFormatter.formatToman(monthly), 12f, COL_GOLD_LIGHT, true));
+            summary.addView(instBox);
         }
         if (shipping > 0L) {
             summary.addView(space(6));
@@ -1443,7 +1581,12 @@ public final class MainActivity extends Activity {
         contentContainer.addView(summary);
         contentContainer.addView(space(14));
 
-        contentContainer.addView(primaryButton("ثبت نهایی سفارش در اپلیکیشن", Luxury3DIconView.ICON_SHIELD, new Runnable() {
+        final String ctaLabel = PAY_INSTALLMENT.equals(payMode)
+                ? "ثبت سفارش اقساطی و ارسال برای تأیید"
+                : (PAY_COD.equals(payMode) ? "ثبت سفارش (پرداخت در محل)" : "پرداخت امن آنلاین و ثبت سفارش");
+        final int ctaIcon = PAY_INSTALLMENT.equals(payMode) ? Luxury3DIconView.ICON_INSTALLMENT
+                : (PAY_COD.equals(payMode) ? Luxury3DIconView.ICON_WALLET : Luxury3DIconView.ICON_CARD);
+        contentContainer.addView(primaryButton(ctaLabel, ctaIcon, new Runnable() {
             @Override public void run() { submitOrder(); }
         }));
         contentContainer.addView(space(10));
@@ -1596,6 +1739,10 @@ public final class MainActivity extends Activity {
         String address = bagAddressInput.getText().toString().trim();
         giftMessageDraft = bagGiftInput.getText().toString().trim();
 
+        if (cart.isEmpty()) {
+            toast("سبد خرید خالی است.");
+            return;
+        }
         if (name.length() < 3) {
             toast("نام و نام خانوادگی تحویل‌گیرنده را کامل وارد کنید.");
             return;
@@ -1608,25 +1755,137 @@ public final class MainActivity extends Activity {
             toast("نشانی پستی را کامل‌تر وارد کنید.");
             return;
         }
+
+        long subtotal = calculateCartSubtotal();
+        long shipping = subtotal >= AsiyeDatabaseHelper.FREE_SHIPPING_THRESHOLD
+                ? 0L : AsiyeDatabaseHelper.STANDARD_SHIPPING_COST;
+        long basePayable = Math.max(0L, subtotal - appliedCouponValue) + shipping;
+        InstallmentEngine.Config instCfg = InstallmentEngine.load(db);
+        List<Models.InstallmentPlan> plans = InstallmentEngine.build(instCfg, basePayable);
+        Models.InstallmentPlan plan = PAY_INSTALLMENT.equals(payMode)
+                ? InstallmentEngine.find(plans, selectedInstallmentId) : null;
+        if (PAY_INSTALLMENT.equals(payMode) && plan == null) {
+            toast("طرح اقساطی معتبری انتخاب نشده است.");
+            return;
+        }
+
         db.setSetting("customer_name", name);
         db.setSetting("customer_mobile", mobile);
         db.setSetting("customer_address", address);
 
-        int installments = "snapp_pay".equals(selectedPaymentMethod) ? 4 : 1;
+        String paymentLabel;
+        String status;
+        int installments;
+        long fee;
+        if (plan != null) {
+            paymentLabel = "اقساطی — " + plan.providerFa + " (" + plan.months + " قسط)";
+            status = "pending_approval";
+            installments = plan.months;
+            fee = plan.totalFee;
+        } else if (PAY_COD.equals(payMode)) {
+            paymentLabel = "پرداخت در محل (پس‌کرایه)";
+            status = "paid";
+            installments = 1;
+            fee = 0L;
+        } else {
+            Models.PaymentGatewayRecord gw = findGateway(selectedGateway);
+            paymentLabel = "پرداخت آنلاین — " + (gw == null ? "درگاه زرین‌پال" : gw.titleFa);
+            status = "pending_payment";
+            installments = 1;
+            fee = 0L;
+        }
+
         try {
-            Models.OrderRecord order = db.executeCheckout(cart, name, mobile, address,
-                    selectedPaymentMethod, installments,
-                    appliedCouponValue > 0 ? appliedCouponCode : "", vipGiftPackaging, giftMessageDraft);
+            Models.OrderRecord order = db.executeCheckoutAdvanced(cart, name, mobile, address,
+                    paymentLabel, installments,
+                    appliedCouponValue > 0 ? appliedCouponCode : "",
+                    vipGiftPackaging, giftMessageDraft, fee, status);
             cart.clear();
             appliedCouponCode = "";
             appliedCouponValue = 0L;
-            showOrderSuccessDialog(order);
-            renderCurrentScreen();
+            selectedInstallmentId = "";
+
+            if ("pending_payment".equals(order.status)) {
+                renderCurrentScreen();
+                showGatewayPaymentSheet(order, plan);
+            } else {
+                showOrderSuccessDialog(order);
+                renderCurrentScreen();
+            }
         } catch (IllegalStateException e) {
             toast(e.getMessage());
         } catch (Exception e) {
             toast("ثبت سفارش با خطا مواجه شد؛ دوباره تلاش کنید.");
         }
+    }
+
+    private Models.PaymentGatewayRecord findGateway(String code) {
+        for (Models.PaymentGatewayRecord g : db.getPaymentGateways()) {
+            if (g.code.equals(code)) return g;
+        }
+        return null;
+    }
+
+    /** Simulated-but-realistic secure gateway hand-off sheet. */
+    private void showGatewayPaymentSheet(final Models.OrderRecord order, Models.InstallmentPlan plan) {
+        Models.PaymentGatewayRecord gw = findGateway(selectedGateway);
+        String gatewayName = gw == null ? "درگاه امن زرین‌پال" : gw.titleFa;
+        String merchant = db.getSetting("pay_merchant_id", "ASIYE-STORE-ZP");
+        boolean sandbox = db.getSettingBool("pay_sandbox", true);
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(22), dp(22), dp(22), dp(18));
+        box.setBackgroundColor(COL_WHITE);
+
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        FrameLayout iconWrap = new FrameLayout(this);
+        iconWrap.setLayoutParams(new LinearLayout.LayoutParams(dp(44), dp(44)));
+        iconWrap.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_CARD, Luxury3DIconView.PEDESTAL_GOLD),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        head.addView(iconWrap);
+        LinearLayout headText = new LinearLayout(this);
+        headText.setOrientation(LinearLayout.VERTICAL);
+        headText.setPadding(dp(10), 0, 0, 0);
+        headText.addView(text(gatewayName, 13.5f, COL_TEXT_MAIN, true));
+        headText.addView(text(sandbox ? "حالت آزمایشی درگاه (Sandbox)" : "اتصال زنده به درگاه بانکی", 9.5f,
+                sandbox ? COL_WARN : COL_SUCCESS, false));
+        head.addView(headText, weight(1f));
+        box.addView(head);
+        box.addView(space(14));
+
+        LinearLayout receipt = new LinearLayout(this);
+        receipt.setOrientation(LinearLayout.VERTICAL);
+        receipt.setBackground(roundedShape(COL_IVORY_BG, dp(14), COL_BORDER, dp(1)));
+        receipt.setPadding(dp(14), dp(12), dp(14), dp(12));
+        receipt.addView(resultDarkLine("شماره سفارش", ltr(order.orderNumber)));
+        receipt.addView(resultDarkLine("مبلغ قابل پرداخت", PersianFormatter.formatToman(order.totalAmount)));
+        receipt.addView(resultDarkLine("پذیرنده", merchant));
+        receipt.addView(resultDarkLine("درگاه", gatewayName));
+        box.addView(receipt);
+        box.addView(space(6));
+        TextView note = text("پس از تأیید، فاکتور رسمی و کد رهگیری برای شما و مدیریت مجموعه ارسال می‌شود.",
+                9.8f, COL_TEXT_FAINT, false);
+        note.setLineSpacing(dp(3), 1f);
+        box.addView(note);
+        box.addView(space(14));
+
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("پرداخت مبلغ و بازگشت به فروشگاه", Luxury3DIconView.ICON_SHIELD, new Runnable() {
+            @Override public void run() {
+                db.updateOrderStatus(order.id, "paid", "");
+                dialog.dismiss();
+                toast("پرداخت با موفقیت انجام شد. سفارش شما ثبت نهایی گردید.");
+                renderCurrentScreen();
+                Models.OrderRecord refreshed = db.getOrderById(order.id);
+                showOrderSuccessDialog(refreshed);
+            }
+        }));
+        box.addView(space(8));
+        box.addView(ghostButton("انصراف از پرداخت (سفارش در انتظار می‌ماند)", new Runnable() {
+            @Override public void run() { dialog.dismiss(); }
+        }));
+        showRoundedDialog(dialog);
     }
 
     private void showOrderSuccessDialog(final Models.OrderRecord order) {
@@ -1785,19 +2044,30 @@ public final class MainActivity extends Activity {
         exec.addView(tileRow2);
         exec.addView(space(14));
 
+        View innerLine = new View(this);
+        innerLine.setBackgroundColor(0x22C8A46B);
+        exec.addView(innerLine, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+        exec.addView(space(10));
+
         LinearLayout hoursRow = row(Gravity.CENTER_VERTICAL);
-        TextView dot = text("•", 13f, COL_GOLD, true);
-        TextView hours = text("پاسخگویی: شنبه تا پنجشنبه — ۱۰:۰۰ تا ۲۱:۰۰", 10.2f, 0xFF9A9186, false);
-        hours.setPadding(dp(4), 0, 0, 0);
-        hoursRow.addView(dot);
+        TextView hours = text("پاسخگویی: شنبه تا پنجشنبه — ۱۰:۰۰ تا ۲۱:۰۰", 9.6f, 0xFF9A9186, false);
+        hours.setSingleLine(false);
+        hours.setLineSpacing(dp(2), 1f);
         hoursRow.addView(hours, weight(1f));
-        TextView addContact = text("افزودن به مخاطبین", 10f, COL_GOLD_LIGHT, true);
-        addContact.setPadding(dp(8), dp(4), dp(8), dp(4));
-        addContact.setOnClickListener(new View.OnClickListener() {
+        exec.addView(hoursRow);
+        exec.addView(space(8));
+
+        LinearLayout contactRow = row(Gravity.CENTER_VERTICAL);
+        contactRow.setBackground(roundedShape(0xFF131218, dp(14), 0x33C8A46B, dp(1)));
+        contactRow.setPadding(dp(12), dp(9), dp(12), dp(9));
+        TextView addContact = text("افزودن شماره مدیریت به مخاطبین", 10f, COL_GOLD_LIGHT, true);
+        contactRow.addView(addContact, weight(1f));
+        TextView addIcon = text("＋", 12f, COL_GOLD_LIGHT, true);
+        contactRow.addView(addIcon);
+        contactRow.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { addOwnerToContacts(); }
         });
-        hoursRow.addView(addContact);
-        exec.addView(hoursRow);
+        exec.addView(contactRow);
         contentContainer.addView(exec);
         contentContainer.addView(space(14));
 
@@ -1897,7 +2167,7 @@ public final class MainActivity extends Activity {
                 res.addView(resHead);
                 res.addView(space(8));
                 for (Models.OrderItemRecord it : order.items) {
-                    res.addView(resultDarkLine(it.productName + " × " + PersianFormatter.toPersianDigits(String.valueOf(it.quantity)),
+                    res.addView(resultDarkLine(it.productName + "  •  " + PersianFormatter.toPersianDigits(String.valueOf(it.quantity)) + " عدد",
                             PersianFormatter.formatToman(it.unitPrice * it.quantity)));
                 }
                 res.addView(space(4));
@@ -1951,8 +2221,7 @@ public final class MainActivity extends Activity {
         // ── Designer plaque ───────────────────────────────────────────────
         contentContainer.addView(space(6));
         contentContainer.addView(designerPlaque());
-        contentContainer.addView(space(14));
-        contentContainer.addView(footerNote());
+        contentContainer.addView(space(10));
     }
 
     private LinearLayout.LayoutParams weightedTile(int index) {
@@ -2286,7 +2555,17 @@ public final class MainActivity extends Activity {
         contentContainer.addView(headRow);
         contentContainer.addView(space(12));
 
-        contentContainer.addView(primaryButton("افزودن کالای جدید به ویترین",
+        contentContainer.addView(primaryButton("افزودن هوشمند کالا با هوش مصنوعی",
+                Luxury3DIconView.ICON_AI, new Runnable() {
+                    @Override public void run() {
+                        resetAiStudio();
+                        aiStudioOpen = true;
+                        adminTab = ADMIN_CATALOG;
+                        renderCurrentScreen();
+                    }
+                }));
+        contentContainer.addView(space(8));
+        contentContainer.addView(outlineDarkButton("افزودن دستی کالا (فرم کامل)",
                 Luxury3DIconView.ICON_PLUS, new Runnable() {
                     @Override public void run() { showProductEditorDialog(null); }
                 }));
@@ -2304,13 +2583,15 @@ public final class MainActivity extends Activity {
     private View adminProductRow(final Models.Product p) {
         LinearLayout card = whiteCard();
 
-        LinearLayout top = row(Gravity.CENTER_VERTICAL);
+        LinearLayout top = row(Gravity.TOP);
         FrameLayout thumbWrap = new FrameLayout(this);
-        thumbWrap.setLayoutParams(new LinearLayout.LayoutParams(dp(52), dp(62)));
+        thumbWrap.setLayoutParams(new LinearLayout.LayoutParams(dp(56), dp(70)));
         thumbWrap.setClipToOutline(true);
-        thumbWrap.setBackground(roundedShape(COL_SILK_CREAM, dp(10), 0, 0));
+        thumbWrap.setBackground(roundedShape(COL_SILK_CREAM, dp(11), 0, 0));
         ImageView thumb = new ImageView(this);
-        thumb.setImageResource(resolveProductImage(p.imageKey));
+        Bitmap aiBitmap = loadProductBitmap(p);
+        if (aiBitmap != null) thumb.setImageBitmap(aiBitmap);
+        else thumb.setImageResource(resolveProductImage(p.imageKey));
         thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
         thumbWrap.addView(thumb, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -2319,44 +2600,53 @@ public final class MainActivity extends Activity {
         info.setOrientation(LinearLayout.VERTICAL);
         info.setPadding(dp(11), 0, 0, 0);
         TextView name = text(p.nameFa, 11.5f, COL_TEXT_MAIN, true);
-        name.setMaxLines(1);
-        name.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        TextView sku = text(ltr(p.sku) + "  •  موجودی: " + PersianFormatter.toPersianDigits(String.valueOf(p.stock)),
+        name.setMaxLines(2);
+        name.setLineSpacing(dp(2), 1f);
+        TextView meta = text(ltr(p.sku) + "   •   " + PersianFormatter.formatToman(p.salePrice),
                 9.5f, COL_TEXT_FAINT, false);
-        sku.setPadding(0, dp(4), 0, dp(4));
-        TextView price = text(PersianFormatter.formatToman(p.salePrice), 11.5f, COL_GOLD_DEEP, true);
+        meta.setPadding(0, dp(4), 0, 0);
+        LinearLayout badgeRow = row(Gravity.CENTER_VERTICAL);
+        badgeRow.setPadding(0, dp(6), 0, 0);
+        badgeRow.addView(statusChip(p.published ? "منتشرشده" : "آرشیو",
+                p.published ? COL_SUCCESS : COL_TEXT_FAINT,
+                p.published ? COL_SUCCESS_SOFT : COL_IVORY_BG));
+        LinearLayout.LayoutParams gapLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        gapLp.setMarginStart(dp(6));
+        badgeRow.addView(statusChip("موجودی " + PersianFormatter.toPersianDigits(String.valueOf(p.stock)),
+                p.stock <= p.lowStockThreshold ? COL_DANGER : COL_TEXT_MUTED,
+                p.stock <= p.lowStockThreshold ? 0xFFFDF1EF : COL_IVORY_BG), gapLp);
+        if (p.aiGenerated) {
+            LinearLayout.LayoutParams aiLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            aiLp.setMarginStart(dp(6));
+            badgeRow.addView(statusChip("هوش مصنوعی", COL_GOLD_DEEP, 0xFFFBF3E4), aiLp);
+        }
         info.addView(name);
-        info.addView(sku);
-        info.addView(price);
+        info.addView(meta);
+        info.addView(badgeRow);
 
         top.addView(thumbWrap);
         top.addView(info, weight(1f));
-
-        TextView published = text(p.published ? "منتشرشده" : "آرشیو", 8.8f,
-                p.published ? COL_SUCCESS : COL_TEXT_FAINT, true);
-        published.setPadding(dp(8), dp(4), dp(8), dp(4));
-        published.setBackground(roundedShape(p.published ? COL_SUCCESS_SOFT : COL_IVORY_BG, dp(10),
-                p.published ? 0xFFBFDCCB : COL_BORDER, dp(1)));
-        top.addView(published);
         card.addView(top);
 
-        card.addView(space(10));
+        card.addView(space(11));
         LinearLayout actions = row(Gravity.CENTER_VERTICAL);
         actions.addView(smallAction("ویرایش", new Runnable() {
             @Override public void run() { showProductEditorDialog(p); }
         }), weight(1f));
-        actions.addView(spaceH(6));
-        actions.addView(smallAction(p.published ? "توقف نمایش" : "انتشار", new Runnable() {
+        actions.addView(spaceH(5));
+        actions.addView(smallAction(p.published ? "توقف" : "انتشار", new Runnable() {
             @Override public void run() {
                 db.setProductPublished(p.id, !p.published);
                 renderCurrentScreen();
             }
         }), weight(1f));
-        actions.addView(spaceH(6));
-        actions.addView(smallAction(p.stock <= p.lowStockThreshold ? "شارژ انبار" : "تنظیم موجودی", new Runnable() {
+        actions.addView(spaceH(5));
+        actions.addView(smallAction("موجودی", new Runnable() {
             @Override public void run() { showExactStockDialog(p); }
         }), weight(1f));
-        actions.addView(spaceH(6));
+        actions.addView(spaceH(5));
         actions.addView(smallDangerAction("حذف", new Runnable() {
             @Override public void run() {
                 String msg = db.deleteProduct(p.id);
@@ -2366,6 +2656,15 @@ public final class MainActivity extends Activity {
         }));
         card.addView(actions);
         return card;
+    }
+
+    private TextView statusChip(String label, int textColor, int bgColor) {
+        TextView t = text(label, 8.8f, textColor, true);
+        t.setGravity(Gravity.CENTER);
+        t.setSingleLine(true);
+        t.setPadding(dp(8), dp(4), dp(8), dp(4));
+        t.setBackground(roundedShape(bgColor, dp(10), 0x22000000, dp(1)));
+        return t;
     }
 
     private View smallAction(String label, final Runnable action) {
@@ -2464,7 +2763,8 @@ public final class MainActivity extends Activity {
 
         card.addView(space(10));
         for (Models.OrderItemRecord it : o.items) {
-            card.addView(resultDarkLine(it.productName, "× " + PersianFormatter.toPersianDigits(String.valueOf(it.quantity))));
+            card.addView(resultDarkLine(it.productName,
+                    PersianFormatter.toPersianDigits(String.valueOf(it.quantity)) + " عدد"));
         }
         card.addView(space(6));
         card.addView(resultDarkLine("مبلغ کل", PersianFormatter.formatToman(o.totalAmount)));
@@ -2606,12 +2906,15 @@ public final class MainActivity extends Activity {
         LinearLayout card = whiteCard();
 
         LinearLayout top = row(Gravity.CENTER_VERTICAL);
+
         FrameLayout thumbWrap = new FrameLayout(this);
-        thumbWrap.setLayoutParams(new LinearLayout.LayoutParams(dp(42), dp(50)));
+        thumbWrap.setLayoutParams(new LinearLayout.LayoutParams(dp(46), dp(56)));
         thumbWrap.setClipToOutline(true);
-        thumbWrap.setBackground(roundedShape(COL_SILK_CREAM, dp(9), 0, 0));
+        thumbWrap.setBackground(roundedShape(COL_SILK_CREAM, dp(10), 0, 0));
         ImageView thumb = new ImageView(this);
-        thumb.setImageResource(resolveProductImage(p.imageKey));
+        Bitmap aiBitmap = loadProductBitmap(p);
+        if (aiBitmap != null) thumb.setImageBitmap(aiBitmap);
+        else thumb.setImageResource(resolveProductImage(p.imageKey));
         thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
         thumbWrap.addView(thumb, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -2620,9 +2923,9 @@ public final class MainActivity extends Activity {
         info.setOrientation(LinearLayout.VERTICAL);
         info.setPadding(dp(10), 0, 0, 0);
         TextView name = text(p.nameFa, 11f, COL_TEXT_MAIN, true);
-        name.setMaxLines(1);
-        name.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        TextView sku = text(ltr(p.sku), 9f, COL_TEXT_FAINT, false);
+        name.setMaxLines(2);
+        name.setLineSpacing(dp(2), 1f);
+        TextView sku = text(ltr(p.sku) + "  •  انقضا " + p.expiryLabel, 9f, COL_TEXT_FAINT, false);
         sku.setPadding(0, dp(3), 0, 0);
         info.addView(name);
         info.addView(sku);
@@ -2632,36 +2935,80 @@ public final class MainActivity extends Activity {
 
         int stockColor = p.stock <= 0 ? COL_DANGER
                 : (p.stock <= p.lowStockThreshold ? COL_WARN : COL_SUCCESS);
-        TextView stock = text(PersianFormatter.toPersianDigits(String.valueOf(p.stock)) + " عدد",
-                10f, COL_WHITE, true);
+        TextView stock = text(PersianFormatter.toPersianDigits(String.valueOf(p.stock)), 11f, COL_WHITE, true);
         stock.setGravity(Gravity.CENTER);
-        stock.setPadding(dp(10), dp(5), dp(10), dp(5));
+        stock.setMinWidth(dp(34));
+        stock.setPadding(dp(8), dp(6), dp(8), dp(6));
         stock.setBackground(roundedShape(stockColor, dp(12), 0, 0));
-        stock.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { showExactStockDialog(p); }
-        });
         top.addView(stock);
         card.addView(top);
 
         card.addView(space(10));
+
+        // Grouped stepper: [+]  value  [−]  + exact-set button — compact, no giant rows.
+        LinearLayout bottom = row(Gravity.CENTER_VERTICAL);
         LinearLayout stepper = row(Gravity.CENTER_VERTICAL);
-        stepper.addView(stepperButton(Luxury3DIconView.ICON_MINUS, new Runnable() {
+        stepper.setBackground(roundedShape(COL_IVORY_BG, dp(14), COL_BORDER, dp(1)));
+        stepper.setPadding(dp(4), dp(4), dp(4), dp(4));
+        stepper.addView(stepperIconButton(Luxury3DIconView.ICON_MINUS, new Runnable() {
             @Override public void run() {
                 db.adjustInventory(p.id, "out", 1, "کسر دستی موجودی توسط مدیریت");
                 renderCurrentScreen();
             }
         }));
-        TextView hint = text("افزایش / کاهش موجودی", 9.8f, COL_TEXT_FAINT, false);
-        hint.setGravity(Gravity.CENTER);
-        stepper.addView(hint, weight(1f));
-        stepper.addView(stepperButton(Luxury3DIconView.ICON_PLUS, new Runnable() {
+        TextView qty = text(PersianFormatter.toPersianDigits(String.valueOf(p.stock)), 11.5f, COL_TEXT_MAIN, true);
+        qty.setGravity(Gravity.CENTER);
+        qty.setMinWidth(dp(30));
+        stepper.addView(qty);
+        stepper.addView(stepperIconButton(Luxury3DIconView.ICON_PLUS, new Runnable() {
             @Override public void run() {
                 db.adjustInventory(p.id, "in", 1, "شارژ موجودی توسط مدیریت");
                 renderCurrentScreen();
             }
         }));
-        card.addView(stepper);
+        bottom.addView(stepper);
+
+        TextView exact = text("تنظیم دقیق", 9.5f, COL_TEXT_MUTED, false);
+        exact.setGravity(Gravity.CENTER);
+        exact.setPadding(dp(10), dp(8), dp(10), dp(8));
+        exact.setBackground(roundedShape(COL_WHITE, dp(11), COL_BORDER, dp(1)));
+        exact.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { showExactStockDialog(p); }
+        });
+        LinearLayout.LayoutParams elp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        elp.setMarginStart(dp(8));
+        bottom.addView(exact);
+
+        TextView charge = text("+۵ سریع", 9.5f, COL_GOLD_DEEP, true);
+        charge.setGravity(Gravity.CENTER);
+        charge.setPadding(dp(10), dp(8), dp(10), dp(8));
+        charge.setBackground(roundedShape(0xFFFBF4E7, dp(11), 0xFFE8D6B4, dp(1)));
+        charge.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                db.adjustInventory(p.id, "in", 5, "شارژ سریع ۵ عددی مدیریت");
+                renderCurrentScreen();
+            }
+        });
+        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        clp.setMarginStart(dp(6));
+        bottom.addView(charge);
+
+        card.addView(bottom);
         return card;
+    }
+
+    private View stepperIconButton(int iconType, final Runnable action) {
+        FrameLayout wrap = new FrameLayout(this);
+        wrap.setBackground(roundedShape(COL_WHITE, dp(16), COL_BORDER, dp(1)));
+        wrap.setLayoutParams(new LinearLayout.LayoutParams(dp(30), dp(30)));
+        wrap.addView(new Luxury3DIconView(this, iconType, Luxury3DIconView.PEDESTAL_IVORY),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        wrap.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { action.run(); }
+        });
+        return wrap;
     }
 
     private void showExactStockDialog(final Models.Product p) {
@@ -2886,16 +3233,20 @@ public final class MainActivity extends Activity {
                     return;
                 }
                 for (final Models.Product p : found) {
-                    LinearLayout line = row(Gravity.CENTER_VERTICAL);
+                    LinearLayout line = new LinearLayout(MainActivity.this);
+                    line.setOrientation(LinearLayout.VERTICAL);
                     line.setBackground(roundedShape(COL_IVORY_BG, dp(13), COL_BORDER, dp(1)));
                     line.setPadding(dp(10), dp(9), dp(10), dp(9));
 
+                    LinearLayout rowTop = row(Gravity.CENTER_VERTICAL);
                     FrameLayout thumbWrap = new FrameLayout(MainActivity.this);
-                    thumbWrap.setLayoutParams(new LinearLayout.LayoutParams(dp(42), dp(50)));
+                    thumbWrap.setLayoutParams(new LinearLayout.LayoutParams(dp(40), dp(48)));
                     thumbWrap.setClipToOutline(true);
                     thumbWrap.setBackground(roundedShape(COL_SILK_CREAM, dp(9), 0, 0));
                     ImageView thumb = new ImageView(MainActivity.this);
-                    thumb.setImageResource(resolveProductImage(p.imageKey));
+                    Bitmap aiBmp = loadProductBitmap(p);
+                    if (aiBmp != null) thumb.setImageBitmap(aiBmp);
+                    else thumb.setImageResource(resolveProductImage(p.imageKey));
                     thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
                     thumbWrap.addView(thumb, new FrameLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -2903,22 +3254,26 @@ public final class MainActivity extends Activity {
                     LinearLayout info = new LinearLayout(MainActivity.this);
                     info.setOrientation(LinearLayout.VERTICAL);
                     info.setPadding(dp(10), 0, 0, 0);
-                    TextView nm = text(p.nameFa, 11f, COL_TEXT_MAIN, true);
-                    nm.setMaxLines(1);
-                    nm.setEllipsize(android.text.TextUtils.TruncateAt.END);
-                    TextView pr = text(PersianFormatter.formatToman(p.salePrice), 10.5f, COL_GOLD_DEEP, false);
+                    TextView nm = text(p.nameFa, 10.8f, COL_TEXT_MAIN, true);
+                    nm.setMaxLines(2);
+                    nm.setLineSpacing(dp(2), 1f);
+                    TextView pr = text(PersianFormatter.formatToman(p.salePrice), 10f, COL_GOLD_DEEP, true);
                     pr.setPadding(0, dp(3), 0, 0);
                     info.addView(nm);
                     info.addView(pr);
 
-                    TextView addBtn = text("افزودن", 9.5f, COL_OBSIDIAN, true);
-                    addBtn.setGravity(Gravity.CENTER);
-                    addBtn.setPadding(dp(10), dp(7), dp(10), dp(7));
-                    addBtn.setBackground(roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0));
+                    rowTop.addView(thumbWrap);
+                    rowTop.addView(info, weight(1f));
+                    line.addView(rowTop);
 
-                    line.addView(thumbWrap);
-                    line.addView(info, weight(1f));
-                    line.addView(addBtn);
+                    TextView addBtn = text("＋ افزودن به سبد خرید", 9.5f, COL_OBSIDIAN, true);
+                    addBtn.setGravity(Gravity.CENTER);
+                    addBtn.setPadding(dp(8), dp(7), dp(8), dp(7));
+                    addBtn.setBackground(roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0));
+                    LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    alp.setMargins(0, dp(8), 0, 0);
+                    line.addView(addBtn, alp);
 
                     line.setOnClickListener(new View.OnClickListener() {
                         @Override public void onClick(View v) {
@@ -3107,6 +3462,1035 @@ public final class MainActivity extends Activity {
     }
 
     // ══════════════════════════════════════════════════════════════════════
+    //  CHECKOUT · PAYMENT MODES / INSTALLMENTS / GATEWAYS  (v6.0)
+    // ══════════════════════════════════════════════════════════════════════
+    private View buildPaymentModePanel(long basePayable, List<Models.InstallmentPlan> plans,
+                                       InstallmentEngine.Config cfg, Models.InstallmentPlan activePlan) {
+        LinearLayout card = whiteCard();
+
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        head.addView(sectionLabel("روش پرداخت و تسویه"), weight(1f));
+        head.addView(text("۳ روش رسمی", 9f, COL_TEXT_FAINT, false));
+        card.addView(head);
+        card.addView(space(10));
+
+        card.addView(paymentModeRow(PAY_INSTALLMENT, Luxury3DIconView.ICON_INSTALLMENT,
+                "خرید اقساطی (BNPL)",
+                plans.isEmpty()
+                        ? "برای مبلغ فعلی سبد قابل استفاده نیست"
+                        : cfg.providerLabel + " • تا " + PersianFormatter.toPersianDigits(String.valueOf(plans.get(plans.size() - 1).months)) + " قسط",
+                plans.isEmpty()));
+        card.addView(space(8));
+        card.addView(paymentModeRow(PAY_ONLINE, Luxury3DIconView.ICON_CARD,
+                "پرداخت امن آنلاین",
+                "زرین‌پال • شاپرک • آیدی‌پی و سایر درگاه‌ها", false));
+        card.addView(space(8));
+        card.addView(paymentModeRow(PAY_COD, Luxury3DIconView.ICON_WALLET,
+                "پرداخت در محل مرسوله",
+                db.getSettingBool("pay_cod_enabled", true) ? "پرداخت نقدی هنگام تحویل" : "غیرفعال توسط مدیریت",
+                !db.getSettingBool("pay_cod_enabled", true)));
+
+        if (PAY_INSTALLMENT.equals(payMode)) {
+            card.addView(space(14));
+            if (plans.isEmpty()) {
+                LinearLayout warn = new LinearLayout(this);
+                warn.setOrientation(LinearLayout.VERTICAL);
+                warn.setBackground(roundedShape(0xFFFDF7EC, dp(13), 0xFFEBD9B6, dp(1)));
+                warn.setPadding(dp(12), dp(11), dp(12), dp(11));
+                warn.addView(text("شرایط فروش اقساطی برای این سبد", 10.8f, COL_WARN, true));
+                warn.addView(text("حداقل مبلغ خرید اقساطی " + PersianFormatter.formatToman(cfg.minAmount)
+                        + " است. با افزودن کالای دیگر به سبد، گزینه‌های اقساط فعال می‌شود.",
+                        9.8f, COL_TEXT_MUTED, false));
+                card.addView(warn);
+            } else {
+                card.addView(text("طرح اقساطی خود را انتخاب کنید", 10.8f, COL_TEXT_MUTED, true));
+                card.addView(space(8));
+                for (Models.InstallmentPlan plan : plans) {
+                    card.addView(installmentPlanRow(plan, plan.id.equals(selectedInstallmentId)));
+                    card.addView(space(7));
+                }
+                if (activePlan != null) {
+                    card.addView(space(4));
+                    LinearLayout sheet = new LinearLayout(this);
+                    sheet.setOrientation(LinearLayout.VERTICAL);
+                    sheet.setBackground(roundedShape(COL_OBSIDIAN, dp(15), 0x40C8A46B, dp(1)));
+                    sheet.setPadding(dp(13), dp(12), dp(13), dp(12));
+                    sheet.addView(text("جدول بازپرداخت", 9.5f, COL_GOLD, false));
+                    sheet.addView(space(6));
+                    sheet.addView(resultLine("مبلغ کل خرید", PersianFormatter.formatToman(basePayable)));
+                    sheet.addView(resultLine("پیش‌پرداخت امروز", PersianFormatter.formatToman(activePlan.downPayment)));
+                    sheet.addView(resultLine("تعداد اقساط",
+                            PersianFormatter.toPersianDigits(String.valueOf(activePlan.months)) + " ماه"));
+                    sheet.addView(resultLine("مبلغ هر قسط", PersianFormatter.formatToman(activePlan.monthlyPayment)));
+                    if (activePlan.totalFee > 0) {
+                        sheet.addView(resultLine("کارمزد تسهیلات", PersianFormatter.formatToman(activePlan.totalFee)));
+                    }
+                    sheet.addView(resultLine("مجموع بازپرداخت", PersianFormatter.formatToman(activePlan.payableTotal)));
+                    card.addView(sheet);
+                }
+            }
+        } else if (PAY_COD.equals(payMode)) {
+            card.addView(space(12));
+            card.addView(text("این سفارش بدون پرداخت آنلاین ثبت می‌شود؛ مبلغ در زمان تحویل مرسوله به پیک یا مأمور پست پرداخت می‌گردد.",
+                    10f, COL_TEXT_MUTED, false));
+        }
+
+        card.addView(space(10));
+        TextView manage = text("تنظیمات درگاه‌ها و شرایط اقساط را مدیریت می‌کنم", 9.5f, COL_GOLD_DEEP, false);
+        manage.setPadding(0, dp(4), 0, dp(2));
+        manage.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                if (!adminAuthenticated) {
+                    showAdminLoginDialog();
+                } else {
+                    adminMode = true;
+                    aiStudioOpen = false;
+                    adminTab = ADMIN_SETTINGS;
+                    renderCurrentScreen();
+                }
+            }
+        });
+        card.addView(manage);
+        return card;
+    }
+
+    private View paymentModeRow(final String mode, int iconType, String title, String subtitle, boolean disabled) {
+        boolean selected = payMode.equals(mode);
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.HORIZONTAL);
+        box.setGravity(Gravity.CENTER_VERTICAL);
+        box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        box.setPadding(dp(12), dp(11), dp(12), dp(11));
+        box.setBackground(roundedShape(selected ? 0xFFFFFBF2 : COL_WHITE, dp(15),
+                selected ? COL_GOLD : COL_BORDER, dp(selected ? 2 : 1)));
+
+        FrameLayout iconWrap = new FrameLayout(this);
+        iconWrap.setLayoutParams(new LinearLayout.LayoutParams(dp(36), dp(36)));
+        iconWrap.addView(new Luxury3DIconView(this, iconType,
+                        selected ? Luxury3DIconView.PEDESTAL_GOLD : Luxury3DIconView.PEDESTAL_OBSIDIAN),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        box.addView(iconWrap);
+
+        LinearLayout textCol = new LinearLayout(this);
+        textCol.setOrientation(LinearLayout.VERTICAL);
+        textCol.setPadding(dp(10), 0, dp(8), 0);
+        TextView t = text(title, 11.8f, disabled ? COL_TEXT_FAINT : COL_TEXT_MAIN, selected);
+        TextView s = text(subtitle, 9.2f, COL_TEXT_FAINT, false);
+        s.setPadding(0, dp(3), 0, 0);
+        textCol.addView(t);
+        textCol.addView(s);
+        box.addView(textCol, weight(1f));
+
+        TextView radio = text(selected ? "●" : "○", 13f, selected ? COL_GOLD_DEEP : COL_TEXT_FAINT, true);
+        box.addView(radio);
+
+        if (!disabled) {
+            box.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    payMode = mode;
+                    renderCurrentScreen();
+                }
+            });
+        }
+        return box;
+    }
+
+    private View installmentPlanRow(final Models.InstallmentPlan plan, boolean selected) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(13), dp(11), dp(13), dp(11));
+        box.setBackground(roundedShape(selected ? 0xFFFFFBF2 : COL_IVORY_BG, dp(13),
+                selected ? COL_GOLD : COL_BORDER, dp(selected ? 2 : 1)));
+
+        LinearLayout top = row(Gravity.CENTER_VERTICAL);
+        TextView title = text(plan.titleFa, 11.5f, COL_TEXT_MAIN, selected);
+        top.addView(title, weight(1f));
+        TextView chip = text(plan.zeroInterest ? "بدون کارمزد" : plan.providerFa, 8.8f,
+                plan.zeroInterest ? COL_SUCCESS : COL_TEXT_MUTED, true);
+        chip.setPadding(dp(8), dp(3), dp(8), dp(3));
+        chip.setBackground(roundedShape(plan.zeroInterest ? COL_SUCCESS_SOFT : COL_WHITE, dp(9),
+                plan.zeroInterest ? 0xFFBFDCCB : COL_BORDER, dp(1)));
+        top.addView(chip);
+        box.addView(top);
+
+        LinearLayout bottom = row(Gravity.CENTER_VERTICAL);
+        bottom.setPadding(0, dp(7), 0, 0);
+        bottom.addView(text(PersianFormatter.formatToman(plan.monthlyPayment) + " در ماه", 11f, COL_GOLD_DEEP, true),
+                weight(1f));
+        bottom.addView(text(plan.totalFee > 0
+                ? "کارمزد " + PersianFormatter.formatToman(plan.totalFee)
+                : "بدون هزینه اضافه", 9f, COL_TEXT_FAINT, false));
+        box.addView(bottom);
+
+        box.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                selectedInstallmentId = plan.id;
+                payMode = PAY_INSTALLMENT;
+                renderCurrentScreen();
+            }
+        });
+        return box;
+    }
+
+    private View buildGatewayPanel(long payable) {
+        LinearLayout card = whiteCard();
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        head.addView(sectionLabel("درگاه پرداخت آنلاین"), weight(1f));
+        head.addView(text(db.getSettingBool("pay_sandbox", true) ? "Sandbox" : "Live", 8.8f,
+                db.getSettingBool("pay_sandbox", true) ? COL_WARN : COL_SUCCESS, true));
+        card.addView(head);
+        card.addView(space(8));
+
+        List<Models.PaymentGatewayRecord> gateways = db.getPaymentGateways();
+        int enabledCount = 0;
+        boolean selectedExists = false;
+        for (Models.PaymentGatewayRecord g : gateways) {
+            if (!g.enabled) continue;
+            enabledCount++;
+            if (g.code.equals(selectedGateway)) selectedExists = true;
+        }
+        if (enabledCount == 0) {
+            card.addView(text("هیچ درگاهی توسط مدیریت فعال نشده است. لطفاً از بخش تنظیمات پرداخت، درگاه مورد نظر را فعال کنید.",
+                    10f, COL_DANGER, false));
+            return card;
+        }
+        if (!selectedExists) {
+            for (Models.PaymentGatewayRecord g : gateways) {
+                if (g.enabled) {
+                    selectedGateway = g.code;
+                    break;
+                }
+            }
+        }
+
+        for (Models.PaymentGatewayRecord g : gateways) {
+            if (!g.enabled) continue;
+            final String code = g.code;
+            boolean selected = code.equals(selectedGateway);
+            LinearLayout line = row(Gravity.CENTER_VERTICAL);
+            line.setPadding(dp(11), dp(10), dp(11), dp(10));
+            line.setBackground(roundedShape(selected ? 0xFFFFFBF2 : COL_IVORY_BG, dp(12),
+                    selected ? COL_GOLD : COL_BORDER, dp(selected ? 2 : 1)));
+
+            TextView radio = text(selected ? "●" : "○", 12f, selected ? COL_GOLD_DEEP : COL_TEXT_FAINT, true);
+            line.addView(radio);
+
+            LinearLayout col = new LinearLayout(this);
+            col.setOrientation(LinearLayout.VERTICAL);
+            col.setPadding(dp(8), 0, 0, 0);
+            col.addView(text(g.titleFa, 10.8f, COL_TEXT_MAIN, selected));
+            col.addView(text(g.subtitleFa, 8.8f, COL_TEXT_FAINT, false));
+            line.addView(col, weight(1f));
+
+            line.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    selectedGateway = code;
+                    renderCurrentScreen();
+                }
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.setMargins(0, 0, 0, dp(7));
+            card.addView(line, lp);
+        }
+
+        card.addView(space(4));
+        card.addView(resultDarkLine("مبلغ قابل پرداخت", PersianFormatter.formatToman(payable)));
+        if (db.getSettingBool("pay_card_to_card", true)) {
+            card.addView(space(8));
+            LinearLayout c2c = new LinearLayout(this);
+            c2c.setOrientation(LinearLayout.VERTICAL);
+            c2c.setBackground(roundedShape(COL_IVORY_BG, dp(12), COL_BORDER, dp(1)));
+            c2c.setPadding(dp(12), dp(10), dp(12), dp(10));
+            c2c.addView(text("کارت‌به‌کارت (پس از تأیید مدیریت)", 9.6f, COL_TEXT_MUTED, true));
+            c2c.addView(text(ltr(db.getSetting("pay_card_number", "6037-9975-0000-0000"))
+                    + "  —  " + db.getSetting("pay_card_holder", "سرکار خانم زنگنه"), 10f, COL_TEXT_MAIN, false));
+            c2c.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    copyToClipboard(db.getSetting("pay_card_number", "6037-9975-0000-0000"));
+                    toast("شماره کارت کپی شد.");
+                }
+            });
+            card.addView(c2c);
+        }
+        return card;
+    }
+
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  ADMIN · SETTINGS (online payment · installments · AI studio)
+    // ══════════════════════════════════════════════════════════════════════
+    private void renderAdminSettings() {
+        settingsTextKeys.clear();
+        settingsTextInputs.clear();
+        settingsCheckKeys.clear();
+        settingsCheckInputs.clear();
+
+        contentContainer.addView(pageTitle("تنظیمات فروشگاه",
+                "پرداخت آنلاین، فروش اقساطی و استودیوی هوش مصنوعی — همه در یک صفحه"));
+        contentContainer.addView(space(14));
+
+        // ── ONLINE PAYMENT ───────────────────────────────────────────────
+        LinearLayout pay = whiteCard();
+        LinearLayout payHead = row(Gravity.CENTER_VERTICAL);
+        FrameLayout payIcon = new FrameLayout(this);
+        payIcon.setLayoutParams(new LinearLayout.LayoutParams(dp(36), dp(36)));
+        payIcon.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_CARD, Luxury3DIconView.PEDESTAL_GOLD),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        payHead.addView(payIcon);
+        LinearLayout payTitles = new LinearLayout(this);
+        payTitles.setOrientation(LinearLayout.VERTICAL);
+        payTitles.setPadding(dp(10), 0, 0, 0);
+        payTitles.addView(text("درگاه پرداخت آنلاین", 13.5f, COL_TEXT_MAIN, true));
+        payTitles.addView(text("فعال‌سازی درگاه‌ها و تنظیمات پذیرندگی", 9.5f, COL_TEXT_MUTED, false));
+        payHead.addView(payTitles, weight(1f));
+        pay.addView(payHead);
+        pay.addView(space(12));
+
+        pay.addView(settingsToggle("pay_online_enabled", "پرداخت آنلاین فعال باشد"));
+        pay.addView(settingsToggle("pay_gateway_zarinpal", "درگاه زرین‌پال"));
+        pay.addView(settingsToggle("pay_gateway_shaparak", "درگاه مستقیم شاپرک"));
+        pay.addView(settingsToggle("pay_gateway_idpay", "درگاه آیدی‌پی (کارمزد ۱٪)"));
+        pay.addView(settingsToggle("pay_gateway_nextpay", "درگاه نکست‌پی"));
+        pay.addView(settingsToggle("pay_cod_enabled", "پرداخت در محل (پس‌کرایه)"));
+        pay.addView(settingsToggle("pay_card_to_card", "نمایش کارت‌به‌کارت در سبد خرید"));
+        pay.addView(settingsToggle("pay_sandbox", "حالت آزمایشی (Sandbox)"));
+        pay.addView(space(8));
+
+        pay.addView(settingsText("pay_merchant_id", "شناسه پذیرنده (Merchant ID)", "ASIYE-STORE-ZP", false));
+        pay.addView(settingsText("pay_callback_url", "آدرس بازگشت تراکنش (Callback)", "https://asiyestore.ir/api/v1/payment/callback", false));
+        pay.addView(settingsText("pay_card_number", "شماره کارت جهت کارت‌به‌کارت", "6037-9975-0000-0000", false));
+        pay.addView(settingsText("pay_card_holder", "نام صاحب کارت", "سرکار خانم زنگنه", false));
+        pay.addView(settingsText("pay_min_amount", "حداقل مبلغ پرداخت (تومان)", "50000", true));
+        pay.addView(settingsText("pay_description", "توضیح تراکنش در صورت‌حساب", "خرید از مجموعه ASIYE STORE", false));
+        contentContainer.addView(pay);
+        contentContainer.addView(space(14));
+
+        // ── INSTALLMENTS ─────────────────────────────────────────────────
+        LinearLayout inst = whiteCard();
+        LinearLayout instHead = row(Gravity.CENTER_VERTICAL);
+        FrameLayout instIcon = new FrameLayout(this);
+        instIcon.setLayoutParams(new LinearLayout.LayoutParams(dp(36), dp(36)));
+        instIcon.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_INSTALLMENT, Luxury3DIconView.PEDESTAL_GOLD),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        instHead.addView(instIcon);
+        LinearLayout instTitles = new LinearLayout(this);
+        instTitles.setOrientation(LinearLayout.VERTICAL);
+        instTitles.setPadding(dp(10), 0, 0, 0);
+        instTitles.addView(text("فروش اقساطی (BNPL)", 13.5f, COL_TEXT_MAIN, true));
+        instTitles.addView(text("تعیین شرایط، سقف و کارمزد تسهیلات", 9.5f, COL_TEXT_MUTED, false));
+        instHead.addView(instTitles, weight(1f));
+        inst.addView(instHead);
+        inst.addView(space(12));
+
+        inst.addView(settingsToggle("inst_enabled", "فروش اقساطی فعال باشد"));
+        inst.addView(settingsToggle("inst_verify_kyc", "احراز هویت مشتری الزامی باشد"));
+        inst.addView(settingsToggle("inst_auto_approve", "تأیید خودکار سفارش‌های اقساطی"));
+        inst.addView(space(8));
+        inst.addView(settingsText("inst_zero_months", "تعداد اقساط بدون کارمزد", "4", true));
+        inst.addView(settingsText("inst_extended_months", "اقساط کارمزددار (با کاما جدا کنید)", "6,12", false));
+        inst.addView(settingsText("inst_interest_percent", "نرخ کارمزد سالانه (٪)", "18", true));
+        inst.addView(settingsText("inst_min_amount", "حداقل مبلغ خرید اقساطی (تومان)", "1000000", true));
+        inst.addView(settingsText("inst_max_amount", "حداکثر مبلغ خرید اقساطی (تومان)", "20000000", true));
+        inst.addView(settingsText("inst_down_percent", "درصد پیش‌پرداخت اولیه (٪)", "0", true));
+        inst.addView(space(6));
+
+        inst.addView(text("ارائه‌دهنده اعتبار", 10.5f, COL_TEXT_MUTED, true));
+        inst.addView(space(6));
+        LinearLayout provRow1 = row(Gravity.CENTER_VERTICAL);
+        LinearLayout provRow2 = row(Gravity.CENTER_VERTICAL);
+        String[][] providers = {
+                {"snapp_pay", "اسنپ‌پی"}, {"tara", "تارا"}, {"digipay", "دیجی‌پی"},
+                {"azkivam", "ازکی‌وام"}, {"bank", "کارت اعتباری بانکی"}
+        };
+        String currentProvider = db.getSetting("inst_provider", "snapp_pay");
+        for (int i = 0; i < providers.length; i++) {
+            final String code = providers[i][0];
+            boolean active = currentProvider.equals(code);
+            TextView chip = text(providers[i][1], 10f, active ? COL_OBSIDIAN : COL_TEXT_MUTED, active);
+            chip.setGravity(Gravity.CENTER);
+            chip.setSingleLine(true);
+            chip.setPadding(dp(4), dp(9), dp(4), dp(9));
+            chip.setBackground(active
+                    ? roundedShape(COL_GOLD_LIGHT, dp(12), COL_GOLD_LIGHT, dp(1))
+                    : roundedShape(COL_IVORY_BG, dp(12), COL_BORDER, dp(1)));
+            chip.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    db.setSetting("inst_provider", code);
+                    renderCurrentScreen();
+                    toast("ارائه‌دهنده اعتبار تغییر کرد.");
+                }
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            lp.setMargins(dp(3), 0, dp(3), dp(6));
+            if (i < 3) provRow1.addView(chip, lp); else provRow2.addView(chip, lp);
+        }
+        inst.addView(provRow1);
+        inst.addView(provRow2);
+        contentContainer.addView(inst);
+        contentContainer.addView(space(14));
+
+        // ── AI STUDIO ────────────────────────────────────────────────────
+        LinearLayout ai = whiteCard();
+        LinearLayout aiHead = row(Gravity.CENTER_VERTICAL);
+        FrameLayout aiIcon = new FrameLayout(this);
+        aiIcon.setLayoutParams(new LinearLayout.LayoutParams(dp(36), dp(36)));
+        aiIcon.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_AI, Luxury3DIconView.PEDESTAL_GOLD),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        aiHead.addView(aiIcon);
+        LinearLayout aiTitles = new LinearLayout(this);
+        aiTitles.setOrientation(LinearLayout.VERTICAL);
+        aiTitles.setPadding(dp(10), 0, 0, 0);
+        aiTitles.addView(text("استودیوی هوش مصنوعی", 13.5f, COL_TEXT_MAIN, true));
+        aiTitles.addView(text("کپشن، سئو و تصویر استودیویی خودکار", 9.5f, COL_TEXT_MUTED, false));
+        aiHead.addView(aiTitles, weight(1f));
+        ai.addView(aiHead);
+        ai.addView(space(12));
+        ai.addView(settingsToggle("ai_auto_caption", "ساخت خودکار کپشن و سئو پس از تشخیص محصول"));
+        ai.addView(settingsText("ai_tone", "لحن نوشتار", "لوکس و تخصصی", false));
+        ai.addView(settingsText("ai_instagram_handle", "شناسه اینستاگرام در کپشن", "asiyeh.store", false));
+        ai.addView(settingsText("ai_seo_city", "شهر برای سئوی محلی", "تهران", false));
+        ai.addView(settingsText("ai_endpoint", "آدرس سرویس ابری هوش مصنوعی (اختیاری)", "خالی = پردازش کاملاً آفلاین", false));
+        ai.addView(space(10));
+        ai.addView(ghostGoldButton("رفتن به استودیوی هوشمند افزودن کالا", new Runnable() {
+            @Override public void run() {
+                resetAiStudio();
+                aiStudioOpen = true;
+                adminTab = ADMIN_CATALOG;
+                renderCurrentScreen();
+            }
+        }));
+        contentContainer.addView(ai);
+        contentContainer.addView(space(16));
+
+        contentContainer.addView(primaryButton("ذخیره تمام تنظیمات", Luxury3DIconView.ICON_CHECK, new Runnable() {
+            @Override public void run() {
+                persistSettings();
+                toast("تنظیمات فروشگاه با موفقیت ذخیره شد.");
+                renderCurrentScreen();
+            }
+        }));
+        contentContainer.addView(space(10));
+        contentContainer.addView(outlineDarkButton("بازگشت به گزارش فروش", Luxury3DIconView.ICON_CHART, new Runnable() {
+            @Override public void run() {
+                adminTab = ADMIN_REPORT;
+                renderCurrentScreen();
+            }
+        }));
+        contentContainer.addView(space(12));
+        contentContainer.addView(footerNote());
+    }
+
+    private View settingsToggle(String key, String label) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        row.setPadding(0, dp(5), 0, dp(5));
+
+        CheckBox box = new CheckBox(this);
+        box.setChecked(db.getSettingBool(key, "1".equals(defaultFor(key))));
+        box.setButtonTintList(ColorStateList.valueOf(COL_GOLD_DEEP));
+        row.addView(box, new LinearLayout.LayoutParams(dp(34), dp(34)));
+
+        TextView t = text(label, 10.8f, COL_TEXT_MAIN, false);
+        t.setPadding(dp(4), 0, 0, 0);
+        row.addView(t, weight(1f));
+
+        settingsCheckKeys.add(key);
+        settingsCheckInputs.add(box);
+        return row;
+    }
+
+    private String defaultFor(String key) {
+        if (key.startsWith("pay_gateway_idpay") || key.startsWith("pay_gateway_nextpay")) return "0";
+        return "1";
+    }
+
+    private View settingsText(String key, String label, String hint, boolean numeric) {
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setOrientation(LinearLayout.VERTICAL);
+        wrap.setPadding(0, dp(6), 0, dp(2));
+
+        TextView l = text(label, 9.6f, COL_TEXT_MUTED, false);
+        wrap.addView(l);
+
+        EditText input = makeInput(hint, numeric ? InputType.TYPE_CLASS_NUMBER : InputType.TYPE_CLASS_TEXT, true);
+        String stored = db.getSetting(key, "");
+        input.setText(stored);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, dp(5), 0, dp(2));
+        wrap.addView(input, lp);
+
+        settingsTextKeys.add(key);
+        settingsTextInputs.add(input);
+        return wrap;
+    }
+
+    private void persistSettings() {
+        for (int i = 0; i < settingsTextKeys.size(); i++) {
+            String value = settingsTextInputs.get(i).getText().toString().trim();
+            db.setSetting(settingsTextKeys.get(i), value);
+        }
+        for (int i = 0; i < settingsCheckKeys.size(); i++) {
+            db.setSetting(settingsCheckKeys.get(i), settingsCheckInputs.get(i).isChecked() ? "1" : "0");
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  ADMIN · AI PRODUCT STUDIO  (3 inputs → full luxury listing)
+    // ══════════════════════════════════════════════════════════════════════
+    private void resetAiStudio() {
+        aiAnalysis = null;
+        aiDraft = null;
+        aiStudioPath = "";
+        aiBusy = false;
+    }
+
+    private void renderAiStudio() {
+        LinearLayout headRow = row(Gravity.CENTER_VERTICAL);
+        TextView back = text("‹  بازگشت", 10.5f, COL_TEXT_MUTED, true);
+        back.setPadding(dp(6), dp(6), dp(6), dp(6));
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                aiStudioOpen = false;
+                renderCurrentScreen();
+            }
+        });
+        headRow.addView(back);
+        headRow.addView(new View(this), weight(1f));
+        contentContainer.addView(headRow);
+        contentContainer.addView(space(6));
+
+        contentContainer.addView(pageTitle("استودیوی هوشمند محصول",
+                "سه ورودی بدهید؛ هوش مصنوعی بقیه مسیر را خودکار می‌سازد"));
+        contentContainer.addView(space(12));
+
+        // Step indicator
+        contentContainer.addView(aiStepStrip());
+        contentContainer.addView(space(14));
+
+        if (aiDraft != null) {
+            renderAiDraft();
+        } else if (aiAnalysis != null) {
+            renderAiConfirmation();
+        } else {
+            renderAiInputs();
+        }
+    }
+
+    private View aiStepStrip() {
+        int step = aiDraft != null ? 3 : (aiAnalysis != null ? 2 : 1);
+        String[] labels = {"اطلاعات پایه", "تشخیص محصول", "تولید کامل"};
+        LinearLayout strip = row(Gravity.CENTER_VERTICAL);
+        for (int i = 0; i < labels.length; i++) {
+            boolean done = (i + 1) < step;
+            boolean active = (i + 1) == step;
+            TextView chip = text((done ? "✓ " : PersianFormatter.toPersianDigits(String.valueOf(i + 1)) + " · ") + labels[i],
+                    9.4f, active ? COL_GOLD_LIGHT : (done ? COL_OBSIDIAN : COL_TEXT_FAINT), active || done);
+            chip.setGravity(Gravity.CENTER);
+            chip.setSingleLine(true);
+            chip.setPadding(dp(3), dp(8), dp(3), dp(8));
+            chip.setBackground(active
+                    ? roundedShape(COL_OBSIDIAN, dp(12), COL_OBSIDIAN, dp(1))
+                    : roundedShape(done ? COL_GOLD_LIGHT : COL_WHITE, dp(12),
+                    done ? COL_GOLD_LIGHT : COL_BORDER, dp(1)));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            lp.setMargins(dp(3), 0, dp(3), 0);
+            strip.addView(chip, lp);
+        }
+        return strip;
+    }
+
+    // ── STEP 1 ───────────────────────────────────────────────────────────
+    private void renderAiInputs() {
+        LinearLayout card = whiteCard();
+
+        card.addView(text("۱ · نام محصول", 10.5f, COL_TEXT_MUTED, true));
+        card.addView(space(6));
+        aiNameInput = makeInput("مثال: کرم روشن‌کننده گاتیو", InputType.TYPE_CLASS_TEXT, false);
+        aiNameInput.setText(aiName);
+        card.addView(aiNameInput);
+        card.addView(space(12));
+
+        card.addView(text("۲ · برند محصول", 10.5f, COL_TEXT_MUTED, true));
+        card.addView(space(6));
+        aiBrandInput = makeInput("مثال: گاتیو / Gatieau", InputType.TYPE_CLASS_TEXT, false);
+        aiBrandInput.setText(aiBrand);
+        card.addView(aiBrandInput);
+        card.addView(space(12));
+
+        card.addView(text("۳ · عکس محصول (اختیاری اما توصیه‌شده)", 10.5f, COL_TEXT_MUTED, true));
+        card.addView(space(6));
+
+        if (aiSourceBitmap != null) {
+            FrameLayout preview = new FrameLayout(this);
+            preview.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(150)));
+            preview.setClipToOutline(true);
+            preview.setBackground(roundedShape(COL_SILK_CREAM, dp(14), 0, 0));
+            ImageView iv = new ImageView(this);
+            iv.setImageBitmap(aiSourceBitmap);
+            iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            preview.addView(iv, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            card.addView(preview);
+            card.addView(space(8));
+        }
+
+        card.addView(outlineDarkButton(aiSourceBitmap == null ? "انتخاب عکس از گالری" : "تغییر عکس محصول",
+                Luxury3DIconView.ICON_CAMERA, new Runnable() {
+                    @Override public void run() { pickProductPhoto(); }
+                }));
+        contentContainer.addView(card);
+        contentContainer.addView(space(14));
+
+        contentContainer.addView(primaryButton("تحلیل هوشمند و تشخیص محصول", Luxury3DIconView.ICON_AI, new Runnable() {
+            @Override public void run() {
+                aiName = aiNameInput == null ? "" : aiNameInput.getText().toString().trim();
+                aiBrand = aiBrandInput == null ? "" : aiBrandInput.getText().toString().trim();
+                if (aiName.length() < 3) {
+                    toast("نام محصول را کامل‌تر وارد کنید.");
+                    return;
+                }
+                aiAnalysis = AiProductStudio.analyze(aiName, aiBrand, aiSourceBitmap);
+                renderCurrentScreen();
+            }
+        }));
+        contentContainer.addView(space(10));
+        TextView hint = text("پردازش روی گوشی و بدون نیاز به اینترنت انجام می‌شود؛ هیچ اطلاعاتی از فروشگاه شما خارج نمی‌گردد.",
+                9.4f, COL_TEXT_FAINT, false);
+        hint.setLineSpacing(dp(3), 1f);
+        contentContainer.addView(hint);
+    }
+
+    // ── STEP 2 ───────────────────────────────────────────────────────────
+    private void renderAiConfirmation() {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(roundedShape(COL_OBSIDIAN, dp(22), 0x55C8A46B, dp(1)));
+        card.setPadding(dp(18), dp(16), dp(18), dp(16));
+
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        FrameLayout icon = new FrameLayout(this);
+        icon.setLayoutParams(new LinearLayout.LayoutParams(dp(38), dp(38)));
+        icon.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_AI, false),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        head.addView(icon);
+        head.addView(text("تشخیص هوش مصنوعی", 12.5f, 0xFFF6EFE3, true), weight(1f));
+        TextView conf = text(PersianFormatter.toPersianDigits(String.valueOf(aiAnalysis.confidence)) + "٪ اطمینان",
+                9.5f, COL_GOLD_LIGHT, true);
+        head.addView(conf);
+        card.addView(head);
+        card.addView(space(12));
+
+        // confidence bar
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        bar.setBackgroundColor(0x22C8A46B);
+        View fill = new View(this);
+        fill.setBackgroundColor(COL_GOLD);
+        bar.addView(fill, new LinearLayout.LayoutParams(0, dp(4), Math.max(0.12f, aiAnalysis.confidence / 100f)));
+        View rest = new View(this);
+        bar.addView(rest, new LinearLayout.LayoutParams(0, dp(4), Math.max(0.02f, 1f - aiAnalysis.confidence / 100f)));
+        card.addView(bar);
+        card.addView(space(14));
+
+        card.addView(text(aiAnalysis.detectedTitle, 15f, 0xFFF6EFE3, true));
+        card.addView(space(6));
+        card.addView(text(aiAnalysis.detectedBrand + "  •  " + aiAnalysis.category, 10f, COL_GOLD, false));
+        card.addView(space(10));
+        TextView why = text(aiAnalysis.rationaleFa, 10.3f, 0xFFBEB6AA, false);
+        why.setLineSpacing(dp(3), 1f);
+        card.addView(why);
+        if (aiAnalysis.photoInsightFa != null && !aiAnalysis.photoInsightFa.isEmpty()) {
+            card.addView(space(10));
+            card.addView(text(aiAnalysis.photoInsightFa, 9.4f, 0xFF9A9186, false));
+        }
+        contentContainer.addView(card);
+        contentContainer.addView(space(12));
+
+        contentContainer.addView(valuationCard(aiAnalysis));
+        contentContainer.addView(space(14));
+
+        contentContainer.addView(text("آیا این محصول را درست تشخیص داده‌ام؟", 11.5f, COL_TEXT_MAIN, true));
+        contentContainer.addView(space(8));
+        contentContainer.addView(primaryButton("بله، درست است — همه بخش‌ها را بساز", Luxury3DIconView.ICON_CHECK,
+                new Runnable() {
+                    @Override public void run() {
+                        aiDraft = AiProductStudio.compose(aiAnalysis, aiName, aiBrand);
+                        renderCurrentScreen();
+                    }
+                }));
+        contentContainer.addView(space(8));
+        contentContainer.addView(ghostButton("خیر، ورودی‌ها را اصلاح می‌کنم", new Runnable() {
+            @Override public void run() {
+                aiAnalysis = null;
+                renderCurrentScreen();
+            }
+        }));
+
+        if (!aiAnalysis.alternativesFa.isEmpty()) {
+            contentContainer.addView(space(12));
+            contentContainer.addView(text("یا یکی از این گزینه‌ها را انتخاب کنید:", 10f, COL_TEXT_MUTED, false));
+            contentContainer.addView(space(6));
+            for (final String alt : aiAnalysis.alternativesFa) {
+                TextView chip = text(alt, 10f, COL_TEXT_MAIN, false);
+                chip.setPadding(dp(10), dp(9), dp(10), dp(9));
+                chip.setBackground(roundedShape(COL_WHITE, dp(12), COL_BORDER, dp(1)));
+                chip.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        aiAnalysis.detectedTitle = alt;
+                        aiDraft = AiProductStudio.compose(aiAnalysis, aiName, aiBrand);
+                        renderCurrentScreen();
+                    }
+                });
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                lp.setMargins(0, 0, 0, dp(6));
+                contentContainer.addView(chip, lp);
+            }
+        }
+    }
+
+    // ── STEP 3 ───────────────────────────────────────────────────────────
+    /** Self-proposed: quotes the AI price against the real catalog so the merchant never mis-prices. */
+    private View valuationCard(AiProductStudio.Analysis analysis) {
+        List<Models.Product> all = db.getProducts(true, "همه", "", "newest");
+        long sum = 0;
+        int count = 0;
+        long min = Long.MAX_VALUE;
+        long max = 0;
+        for (Models.Product p : all) {
+            if (p.salePrice <= 0) continue;
+            if (p.category != null && analysis.category != null
+                    && !p.category.equals(analysis.category) && count > 0) continue;
+            sum += p.salePrice;
+            min = Math.min(min, p.salePrice);
+            max = Math.max(max, p.salePrice);
+            count++;
+        }
+        if (count == 0) {
+            for (Models.Product p : all) {
+                if (p.salePrice <= 0) continue;
+                sum += p.salePrice;
+                min = Math.min(min, p.salePrice);
+                max = Math.max(max, p.salePrice);
+                count++;
+            }
+        }
+        if (count == 0) return new View(this);
+
+        final long average = sum / count;
+        long suggested = analysis.suggestedPrice;
+        String positionFa;
+        int tint;
+        if (suggested < average * 0.85f) {
+            positionFa = "اقتصادی‌تر از میانگین مجموعه";
+            tint = 0xFF3E7A57;
+        } else if (suggested > average * 1.15f) {
+            positionFa = "پریمیوم‌تر از میانگین مجموعه";
+            tint = 0xFF8A6A2E;
+        } else {
+            positionFa = "هم‌تراز با میانگین مجموعه";
+            tint = 0xFF3E7A57;
+        }
+
+        LinearLayout card = whiteCard();
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        FrameLayout icon = new FrameLayout(this);
+        icon.setLayoutParams(new LinearLayout.LayoutParams(dp(22), dp(22)));
+        icon.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_CHART, Luxury3DIconView.PEDESTAL_IVORY),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        head.addView(icon);
+        TextView title = text("ارزش‌گذاری سریع", 11.5f, COL_TEXT_MAIN, true);
+        title.setPadding(dp(7), 0, 0, 0);
+        head.addView(title, weight(1f));
+        head.addView(statusChip(positionFa, tint, 0xFFF3EFE5));
+        card.addView(head);
+        card.addView(space(11));
+
+        LinearLayout stats = row(Gravity.CENTER_VERTICAL);
+        stats.addView(statCell("قیمت پیشنهادی", PersianFormatter.formatToman(suggested), COL_TEXT_MAIN), weight(1f));
+        stats.addView(statCell("میانگین کاتالوگ", PersianFormatter.formatToman(average), COL_TEXT_MUTED), weight(1f));
+        card.addView(stats);
+        card.addView(space(10));
+        card.addView(text("بازه کالاهای موجود: " + PersianFormatter.formatToman(min) + " تا " + PersianFormatter.formatToman(max)
+                + "  •  در " + PersianFormatter.toPersianDigits(String.valueOf(count)) + " کالای منتشرشده",
+                9.2f, COL_TEXT_MUTED, false));
+        return card;
+    }
+
+    private View statCell(String caption, String value, int valueColor) {
+        LinearLayout cell = new LinearLayout(this);
+        cell.setOrientation(LinearLayout.VERTICAL);
+        cell.addView(text(caption, 9f, COL_TEXT_MUTED, false));
+        cell.addView(space(3));
+        cell.addView(text(value, 12f, valueColor, true));
+        return cell;
+    }
+
+    private void renderAiDraft() {
+        final AiProductStudio.Draft d = aiDraft;
+
+        LinearLayout card = whiteCard();
+        FrameLayout hero = new FrameLayout(this);
+        hero.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(190)));
+        hero.setClipToOutline(true);
+        hero.setBackground(roundedShape(COL_OBSIDIAN, dp(16), 0, 0));
+        ImageView heroImg = new ImageView(this);
+        if (aiStudioPath != null && !aiStudioPath.isEmpty()) {
+            Bitmap bmp = BitmapFactory.decodeFile(aiStudioPath);
+            if (bmp != null) heroImg.setImageBitmap(bmp);
+            else heroImg.setImageResource(resolveProductImage(d.imageKey));
+        } else {
+            heroImg.setImageResource(resolveProductImage(d.imageKey));
+        }
+        heroImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        hero.addView(heroImg, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        TextView tag = text(aiStudioPath.isEmpty() ? "PREVIEW" : "AI STUDIO", 8.5f, COL_GOLD_LIGHT, true);
+        tag.setPadding(dp(8), dp(4), dp(8), dp(4));
+        tag.setBackground(roundedShape(0xCC0B0B0E, dp(9), 0x55C8A46B, dp(1)));
+        FrameLayout.LayoutParams tagLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tagLp.gravity = Gravity.TOP | Gravity.START;
+        tagLp.setMargins(dp(10), dp(10), 0, 0);
+        hero.addView(tag, tagLp);
+        card.addView(hero);
+        card.addView(space(12));
+        card.addView(text(d.nameFa, 14.5f, COL_TEXT_MAIN, true));
+        card.addView(space(4));
+        card.addView(text(d.nameEn, 9.5f, COL_GOLD_DEEP, false));
+        card.addView(space(10));
+        card.addView(outlineDarkButton(aiStudioPath.isEmpty() ? "ساخت تصویر استودیویی اختصاصی" : "بازسازی تصویر استودیویی",
+                Luxury3DIconView.ICON_CAMERA, new Runnable() {
+                    @Override public void run() { generateStudioImage(); }
+                }));
+        contentContainer.addView(card);
+        contentContainer.addView(space(12));
+
+        // editable commercial fields
+        LinearLayout edit = whiteCard();
+        edit.addView(sectionLabel("قیمت‌گذاری و موجودی"));
+        edit.addView(space(8));
+        aiPriceInput = makeInput("قیمت فروش (تومان)", InputType.TYPE_CLASS_NUMBER, true);
+        aiPriceInput.setText(PersianFormatter.toAsciiDigits(String.valueOf(d.suggestedPrice)));
+        aiOldPriceInput = makeInput("قیمت پیش از تخفیف (تومان)", InputType.TYPE_CLASS_NUMBER, true);
+        aiOldPriceInput.setText(PersianFormatter.toAsciiDigits(String.valueOf(d.suggestedOldPrice)));
+        aiStockInput = makeInput("موجودی انبار", InputType.TYPE_CLASS_NUMBER, true);
+        aiStockInput.setText("12");
+        edit.addView(aiPriceInput);
+        edit.addView(space(8));
+        edit.addView(aiOldPriceInput);
+        edit.addView(space(8));
+        edit.addView(aiStockInput);
+        contentContainer.addView(edit);
+        contentContainer.addView(space(12));
+
+        contentContainer.addView(aiCopyBlock("توضیح کوتاه ویترین", d.description, true));
+        contentContainer.addView(space(10));
+        contentContainer.addView(aiCopyBlock("معرفی کامل و ترغیب‌کننده", d.longDescription, false));
+        contentContainer.addView(space(10));
+        contentContainer.addView(aiCopyBlock("مزیت‌های کلیدی", d.benefits, false));
+        contentContainer.addView(space(10));
+        contentContainer.addView(aiCopyBlock("ترکیبات و روش مصرف", d.ingredients + "\n\n" + d.usage, false));
+        contentContainer.addView(space(10));
+        contentContainer.addView(aiCopyBlock("کلمات کلیدی سئو", d.keywords, false));
+        contentContainer.addView(space(10));
+        contentContainer.addView(aiCopyBlock("عنوان سئو (SEO Title)", d.seoTitle, false));
+        contentContainer.addView(space(10));
+        contentContainer.addView(aiCopyBlock("توضیح متا (SEO Description)", d.seoDescription, false));
+        contentContainer.addView(space(10));
+        contentContainer.addView(aiCopyBlock("کپشن آماده اینستاگرام", d.instagramCaption, false));
+        contentContainer.addView(space(16));
+
+        contentContainer.addView(primaryButton("ذخیره کالا در ویترین فروشگاه", Luxury3DIconView.ICON_CHECK, new Runnable() {
+            @Override public void run() {
+                long price = parseLong(aiPriceInput == null ? "" : aiPriceInput.getText().toString());
+                long old = parseLong(aiOldPriceInput == null ? "" : aiOldPriceInput.getText().toString());
+                int stock = (int) Math.min(9999L, parseLong(aiStockInput == null ? "" : aiStockInput.getText().toString()));
+                if (price <= 0) {
+                    toast("قیمت فروش را وارد کنید.");
+                    return;
+                }
+                String error = db.saveAiProduct(null, null, d.nameFa, d.nameEn, d.category,
+                        d.description, d.longDescription, d.benefits, d.ingredients, d.usage,
+                        d.country, d.volume, old, price, stock, true, d.imageKey, aiStudioPath,
+                        d.seoTitle, d.seoDescription, d.keywords, d.instagramCaption);
+                if (error == null) {
+                    toast("کالا با موفقیت به ویترین اضافه شد.");
+                    resetAiStudio();
+                    aiStudioOpen = false;
+                    adminTab = ADMIN_CATALOG;
+                    renderCurrentScreen();
+                } else {
+                    toast(error);
+                }
+            }
+        }));
+        contentContainer.addView(space(8));
+        contentContainer.addView(ghostButton("شروع دوباره با محصول دیگر", new Runnable() {
+            @Override public void run() {
+                resetAiStudio();
+                renderCurrentScreen();
+            }
+        }));
+    }
+
+    private View aiCopyBlock(final String title, final String body, boolean highlight) {
+        LinearLayout card = whiteCard();
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        head.addView(text(title, 10.5f, highlight ? COL_GOLD_DEEP : COL_TEXT_MUTED, true), weight(1f));
+        TextView copy = text("کپی", 9f, COL_GOLD_DEEP, true);
+        copy.setPadding(dp(8), dp(3), dp(8), dp(3));
+        copy.setBackground(roundedShape(0xFFFBF4E7, dp(9), 0xFFE8D6B4, dp(1)));
+        copy.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                copyToClipboard(body);
+                toast("متن کپی شد.");
+            }
+        });
+        head.addView(copy);
+        card.addView(head);
+        card.addView(space(8));
+        TextView content = text(body, highlight ? 11.5f : 10.5f,
+                highlight ? COL_TEXT_MAIN : 0xFF4A463F, false);
+        content.setLineSpacing(dp(4), 1f);
+        card.addView(content);
+        return card;
+    }
+
+    private void pickProductPhoto() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            startActivityForResult(Intent.createChooser(intent, "انتخاب عکس محصول"), REQ_PICK_PHOTO);
+        } catch (Exception e) {
+            toast("دسترسی به گالری ممکن نشد.");
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_PICK_PHOTO && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            try {
+                BitmapFactory.Options bounds = new BitmapFactory.Options();
+                bounds.inJustDecodeBounds = true;
+                java.io.InputStream s1 = getContentResolver().openInputStream(data.getData());
+                BitmapFactory.decodeStream(s1, null, bounds);
+                if (s1 != null) s1.close();
+
+                int sample = 1;
+                int maxSide = Math.max(bounds.outWidth, bounds.outHeight);
+                while (maxSide / sample > 1400) sample *= 2;
+
+                BitmapFactory.Options opts = new BitmapFactory.Options();
+                opts.inSampleSize = sample;
+                java.io.InputStream s2 = getContentResolver().openInputStream(data.getData());
+                Bitmap bmp = BitmapFactory.decodeStream(s2, null, opts);
+                if (s2 != null) s2.close();
+
+                if (bmp != null) {
+                    aiSourceBitmap = bmp;
+                    aiStudioPath = "";
+                    toast("عکس محصول بارگذاری شد.");
+                    renderCurrentScreen();
+                } else {
+                    toast("خواندن تصویر ممکن نشد.");
+                }
+            } catch (Exception e) {
+                toast("خواندن تصویر از گالری ممکن نشد.");
+            }
+        }
+    }
+
+    private void generateStudioImage() {
+        if (aiSourceBitmap == null) {
+            toast("ابتدا عکس محصول را از گالری انتخاب کنید.");
+            return;
+        }
+        if (aiBusy) return;
+        if (aiDraft != null) {
+            long editedPrice = parseLong(aiPriceInput == null ? "" : aiPriceInput.getText().toString());
+            long editedOld = parseLong(aiOldPriceInput == null ? "" : aiOldPriceInput.getText().toString());
+            if (editedPrice > 0) aiDraft.suggestedPrice = editedPrice;
+            if (editedOld > 0) aiDraft.suggestedOldPrice = editedOld;
+        }
+        aiBusy = true;
+        toast("در حال ساخت تصویر استودیویی ابسیدین–طلایی…");
+        final Bitmap src = aiSourceBitmap;
+        final String brandLine = aiBrand == null || aiBrand.trim().isEmpty() ? "ASIYE STORE" : aiBrand.trim();
+        final String productLine = aiAnalysis == null ? "" : aiAnalysis.formFactorFa;
+        new Thread(new Runnable() {
+            @Override public void run() {
+                Bitmap rendered = null;
+                String path = "";
+                try {
+                    rendered = LuxuryImageStudio.render(src, brandLine, productLine);
+                    java.io.File file = LuxuryImageStudio.saveToPrivateStorage(MainActivity.this, rendered);
+                    if (file != null) path = file.getAbsolutePath();
+                } catch (Throwable ignored) { }
+                final String finalPath = path;
+                aiBusy = false;
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        if (finalPath.isEmpty()) {
+                            toast("ساخت تصویر ممکن نشد؛ از عکس اصلی استفاده می‌شود.");
+                        } else {
+                            aiStudioPath = finalPath;
+                            toast("تصویر استودیویی اختصاصی ساخته شد.");
+                            renderCurrentScreen();
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+
+    /** Memory-safe decode: AI studio renders are 1080², so we downsample for list rows. */
+    private Bitmap loadProductBitmap(Models.Product p) {
+        if (p == null || p.imagePath == null || p.imagePath.trim().isEmpty()) return null;
+        try {
+            BitmapFactory.Options bounds = new BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(p.imagePath, bounds);
+            int sample = 1;
+            int maxSide = Math.max(bounds.outWidth, bounds.outHeight);
+            while (maxSide / sample > 640) sample *= 2;
+            BitmapFactory.Options opts = new BitmapFactory.Options();
+            opts.inSampleSize = sample;
+            opts.inPreferredConfig = Bitmap.Config.RGB_565;
+            return BitmapFactory.decodeFile(p.imagePath, opts);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    /** Higher-resolution decode used by the immersive product page. */
+    private Bitmap loadProductBitmapLarge(Models.Product p) {
+        if (p == null || p.imagePath == null || p.imagePath.trim().isEmpty()) return null;
+        try {
+            BitmapFactory.Options bounds = new BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(p.imagePath, bounds);
+            int sample = 1;
+            int maxSide = Math.max(bounds.outWidth, bounds.outHeight);
+            while (maxSide / sample > 1100) sample *= 2;
+            BitmapFactory.Options opts = new BitmapFactory.Options();
+            opts.inSampleSize = sample;
+            return BitmapFactory.decodeFile(p.imagePath, opts);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
     //  UI PRIMITIVES
     // ══════════════════════════════════════════════════════════════════════
     private static String ltr(String value) {
@@ -3229,9 +4613,9 @@ public final class MainActivity extends Activity {
         iconWrap.addView(new Luxury3DIconView(this, iconType, true),
                 new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        TextView t = text(label, 12f, COL_OBSIDIAN, true);
+        TextView t = text(label, 11.5f, COL_OBSIDIAN, true);
         t.setGravity(Gravity.CENTER);
-        t.setSingleLine(true);
+        t.setMaxLines(2);
         t.setEllipsize(android.text.TextUtils.TruncateAt.END);
         t.setPadding(dp(7), 0, 0, 0);
 
@@ -3302,10 +4686,21 @@ public final class MainActivity extends Activity {
     }
 
     private View ghostGoldButton(String label, final Runnable action) {
+        TextView t = text(label, 10.5f, COL_GOLD_DEEP, true);
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(dp(12), dp(10), dp(12), dp(10));
+        t.setBackground(roundedShape(0xFFFBF4E7, dp(12), 0xFFE8D6B4, dp(1)));
+        t.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { action.run(); }
+        });
+        return t;
+    }
+
+    private View ghostGoldDarkButton(String label, final Runnable action) {
         TextView t = text(label, 10.5f, COL_GOLD_LIGHT, true);
         t.setGravity(Gravity.CENTER);
-        t.setPadding(dp(12), dp(9), dp(12), dp(9));
-        t.setBackground(roundedShape(0x14C8A46B, dp(12), 0x55C8A46B, dp(1)));
+        t.setPadding(dp(12), dp(10), dp(12), dp(10));
+        t.setBackground(roundedShape(0x1FC8A46B, dp(12), 0x55C8A46B, dp(1)));
         t.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { action.run(); }
         });

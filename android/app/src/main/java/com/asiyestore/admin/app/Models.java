@@ -29,8 +29,42 @@ public final class Models {
         public int stock;
         public int lowStockThreshold;
         public boolean published;
-        public String imageKey; // "serum", "caviar", "lipstick", "perfume", "elixir", "giftbox"
+        public String imageKey;
         public boolean wishlisted;
+        // ── v6.0 AI Studio enrichment ──
+        public String benefits;          // bullet lines separated by \n
+        public String longDescription;   // full persuasive story
+        public String seoTitle;
+        public String seoDescription;
+        public String keywords;
+        public String instagramCaption;
+        public String imagePath;         // absolute path of AI studio render
+        public boolean aiGenerated;
+    }
+
+    /** One selectable BNPL / installment plan computed by InstallmentEngine. */
+    public static final class InstallmentPlan {
+        public String id;
+        public String titleFa;
+        public String providerFa;
+        public int months;
+        public double interestPercent;
+        public long downPayment;
+        public long financedAmount;
+        public long monthlyPayment;
+        public long payableTotal;
+        public long totalFee;
+        public boolean zeroInterest;
+        public String noteFa;
+    }
+
+    /** Payment gateway row shown in the customer checkout + admin payment settings. */
+    public static final class PaymentGatewayRecord {
+        public String code;
+        public String titleFa;
+        public String subtitleFa;
+        public boolean enabled;
+        public int feePercent;
     }
 
     public static final class CartItem {

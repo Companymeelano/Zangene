@@ -38,6 +38,19 @@ public final class Luxury3DIconView extends View {
     public static final int ICON_SHARE     = 18;
     public static final int ICON_MINUS     = 19;
     public static final int ICON_CHART     = 20;
+    public static final int ICON_LOCK      = 21;
+    public static final int ICON_CARD      = 22;
+    public static final int ICON_WALLET    = 23;
+    public static final int ICON_INSTALLMENT = 24;
+    public static final int ICON_AI        = 25;
+    public static final int ICON_CAMERA    = 26;
+    public static final int ICON_SETTINGS  = 27;
+    public static final int ICON_CHECK     = 28;
+    public static final int ICON_BANK      = 29;
+
+    public static final int PEDESTAL_OBSIDIAN = 0;
+    public static final int PEDESTAL_GOLD     = 1;
+    public static final int PEDESTAL_IVORY    = 2;
 
     private final Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint bodyPaint   = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -54,11 +67,26 @@ public final class Luxury3DIconView extends View {
 
     private int iconType;
     private boolean goldPedestal;
+    private int pedestalStyle = PEDESTAL_OBSIDIAN;
 
     public Luxury3DIconView(Context context, int iconType, boolean goldPedestal) {
         super(context);
         this.iconType = iconType;
         this.goldPedestal = goldPedestal;
+        this.pedestalStyle = goldPedestal ? PEDESTAL_GOLD : PEDESTAL_OBSIDIAN;
+
+        rimPaint.setStyle(Paint.Style.STROKE);
+        glyphStroke.setStyle(Paint.Style.STROKE);
+        glyphStroke.setStrokeCap(Paint.Cap.ROUND);
+        glyphStroke.setStrokeJoin(Paint.Join.ROUND);
+        glyphFill.setStyle(Paint.Style.FILL);
+    }
+
+    public Luxury3DIconView(Context context, int iconType, int pedestalStyle) {
+        super(context);
+        this.iconType = iconType;
+        this.pedestalStyle = pedestalStyle;
+        this.goldPedestal = (pedestalStyle == PEDESTAL_GOLD);
 
         rimPaint.setStyle(Paint.Style.STROKE);
         glyphStroke.setStyle(Paint.Style.STROKE);
@@ -70,6 +98,13 @@ public final class Luxury3DIconView extends View {
     public void setIconState(int iconType, boolean goldPedestal) {
         this.iconType = iconType;
         this.goldPedestal = goldPedestal;
+        this.pedestalStyle = goldPedestal ? PEDESTAL_GOLD : PEDESTAL_OBSIDIAN;
+        invalidate();
+    }
+
+    public void setPedestal(int pedestalStyle) {
+        this.pedestalStyle = pedestalStyle;
+        this.goldPedestal = (pedestalStyle == PEDESTAL_GOLD);
         invalidate();
     }
 
@@ -86,16 +121,23 @@ public final class Luxury3DIconView extends View {
 
         // 1. Soft 3D Ground Shadow
         shadowBox.set(pad + s * 0.02f, pad + s * 0.055f, w - pad - s * 0.02f, h - pad + s * 0.045f);
-        shadowPaint.setColor(0x54050507);
+        shadowPaint.setColor(pedestalStyle == PEDESTAL_IVORY ? 0x24050507 : 0x54050507);
         canvas.drawRoundRect(shadowBox, radius, radius, shadowPaint);
 
         // 2. 3D Obsidian-Crystal or 24K Gold Bullion Pedestal
         box.set(pad, pad, w - pad, h - pad);
-        if (goldPedestal) {
+        if (pedestalStyle == PEDESTAL_GOLD) {
             bodyPaint.setShader(new RadialGradient(
                     w * 0.32f, h * 0.25f, s * 0.78f,
-                    new int[]{0xFFFFF5DC, 0xFFD4AF73, 0xFF8C6834},
+                    new int[]{0xFFFFF8E6, 0xFFDCBC85, 0xFF9A7440},
                     new float[]{0f, 0.58f, 1f},
+                    Shader.TileMode.CLAMP
+            ));
+        } else if (pedestalStyle == PEDESTAL_IVORY) {
+            bodyPaint.setShader(new RadialGradient(
+                    w * 0.32f, h * 0.24f, s * 0.82f,
+                    new int[]{0xFFFFFFFF, 0xFFF7F0E3, 0xFFE6D9C2},
+                    new float[]{0f, 0.55f, 1f},
                     Shader.TileMode.CLAMP
             ));
         } else {
@@ -132,7 +174,7 @@ public final class Luxury3DIconView extends View {
         sheenPath.close();
         sheenPaint.setShader(new LinearGradient(
                 box.left, box.top, box.right * 0.7f, box.top + s * 0.4f,
-                0x4AFFFFFF, 0x00FFFFFF, Shader.TileMode.CLAMP
+                pedestalStyle == PEDESTAL_IVORY ? 0x66FFFFFF : 0x4AFFFFFF, 0x00FFFFFF, Shader.TileMode.CLAMP
         ));
         canvas.drawPath(sheenPath, sheenPaint);
 
@@ -147,9 +189,14 @@ public final class Luxury3DIconView extends View {
         canvas.drawRoundRect(box, radius, radius, rimPaint);
 
         // 6. Sculpted Vector Inner Glyph (mapped on 64x64 virtual coordinate space)
-        LinearGradient fgGrad = goldPedestal
-                ? new LinearGradient(0, pad, 0, h - pad, 0xFF1E1C22, 0xFF09090C, Shader.TileMode.CLAMP)
-                : new LinearGradient(0, pad, 0, h - pad, 0xFFFFF5DC, 0xFFD0AA6E, Shader.TileMode.CLAMP);
+        LinearGradient fgGrad;
+        if (pedestalStyle == PEDESTAL_OBSIDIAN) {
+            fgGrad = new LinearGradient(0, pad, 0, h - pad, 0xFFFFF7E4, 0xFFD2AC70, Shader.TileMode.CLAMP);
+        } else if (pedestalStyle == PEDESTAL_IVORY) {
+            fgGrad = new LinearGradient(0, pad, 0, h - pad, 0xFF4A3B25, 0xFF1A1610, Shader.TileMode.CLAMP);
+        } else {
+            fgGrad = new LinearGradient(0, pad, 0, h - pad, 0xFF221F27, 0xFF0A0A0D, Shader.TileMode.CLAMP);
+        }
 
         glyphStroke.setShader(fgGrad);
         glyphFill.setShader(fgGrad);
@@ -275,9 +322,113 @@ public final class Luxury3DIconView extends View {
                 break;
             }
             case ICON_KEY_ADMIN: {
-                c.drawCircle(gx(26f, w), gy(28f, h), s * 0.095f, glyphStroke);
-                c.drawLine(gx(31.5f, w), gy(33.5f, h), gx(44f, w), gy(44f, h), glyphStroke);
-                c.drawLine(gx(39f, w), gy(39.8f, h), gx(42.5f, w), gy(36.5f, h), glyphStroke);
+                // Ring bow (left-top) + shaft + two teeth: unmistakably a key, never a magnifier
+                c.drawCircle(gx(24f, w), gy(24f, h), s * 0.075f, glyphStroke);
+                c.drawLine(gx(29.2f, w), gy(29.2f, h), gx(44f, w), gy(44f, h), glyphStroke);
+                c.drawLine(gx(34.5f, w), gy(34.5f, h), gx(30.5f, w), gy(38.5f, h), glyphStroke);
+                c.drawLine(gx(39.5f, w), gy(39.5f, h), gx(35.5f, w), gy(43.5f, h), glyphStroke);
+                break;
+            }
+            case ICON_LOCK: {
+                glyphStroke.setStrokeWidth(Math.max(dp(1.6f), s * 0.042f));
+                Path shackle = new Path();
+                shackle.moveTo(gx(24.5f, w), gy(29f, h));
+                shackle.lineTo(gx(24.5f, w), gy(24.5f, h));
+                shackle.cubicTo(gx(24.5f, w), gy(18.5f, h), gx(39.5f, w), gy(18.5f, h), gx(39.5f, w), gy(24.5f, h));
+                shackle.lineTo(gx(39.5f, w), gy(29f, h));
+                c.drawPath(shackle, glyphStroke);
+                RectF lockBody = new RectF(gx(19.5f, w), gy(29f, h), gx(44.5f, w), gy(46f, h));
+                c.drawRoundRect(lockBody, s * 0.075f, s * 0.075f, glyphStroke);
+                c.drawCircle(gx(32f, w), gy(35.6f, h), s * 0.032f, glyphFill);
+                c.drawLine(gx(32f, w), gy(37.2f, h), gx(32f, w), gy(41.2f, h), glyphStroke);
+                break;
+            }
+            case ICON_CARD: {
+                RectF card = new RectF(gx(17.5f, w), gy(22f, h), gx(46.5f, w), gy(43.5f, h));
+                c.drawRoundRect(card, s * 0.055f, s * 0.055f, glyphStroke);
+                c.drawLine(gx(17.5f, w), gy(29.5f, h), gx(46.5f, w), gy(29.5f, h), glyphStroke);
+                c.drawLine(gx(23f, w), gy(37.2f, h), gx(32f, w), gy(37.2f, h), glyphStroke);
+                c.drawCircle(gx(41f, w), gy(37.2f, h), s * 0.028f, glyphFill);
+                break;
+            }
+            case ICON_WALLET: {
+                glyphPath.moveTo(gx(18.5f, w), gy(25f, h));
+                glyphPath.lineTo(gx(41f, w), gy(25f, h));
+                glyphPath.quadTo(gx(45.5f, w), gy(25f, h), gx(45.5f, w), gy(30f, h));
+                glyphPath.lineTo(gx(45.5f, w), gy(41f, h));
+                glyphPath.quadTo(gx(45.5f, w), gy(45f, h), gx(41f, w), gy(45f, h));
+                glyphPath.lineTo(gx(21.5f, w), gy(45f, h));
+                glyphPath.quadTo(gx(18.5f, w), gy(45f, h), gx(18.5f, w), gy(41f, h));
+                glyphPath.close();
+                c.drawPath(glyphPath, glyphStroke);
+                c.drawLine(gx(18.5f, w), gy(31f, h), gx(45.5f, w), gy(31f, h), glyphStroke);
+                c.drawCircle(gx(39.5f, w), gy(38f, h), s * 0.03f, glyphFill);
+                break;
+            }
+            case ICON_INSTALLMENT: {
+                c.drawCircle(gx(32f, w), gy(32f, h), s * 0.155f, glyphStroke);
+                c.drawLine(gx(32f, w), gy(23.5f, h), gx(32f, w), gy(32f, h), glyphStroke);
+                c.drawLine(gx(32f, w), gy(32f, h), gx(38.5f, w), gy(36f, h), glyphStroke);
+                c.drawCircle(gx(32f, w), gy(32f, h), s * 0.018f, glyphFill);
+                break;
+            }
+            case ICON_AI: {
+                glyphPath.moveTo(gx(32f, w), gy(16.5f, h));
+                glyphPath.lineTo(gx(35.2f, w), gy(26.4f, h));
+                glyphPath.lineTo(gx(45f, w), gy(29.6f, h));
+                glyphPath.lineTo(gx(35.2f, w), gy(32.8f, h));
+                glyphPath.lineTo(gx(32f, w), gy(42.7f, h));
+                glyphPath.lineTo(gx(28.8f, w), gy(32.8f, h));
+                glyphPath.lineTo(gx(19f, w), gy(29.6f, h));
+                glyphPath.lineTo(gx(28.8f, w), gy(26.4f, h));
+                glyphPath.close();
+                c.drawPath(glyphPath, glyphFill);
+                c.drawCircle(gx(42.5f, w), gy(19.5f, h), s * 0.028f, glyphFill);
+                c.drawCircle(gx(22f, w), gy(42f, h), s * 0.022f, glyphFill);
+                break;
+            }
+            case ICON_CAMERA: {
+                RectF body = new RectF(gx(17.5f, w), gy(23.5f, h), gx(46.5f, w), gy(44f, h));
+                c.drawRoundRect(body, s * 0.07f, s * 0.07f, glyphStroke);
+                c.drawCircle(gx(32f, w), gy(33.6f, h), s * 0.098f, glyphStroke);
+                c.drawCircle(gx(32f, w), gy(33.6f, h), s * 0.042f, glyphFill);
+                c.drawLine(gx(25f, w), gy(23.5f, h), gx(28f, w), gy(19.5f, h), glyphStroke);
+                c.drawLine(gx(28f, w), gy(19.5f, h), gx(36f, w), gy(19.5f, h), glyphStroke);
+                c.drawLine(gx(36f, w), gy(19.5f, h), gx(39f, w), gy(23.5f, h), glyphStroke);
+                c.drawCircle(gx(42f, w), gy(28.5f, h), s * 0.022f, glyphFill);
+                break;
+            }
+            case ICON_SETTINGS: {
+                c.drawCircle(gx(32f, w), gy(32f, h), s * 0.075f, glyphStroke);
+                for (int i = 0; i < 8; i++) {
+                    double ang = Math.PI / 4.0 * i;
+                    float x1 = (float) (32 + Math.cos(ang) * 12.5);
+                    float y1 = (float) (32 + Math.sin(ang) * 12.5);
+                    float x2 = (float) (32 + Math.cos(ang) * 17.5);
+                    float y2 = (float) (32 + Math.sin(ang) * 17.5);
+                    c.drawLine(gx(x1, w), gy(y1, h), gx(x2, w), gy(y2, h), glyphStroke);
+                }
+                c.drawCircle(gx(32f, w), gy(32f, h), s * 0.155f, glyphStroke);
+                break;
+            }
+            case ICON_CHECK: {
+                glyphPath.moveTo(gx(21f, w), gy(32.5f, h));
+                glyphPath.lineTo(gx(29f, w), gy(40.5f, h));
+                glyphPath.lineTo(gx(44f, w), gy(23.5f, h));
+                c.drawPath(glyphPath, glyphStroke);
+                break;
+            }
+            case ICON_BANK: {
+                glyphPath.moveTo(gx(18f, w), gy(27f, h));
+                glyphPath.lineTo(gx(32f, w), gy(18.5f, h));
+                glyphPath.lineTo(gx(46f, w), gy(27f, h));
+                glyphPath.close();
+                c.drawPath(glyphPath, glyphStroke);
+                RectF base = new RectF(gx(18f, w), gy(28.5f, h), gx(46f, w), gy(45f, h));
+                c.drawRoundRect(base, s * 0.02f, s * 0.02f, glyphStroke);
+                c.drawLine(gx(25f, w), gy(33f, h), gx(25f, w), gy(41f, h), glyphStroke);
+                c.drawLine(gx(32f, w), gy(33f, h), gx(32f, w), gy(41f, h), glyphStroke);
+                c.drawLine(gx(39f, w), gy(33f, h), gx(39f, w), gy(41f, h), glyphStroke);
                 break;
             }
             case ICON_SEARCH: {
