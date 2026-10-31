@@ -2,7 +2,6 @@ package com.asiyestore.admin.app;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -10,14 +9,12 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextUtils;
@@ -31,7 +28,6 @@ import android.view.WindowManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -79,7 +75,6 @@ public final class MainActivity extends Activity {
     // ── Palette ────────────────────────────────────────────────────────────
     private static final int COL_OBSIDIAN      = 0xFF0B0B0E;
     private static final int COL_OBSIDIAN_SOFT = 0xFF141319;
-    private static final int COL_OBSIDIAN_CARD = 0xFF17161D;
     private static final int COL_GOLD          = 0xFFC8A46B;
     private static final int COL_GOLD_LIGHT    = 0xFFEBD6B0;
     private static final int COL_GOLD_DEEP     = 0xFF8E6C3A;
@@ -1113,7 +1108,7 @@ public final class MainActivity extends Activity {
         foot.setGravity(Gravity.CENTER);
         foot.setPadding(0, dp(8), 0, dp(8));
 
-        TextView line = text("ASIYE STORE  ·  طراحی: میلاد یعقوبی  ·  " + APP_VERSION, 8.8f, 0xFF9A9186, false);
+        TextView line = text("ASIYE STORE  ·  طراحی: میلاد یعقوبی  ·  " + APP_VERSION, 8.8f, 0xFF8A8175, false);
         line.setGravity(Gravity.CENTER);
         line.setLetterSpacing(0.06f);
         foot.addView(line);
@@ -5031,7 +5026,7 @@ public final class MainActivity extends Activity {
     private EditText makeInput(String hint, int inputType, boolean ltrText) {
         EditText input = new EditText(this);
         input.setHint(hint);
-        input.setHintTextColor(0xFFA9A196);
+        input.setHintTextColor(0xFF8E8678);
         input.setTextColor(COL_TEXT_MAIN);
         input.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
         input.setInputType(inputType);
