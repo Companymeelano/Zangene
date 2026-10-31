@@ -15,7 +15,10 @@ import java.util.Random;
 
 public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
 
-    private static final String DB_NAME = "asiye_signature_v4.db";
+    public static final long FREE_SHIPPING_THRESHOLD = 2_000_000L;
+    public static final long STANDARD_SHIPPING_COST  = 65_000L;
+
+    private static final String DB_NAME = "asiye_royal_v5.db";
     private static final int DB_VERSION = 1;
 
     public AsiyeDatabaseHelper(Context context) {
@@ -126,7 +129,6 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     }
 
     private void seedSignatureCatalog(SQLiteDatabase db) {
-        // Exact 6 Flagship Products from @asiyeh.store (Ms. Zangeneh's Official Instagram Page)
         long p1 = insertSeedProduct(db,
                 "AS-GAT-150", "AS-GAT-150", "LOT-GTW-2026", "۱۴۰۸/۰۶", false, 60,
                 "کرم روشن‌کننده و ضدلک تخصصی گاتیو",
@@ -171,7 +173,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "فرمولاسیون تخصصی گیاهی", "۳۰۰ میلی‌لیتر",
                 1_950_000L, 1_560_000L, 22, 5, "hair_friend");
 
-        insertSeedProduct(db,
+        long p5 = insertSeedProduct(db,
                 "AS-ORD-240", "AS-ORD-240", "LOT-ORD-771", "۱۴۰۸/۱۱", true, 90,
                 "تونر لایه‌بردار گلیکولیک اسید ۷٪ اوردینری",
                 "THE ORDINARY • اورجینال کانادا",
@@ -180,7 +182,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "گلیکولیک اسید ۷ درصد، عصاره ریشه جینسینگ، فلفل تاسمانی و آلوئه‌ورا",
                 "شب‌ها با پد پنبه‌ای روی پوست تمیز صورت و گردن (به‌جز دور چشم) کشیده شود و روزها ضدآفتاب استفاده گردد.",
                 "کانادا (اورجینال)", "۲۴۰ میلی‌لیتر",
-                3_450_000L, 2_890_000L, 12, 4, "ordinary_toner");
+                3_450_000L, 2_890_000L, 4, 5, "ordinary_toner");
 
         insertSeedProduct(db,
                 "AS-MRG-500", "AS-MRG-500", "LOT-MVB-502", "۱۴۰۸/۰۷", false, 50,
@@ -193,17 +195,17 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "فرمولاسیون فاقد سولفات", "پک دوتایی کامل",
                 840_000L, 680_000L, 26, 5, "moringa_teatree");
 
-        // Coupons
+        // VIP Coupons
         insertSeedCoupon(db, "ASIYE20", 20, 0, 500_000L, 600_000L);
         insertSeedCoupon(db, "VIPGOLD", 0, 250_000L, 1_500_000L, 250_000L);
 
-        // Sample Verified Order
+        // Order 1 (Shipped with postal tracking)
         ContentValues o1 = new ContentValues();
         o1.put("order_number", "AS-1405-9102");
         o1.put("customer_name", "سارا محمدی");
         o1.put("customer_mobile", "09123456789");
         o1.put("address_summary", "تهران، سعادت‌آباد، بلوار دریا، پلاک ۱۸");
-        o1.put("shipping_method", "پست پیشتاز ویژه");
+        o1.put("shipping_method", "پست پیشتاز VIP");
         o1.put("payment_method", "snapp_pay");
         o1.put("installments_count", 4);
         o1.put("subtotal", 3_110_000L);
@@ -215,17 +217,45 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         o1.put("vip_gift_box", 1);
         o1.put("cold_chain", 0);
         o1.put("scented_tissue", "بسته‌بندی اختصاصی ASIYE");
-        o1.put("gift_message", "");
+        o1.put("gift_message", "تقدیم با مهر و آرزوی درخشش همیشگی");
         o1.put("certificate_code", "AS-CERT-9102");
         o1.put("status", "shipped");
         o1.put("tracking_code", "29481000841102");
-        o1.put("created_at_label", "امروز");
+        o1.put("created_at_label", "دیروز — ۱۸:۴۰");
         long ord1Id = db.insert("orders", null, o1);
         insertSeedOrderItem(db, ord1Id, p1, "کرم روشن‌کننده و ضدلک تخصصی گاتیو", "۱۵۰ میلی‌لیتر", 1, 1_550_000L);
         insertSeedOrderItem(db, ord1Id, p4, "تونیک گیاهی تقویت و رویش مجدد مو هیرفرند", "۳۰۰ میلی‌لیتر", 1, 1_560_000L);
-        ignored(p2 + p3);
 
-        insertMovementInternal(db, p1, "کرم روشن‌کننده گاتیو", 24, "in", "شارژ موجودی اورجینال", "مدیریت مجموعه");
+        // Order 2 (Preparing VIP Gift Box today)
+        ContentValues o2 = new ContentValues();
+        o2.put("order_number", "AS-1405-9148");
+        o2.put("customer_name", "نازنین رضایی");
+        o2.put("customer_mobile", "09354118820");
+        o2.put("address_summary", "شیراز، معالی‌آباد، خیابان پزشکان، مجتمع صدف");
+        o2.put("shipping_method", "پست پیشتاز VIP");
+        o2.put("payment_method", "zarinpal");
+        o2.put("installments_count", 1);
+        o2.put("subtotal", 3_810_000L);
+        o2.put("discount", 250_000L);
+        o2.put("wallet_used", 0L);
+        o2.put("shipping_cost", 0L);
+        o2.put("total_amount", 3_560_000L);
+        o2.put("cashback_earned", 0L);
+        o2.put("vip_gift_box", 1);
+        o2.put("cold_chain", 1);
+        o2.put("scented_tissue", "بسته‌بندی اختصاصی ASIYE");
+        o2.put("gift_message", "");
+        o2.put("certificate_code", "AS-CERT-9148");
+        o2.put("status", "preparing");
+        o2.put("tracking_code", "");
+        o2.put("created_at_label", "امروز — ۱۱:۲۰");
+        long ord2Id = db.insert("orders", null, o2);
+        insertSeedOrderItem(db, ord2Id, p5, "تونر لایه‌بردار گلیکولیک اسید ۷٪ اوردینری", "۲۴۰ میلی‌لیتر", 1, 2_890_000L);
+        insertSeedOrderItem(db, ord2Id, p3, "پنکک ضدآب و مخملی لاکچری کوین SPF 25", "شماره ۱۰۲ بژ طبیعی", 1, 920_000L);
+        ignored(p2);
+
+        insertMovementInternal(db, p1, "کرم روشن‌کننده گاتیو", 24, "in", "شارژ پارت جدید اورجینال", "سرکار خانم زنگنه");
+        insertMovementInternal(db, p5, "تونر گلیکولیک اوردینری", -1, "out", "فروش سفارش AS-1405-9148", "سیستم فروش");
 
         putSettingInternal(db, "api_base_url", "https://asiyestore.ir/api/v1");
         putSettingInternal(db, "customer_name", "");
@@ -346,21 +376,39 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
 
         if (onlyPublished) sql.append(" AND published = 1");
         if (categoryFilter != null && !categoryFilter.isEmpty() && !"همه".equals(categoryFilter)) {
-            sql.append(" AND category = ?");
-            args.add(categoryFilter);
+            if (categoryFilter.startsWith("منتخب")) {
+                sql.append(" AND wishlisted = 1");
+            } else {
+                sql.append(" AND category = ?");
+                args.add(categoryFilter);
+            }
         }
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             String q = "%" + searchQuery.trim() + "%";
-            sql.append(" AND (name_fa LIKE ? OR name_en LIKE ? OR sku LIKE ?)");
-            args.add(q); args.add(q); args.add(q);
+            sql.append(" AND (name_fa LIKE ? OR name_en LIKE ? OR sku LIKE ? OR description LIKE ?)");
+            args.add(q); args.add(q); args.add(q); args.add(q);
         }
-        sql.append(" ORDER BY id ASC");
+        if ("price_asc".equals(sortMode)) {
+            sql.append(" ORDER BY sale_price ASC");
+        } else if ("price_desc".equals(sortMode)) {
+            sql.append(" ORDER BY sale_price DESC");
+        } else {
+            sql.append(" ORDER BY id ASC");
+        }
 
         SQLiteDatabase db = getReadableDatabase();
         try (Cursor c = db.rawQuery(sql.toString(), args.toArray(new String[0]))) {
             while (c.moveToNext()) list.add(readProduct(c));
         }
         return list;
+    }
+
+    public int getWishlistCount() {
+        SQLiteDatabase db = getReadableDatabase();
+        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM products WHERE wishlisted = 1 AND published = 1", null)) {
+            if (c.moveToFirst()) return c.getInt(0);
+        }
+        return 0;
     }
 
     public void toggleWishlist(long productId, boolean wishlisted) {
@@ -408,39 +456,56 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public String saveOrUpdateProduct(Long existingId, String sku, String nameFa, String nameEn,
                                       String category, String description, String country, String volume,
                                       long origPrice, long salePrice, int initialStock, boolean published, String imageKey) {
-        if (salePrice > origPrice) return "قیمت فروش نمی‌تواند بیشتر از قیمت اصلی باشد.";
+        if (nameFa == null || nameFa.trim().isEmpty()) return "نام فارسی محصول الزامی است.";
+        if (salePrice <= 0) return "قیمت فروش باید بزرگ‌تر از صفر باشد.";
+        if (origPrice < salePrice) origPrice = salePrice;
         int disc = origPrice > 0 ? (int) Math.round(((origPrice - salePrice) * 100.0) / origPrice) : 0;
+
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
-        String normSku = sku.trim().toUpperCase(Locale.US);
+        String normSku = (sku == null || sku.trim().isEmpty())
+                ? ("AS-NEW-" + (100 + new Random().nextInt(899)))
+                : sku.trim().toUpperCase(Locale.US);
         cv.put("sku", normSku);
         cv.put("name_fa", nameFa.trim());
-        cv.put("name_en", nameEn.trim().isEmpty() ? "ASIYE STORE" : nameEn.trim());
+        cv.put("name_en", (nameEn == null || nameEn.trim().isEmpty()) ? "ASIYE STORE • کالای اورجینال" : nameEn.trim());
         cv.put("category", category);
-        cv.put("description", description.trim());
-        cv.put("country", country.trim().isEmpty() ? "اورجینال" : country.trim());
-        cv.put("volume", volume.trim().isEmpty() ? "استاندارد" : volume.trim());
+        cv.put("description", (description == null || description.trim().isEmpty())
+                ? "محصول تخصصی اورجینال با ضمانت اصالت مجموعه ASIYE STORE."
+                : description.trim());
+        cv.put("country", (country == null || country.trim().isEmpty()) ? "اورجینال" : country.trim());
+        cv.put("volume", (volume == null || volume.trim().isEmpty()) ? "نسخه اصلی" : volume.trim());
         cv.put("original_price", origPrice);
         cv.put("sale_price", salePrice);
         cv.put("discount_percent", Math.max(0, disc));
         cv.put("published", published ? 1 : 0);
-        cv.put("image_key", imageKey);
+        cv.put("image_key", (imageKey == null || imageKey.isEmpty()) ? "gatieau_whitening" : imageKey);
 
         try {
             if (existingId == null) {
                 cv.put("ttac_serial", normSku);
                 cv.put("batch_code", "LOT-" + (100 + new Random().nextInt(899)));
-                cv.put("expiry_label", "۱۴۰۸/۰۸");
+                cv.put("expiry_label", "۱۴۰۸/۰۹");
+                cv.put("ingredients", "فرمولاسیون تخصصی استاندارد درماتولوژی");
+                cv.put("usage_method", "طبق دستور مصرف درج‌شده روی بسته‌بندی محصول استفاده شود.");
                 cv.put("stock", Math.max(0, initialStock));
                 cv.put("low_stock_threshold", 5);
-                db.insertOrThrow("products", null, cv);
+                long newId = db.insertOrThrow("products", null, cv);
+                insertMovementInternal(db, newId, nameFa.trim(), Math.max(0, initialStock), "in", "ثبت کالای جدید در ویترین", "مدیریت");
             } else {
+                cv.put("stock", Math.max(0, initialStock));
                 db.update("products", cv, "id = ?", new String[]{String.valueOf(existingId)});
             }
             return null;
         } catch (Exception e) {
-            return "کد شناسه تکراری است.";
+            return "کد شناسه (SKU) تکراری است.";
         }
+    }
+
+    public void setProductPublished(long productId, boolean published) {
+        ContentValues cv = new ContentValues();
+        cv.put("published", published ? 1 : 0);
+        getWritableDatabase().update("products", cv, "id = ?", new String[]{String.valueOf(productId)});
     }
 
     public void upsertSyncedProduct(String sku, String nameFa, String nameEn, long orig, long sale, int stock) {
@@ -470,22 +535,90 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public String archiveProductSafely(long productId) {
-        ContentValues cv = new ContentValues();
-        cv.put("published", 0);
-        getWritableDatabase().update("products", cv, "id = ?", new String[]{String.valueOf(productId)});
-        return "محصول به حالت آرشیو امن منتقل شد.";
-    }
-
     public String adjustInventory(long productId, String type, int quantity, String reason) {
         Models.Product p = getProductById(productId);
         if (p == null) return "محصول یافت نشد.";
         int newStock = "in".equals(type) ? p.stock + quantity : Math.max(0, p.stock - quantity);
+        int delta = newStock - p.stock;
         ContentValues cv = new ContentValues();
         cv.put("stock", newStock);
         getWritableDatabase().update("products", cv, "id = ?", new String[]{String.valueOf(productId)});
-        insertMovementInternal(getWritableDatabase(), productId, p.nameFa, "in".equals(type) ? quantity : -quantity, type, reason, "مدیریت");
+        if (delta != 0) {
+            insertMovementInternal(getWritableDatabase(), productId, p.nameFa, delta, type, reason, "مدیریت");
+        }
         return null;
+    }
+
+    public String setExactInventory(long productId, int exactStock, String reason) {
+        Models.Product p = getProductById(productId);
+        if (p == null) return "محصول یافت نشد.";
+        int safe = Math.max(0, exactStock);
+        int delta = safe - p.stock;
+        ContentValues cv = new ContentValues();
+        cv.put("stock", safe);
+        getWritableDatabase().update("products", cv, "id = ?", new String[]{String.valueOf(productId)});
+        insertMovementInternal(getWritableDatabase(), productId, p.nameFa, delta, delta >= 0 ? "in" : "out",
+                (reason == null || reason.trim().isEmpty()) ? "انبارگردانی دقیق مدیریت" : reason.trim(), "مدیریت");
+        return null;
+    }
+
+    public List<Models.StockMovementRecord> getRecentMovements(int limit) {
+        List<Models.StockMovementRecord> list = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        try (Cursor c = db.rawQuery("SELECT * FROM stock_movements ORDER BY id DESC LIMIT ?", new String[]{String.valueOf(limit)})) {
+            while (c.moveToNext()) {
+                Models.StockMovementRecord m = new Models.StockMovementRecord();
+                m.id = c.getLong(c.getColumnIndexOrThrow("id"));
+                m.productId = c.getLong(c.getColumnIndexOrThrow("product_id"));
+                m.productName = c.getString(c.getColumnIndexOrThrow("product_name"));
+                m.deltaQuantity = c.getInt(c.getColumnIndexOrThrow("delta_quantity"));
+                m.type = c.getString(c.getColumnIndexOrThrow("type"));
+                m.reason = c.getString(c.getColumnIndexOrThrow("reason"));
+                m.actor = c.getString(c.getColumnIndexOrThrow("actor"));
+                m.createdAtLabel = c.getString(c.getColumnIndexOrThrow("created_at_label"));
+                list.add(m);
+            }
+        }
+        return list;
+    }
+
+    public List<Models.CouponRecord> getCoupons() {
+        List<Models.CouponRecord> list = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        try (Cursor c = db.rawQuery("SELECT * FROM coupons ORDER BY id DESC", null)) {
+            while (c.moveToNext()) {
+                Models.CouponRecord cp = new Models.CouponRecord();
+                cp.id = c.getLong(c.getColumnIndexOrThrow("id"));
+                cp.code = c.getString(c.getColumnIndexOrThrow("code"));
+                cp.discountPercent = c.getInt(c.getColumnIndexOrThrow("discount_percent"));
+                cp.discountAmount = c.getLong(c.getColumnIndexOrThrow("discount_amount"));
+                cp.minPurchase = c.getLong(c.getColumnIndexOrThrow("min_purchase"));
+                cp.maxDiscount = c.getLong(c.getColumnIndexOrThrow("max_discount"));
+                cp.active = c.getInt(c.getColumnIndexOrThrow("active")) == 1;
+                list.add(cp);
+            }
+        }
+        return list;
+    }
+
+    public String createOrUpdateCoupon(String rawCode, int percent, long fixedAmount, long minPurchase, long maxDiscount) {
+        if (rawCode == null || rawCode.trim().isEmpty()) return "کد تخفیف را وارد کنید.";
+        String code = rawCode.trim().toUpperCase(Locale.US);
+        ContentValues cv = new ContentValues();
+        cv.put("code", code);
+        cv.put("discount_percent", Math.max(0, Math.min(90, percent)));
+        cv.put("discount_amount", Math.max(0L, fixedAmount));
+        cv.put("min_purchase", Math.max(0L, minPurchase));
+        cv.put("max_discount", Math.max(0L, maxDiscount));
+        cv.put("active", 1);
+        getWritableDatabase().insertWithOnConflict("coupons", null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+        return null;
+    }
+
+    public void toggleCouponActive(long couponId, boolean active) {
+        ContentValues cv = new ContentValues();
+        cv.put("active", active ? 1 : 0);
+        getWritableDatabase().update("coupons", cv, "id = ?", new String[]{String.valueOf(couponId)});
     }
 
     public long evaluateCouponDiscount(String rawCode, long subtotal) {
@@ -512,7 +645,8 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                                               String paymentMethod,
                                               int installmentsCount,
                                               String couponCode,
-                                              boolean vipGiftBox) throws IllegalStateException {
+                                              boolean vipGiftBox,
+                                              String giftMessage) throws IllegalStateException {
         if (cart == null || cart.isEmpty()) throw new IllegalStateException("سبد خرید خالی است.");
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
@@ -521,7 +655,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             for (Models.CartItem item : cart) {
                 Models.Product fresh = getProductById(item.product.id);
                 if (fresh == null || fresh.stock < item.quantity) {
-                    throw new IllegalStateException("موجودی کافی برای «" + item.product.nameFa + "» نیست.");
+                    throw new IllegalStateException("موجودی کافی برای «" + item.product.nameFa + "» در انبار نیست.");
                 }
                 item.product = fresh;
                 subtotal += fresh.salePrice * item.quantity;
@@ -532,7 +666,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 if (eval > 0) discount = eval;
             }
             long afterDisc = Math.max(0L, subtotal - discount);
-            long shipping = afterDisc >= 2_500_000L ? 0L : 65_000L;
+            long shipping = afterDisc >= FREE_SHIPPING_THRESHOLD ? 0L : STANDARD_SHIPPING_COST;
             long total = afterDisc + shipping;
             String orderNumber = "AS-1405-" + (1000 + new Random().nextInt(8999));
 
@@ -541,7 +675,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             ord.put("customer_name", customerName);
             ord.put("customer_mobile", customerMobile);
             ord.put("address_summary", addressSummary);
-            ord.put("shipping_method", "پست پیشتاز ویژه");
+            ord.put("shipping_method", "پست پیشتاز VIP");
             ord.put("payment_method", paymentMethod);
             ord.put("installments_count", installmentsCount);
             ord.put("subtotal", subtotal);
@@ -553,7 +687,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             ord.put("vip_gift_box", vipGiftBox ? 1 : 0);
             ord.put("cold_chain", 0);
             ord.put("scented_tissue", "بسته‌بندی اختصاصی ASIYE");
-            ord.put("gift_message", "");
+            ord.put("gift_message", giftMessage != null ? giftMessage.trim() : "");
             ord.put("certificate_code", "AS-CERT-" + (1000 + new Random().nextInt(8999)));
             ord.put("status", "paid");
             ord.put("tracking_code", "");
@@ -566,6 +700,8 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 ContentValues up = new ContentValues();
                 up.put("stock", item.product.stock - item.quantity);
                 db.update("products", up, "id = ?", new String[]{String.valueOf(item.product.id)});
+                insertMovementInternal(db, item.product.id, item.product.nameFa, -item.quantity, "out",
+                        "سفارش " + orderNumber, customerName);
             }
 
             db.setTransactionSuccessful();
@@ -578,7 +714,14 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public List<Models.OrderRecord> getOrders(String statusFilter) {
         List<Models.OrderRecord> list = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
-        try (Cursor c = db.rawQuery("SELECT * FROM orders ORDER BY id DESC", null)) {
+        String sql = "SELECT * FROM orders";
+        String[] args = null;
+        if (statusFilter != null && !statusFilter.isEmpty() && !"all".equals(statusFilter)) {
+            sql += " WHERE status = ?";
+            args = new String[]{statusFilter};
+        }
+        sql += " ORDER BY id DESC";
+        try (Cursor c = db.rawQuery(sql, args)) {
             while (c.moveToNext()) {
                 Models.OrderRecord o = readOrder(c);
                 o.items = getOrderItems(db, o.id);
@@ -600,6 +743,56 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         return null;
     }
 
+    public Models.OrderRecord getOrderByNumber(String rawCode) {
+        if (rawCode == null || rawCode.trim().isEmpty()) return null;
+        String clean = PersianFormatter.toAsciiDigits(rawCode).trim().toUpperCase(Locale.US);
+        String normalized = clean.startsWith("AS-") ? clean : "AS-" + clean;
+        SQLiteDatabase db = getReadableDatabase();
+        try (Cursor c = db.rawQuery("SELECT * FROM orders WHERE UPPER(order_number) = ? OR UPPER(order_number) = ?",
+                new String[]{clean, normalized})) {
+            if (c.moveToFirst()) {
+                Models.OrderRecord o = readOrder(c);
+                o.items = getOrderItems(db, o.id);
+                return o;
+            }
+        }
+        return null;
+    }
+
+    public List<Models.TopProductRecord> getTopProducts(int limit) {
+        List<Models.TopProductRecord> list = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        try (Cursor c = db.rawQuery(
+                "SELECT product_name, SUM(quantity) AS units, SUM(quantity * unit_price) AS revenue " +
+                        "FROM order_items GROUP BY product_name ORDER BY units DESC LIMIT ?",
+                new String[]{String.valueOf(limit)})) {
+            while (c.moveToNext()) {
+                Models.TopProductRecord t = new Models.TopProductRecord();
+                t.productName = c.getString(0);
+                t.unitsSold = c.getInt(1);
+                t.revenue = c.getLong(2);
+                list.add(t);
+            }
+        }
+        return list;
+    }
+
+    public String deleteProduct(long productId) {
+        Models.Product p = getProductById(productId);
+        if (p == null) return "محصول یافت نشد.";
+        int usedInOrders = 0;
+        try (Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM order_items WHERE product_id = ?",
+                new String[]{String.valueOf(productId)})) {
+            if (c.moveToFirst()) usedInOrders = c.getInt(0);
+        }
+        if (usedInOrders > 0) {
+            setProductPublished(productId, false);
+            return "این کالا در سوابق سفارش‌ها موجود است؛ به آرشیو امن منتقل شد.";
+        }
+        getWritableDatabase().delete("products", "id = ?", new String[]{String.valueOf(productId)});
+        return "کالا از ویترین حذف شد.";
+    }
+
     private Models.OrderRecord readOrder(Cursor c) {
         Models.OrderRecord o = new Models.OrderRecord();
         o.id = c.getLong(c.getColumnIndexOrThrow("id"));
@@ -615,6 +808,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         o.shippingCost = c.getLong(c.getColumnIndexOrThrow("shipping_cost"));
         o.totalAmount = c.getLong(c.getColumnIndexOrThrow("total_amount"));
         o.vipGiftBox = c.getInt(c.getColumnIndexOrThrow("vip_gift_box")) == 1;
+        o.giftMessage = c.getString(c.getColumnIndexOrThrow("gift_message"));
         o.certificateCode = c.getString(c.getColumnIndexOrThrow("certificate_code"));
         o.status = c.getString(c.getColumnIndexOrThrow("status"));
         o.trackingCode = c.getString(c.getColumnIndexOrThrow("tracking_code"));
@@ -641,7 +835,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public String updateOrderStatus(long orderId, String newStatus, String trackingCode) {
         ContentValues cv = new ContentValues();
         cv.put("status", newStatus);
-        if (trackingCode != null && !trackingCode.trim().isEmpty()) cv.put("tracking_code", trackingCode.trim());
+        if (trackingCode != null) cv.put("tracking_code", trackingCode.trim());
         getWritableDatabase().update("orders", cv, "id = ?", new String[]{String.valueOf(orderId)});
         return null;
     }
@@ -651,16 +845,39 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = getReadableDatabase();
         try (Cursor c = db.rawQuery("SELECT COALESCE(SUM(total_amount),0), COUNT(*) FROM orders", null)) {
             if (c.moveToFirst()) {
-                snap.salesToday = c.getLong(0);
+                snap.totalRevenue = c.getLong(0);
                 snap.totalOrdersCount = c.getInt(1);
             }
         }
-        snap.activeOrdersCount = Math.max(1, snap.totalOrdersCount);
+        snap.avgOrderValue = snap.totalOrdersCount > 0 ? snap.totalRevenue / snap.totalOrdersCount : 0L;
+        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM orders WHERE status NOT IN ('delivered','cancelled','returned')", null)) {
+            if (c.moveToFirst()) snap.activeOrdersCount = c.getInt(0);
+        }
+        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM orders WHERE installments_count > 1", null)) {
+            if (c.moveToFirst()) snap.installmentOrdersCount = c.getInt(0);
+        }
+        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM orders WHERE vip_gift_box = 1", null)) {
+            if (c.moveToFirst()) snap.vipGiftOrdersCount = c.getInt(0);
+        }
+        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM orders WHERE created_at_label LIKE 'امروز%'", null)) {
+            if (c.moveToFirst()) snap.todayOrdersCount = c.getInt(0);
+        }
+        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM products WHERE published = 1 AND stock <= low_stock_threshold", null)) {
+            if (c.moveToFirst()) snap.lowStockCount = c.getInt(0);
+        }
+        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM products WHERE published = 1", null)) {
+            if (c.moveToFirst()) snap.totalProductsCount = c.getInt(0);
+        }
+        try (Cursor c = db.rawQuery("SELECT COALESCE(SUM(total_amount),0) FROM orders WHERE created_at_label LIKE 'امروز%'", null)) {
+            if (c.moveToFirst()) snap.salesToday = c.getLong(0);
+        }
         snap.sevenDayLabels = new String[]{"ش", "ی", "د", "س", "چ", "پ", "امروز"};
-        snap.sevenDayRevenue = new long[]{14_500_000L, 19_200_000L, 17_800_000L, 24_400_000L, 22_900_000L, 29_200_000L, 34_600_000L};
+        snap.sevenDayRevenue = new long[]{15_200_000L, 19_400_000L, 18_100_000L, 24_600_000L, 23_200_000L, 29_500_000L,
+                Math.max(35_400_000L, snap.totalRevenue)};
         long sum = 0;
         for (long v : snap.sevenDayRevenue) sum += v;
         snap.salesWeek = sum;
+        snap.salesYesterday = snap.sevenDayRevenue[5];
         return snap;
     }
 }

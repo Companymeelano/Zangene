@@ -140,6 +140,12 @@ export function icon3D(name, size = 44) {
         heart: `
           <path d="M32 44.5s-13-7.8-13-16.8c0-4.3 3.4-7.7 7.6-7.7 2.4 0 4.5 1.1 5.4 2.8.9-1.7 3-2.8 5.4-2.8 4.2 0 7.6 3.4 7.6 7.7 0 9-13 16.8-13 16.8z"
                 fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.4" stroke-linejoin="round"/>`,
+        gift: `
+          <rect x="19.5" y="25.5" width="25" height="6.5" rx="2" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2"/>
+          <path d="M21.5 32h21v12.5c0 .8-.7 1.5-1.5 1.5H23c-.8 0-1.5-.7-1.5-1.5V32z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linejoin="round"/>
+          <line x1="32" y1="25.5" x2="32" y2="46" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M32 25.5c-2.8-4.4-9.4-5.2-9.4-1.2 0 2.1 3 3.2 9.4 1.2z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M32 25.5c2.8-4.4 9.4-5.2 9.4-1.2 0 2.1-3 3.2-9.4 1.2z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2" stroke-linejoin="round"/>`,
         check: `
           <path d="M22.5 32.5l6.5 6.5 12.5-13" fill="none" stroke="url(#gold3dGlyph)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
     };

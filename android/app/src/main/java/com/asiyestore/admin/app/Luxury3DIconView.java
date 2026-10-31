@@ -12,9 +12,9 @@ import android.util.TypedValue;
 import android.view.View;
 
 /**
- * Hardware-Accelerated 3D Obsidian-Crystal & 24K Champagne-Gold SVG-Path Icon Renderer.
- * Renders multi-layered 3D squircle medallions with drop shadows, metallic gold beveled rims,
- * top-left curved crystal specular reflection, and precision vector glyphs.
+ * Hardware-Accelerated 3D Obsidian-Crystal & 24K Champagne-Gold SVG-Path Icon Renderer (v5.0 Royal).
+ * Renders multi-layered 3D squircle medallions with ground shadow, metallic gold beveled rims,
+ * curved crystal specular reflection, jewel inner aura, and precision vector glyphs.
  */
 public final class Luxury3DIconView extends View {
 
@@ -31,6 +31,13 @@ public final class Luxury3DIconView extends View {
     public static final int ICON_HEART     = 11;
     public static final int ICON_KEY_ADMIN = 12;
     public static final int ICON_CROWN     = 13;
+    public static final int ICON_SEARCH    = 14;
+    public static final int ICON_EDIT      = 15;
+    public static final int ICON_TRASH     = 16;
+    public static final int ICON_GIFT      = 17;
+    public static final int ICON_SHARE     = 18;
+    public static final int ICON_MINUS     = 19;
+    public static final int ICON_CHART     = 20;
 
     private final Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint bodyPaint   = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -46,7 +53,7 @@ public final class Luxury3DIconView extends View {
     private final Path glyphPath = new Path();
 
     private int iconType;
-    private boolean goldPedestal; // true when active on dark nav or placed inside dark button
+    private boolean goldPedestal;
 
     public Luxury3DIconView(Context context, int iconType, boolean goldPedestal) {
         super(context);
@@ -74,12 +81,12 @@ public final class Luxury3DIconView extends View {
         if (w <= 0 || h <= 0) return;
 
         float s = Math.min(w, h);
-        float pad = s * 0.09f;
+        float pad = s * 0.085f;
         float radius = s * 0.29f;
 
         // 1. Soft 3D Ground Shadow
         shadowBox.set(pad + s * 0.02f, pad + s * 0.055f, w - pad - s * 0.02f, h - pad + s * 0.045f);
-        shadowPaint.setColor(0x52050507);
+        shadowPaint.setColor(0x54050507);
         canvas.drawRoundRect(shadowBox, radius, radius, shadowPaint);
 
         // 2. 3D Obsidian-Crystal or 24K Gold Bullion Pedestal
@@ -87,28 +94,34 @@ public final class Luxury3DIconView extends View {
         if (goldPedestal) {
             bodyPaint.setShader(new RadialGradient(
                     w * 0.32f, h * 0.25f, s * 0.78f,
-                    new int[]{0xFFFFF4D9, 0xFFD2AE74, 0xFF8C6834},
+                    new int[]{0xFFFFF5DC, 0xFFD4AF73, 0xFF8C6834},
                     new float[]{0f, 0.58f, 1f},
                     Shader.TileMode.CLAMP
             ));
         } else {
             bodyPaint.setShader(new RadialGradient(
                     w * 0.32f, h * 0.24f, s * 0.78f,
-                    new int[]{0xFF322E3B, 0xFF15141B, 0xFF08080B},
+                    new int[]{0xFF34303E, 0xFF15141C, 0xFF08080B},
                     new float[]{0f, 0.55f, 1f},
                     Shader.TileMode.CLAMP
             ));
         }
         canvas.drawRoundRect(box, radius, radius, bodyPaint);
 
-        // 3. Subtle Jewel Inner Aura for WhatsApp / Instagram
-        if (!goldPedestal && (iconType == ICON_WHATSAPP || iconType == ICON_INSTAGRAM)) {
-            int auraCol = (iconType == ICON_WHATSAPP) ? 0x482A8F68 : 0x48C8647A;
-            auraPaint.setShader(new RadialGradient(
-                    w * 0.5f, h * 0.54f, s * 0.38f,
-                    auraCol, 0x0008080B, Shader.TileMode.CLAMP
-            ));
-            canvas.drawCircle(w * 0.5f, h * 0.54f, s * 0.36f, auraPaint);
+        // 3. Subtle Jewel Inner Aura for Contact & Social Icons
+        if (!goldPedestal) {
+            int auraCol = 0;
+            if (iconType == ICON_WHATSAPP) auraCol = 0x5228946B;
+            else if (iconType == ICON_INSTAGRAM) auraCol = 0x52C95F79;
+            else if (iconType == ICON_PHONE) auraCol = 0x36C8A46B;
+            else if (iconType == ICON_GIFT) auraCol = 0x40C8A46B;
+            if (auraCol != 0) {
+                auraPaint.setShader(new RadialGradient(
+                        w * 0.5f, h * 0.54f, s * 0.38f,
+                        auraCol, 0x0008080B, Shader.TileMode.CLAMP
+                ));
+                canvas.drawCircle(w * 0.5f, h * 0.54f, s * 0.36f, auraPaint);
+            }
         }
 
         // 4. Top-Left Curved Crystal Specular Highlight
@@ -119,28 +132,28 @@ public final class Luxury3DIconView extends View {
         sheenPath.close();
         sheenPaint.setShader(new LinearGradient(
                 box.left, box.top, box.right * 0.7f, box.top + s * 0.4f,
-                0x48FFFFFF, 0x00FFFFFF, Shader.TileMode.CLAMP
+                0x4AFFFFFF, 0x00FFFFFF, Shader.TileMode.CLAMP
         ));
         canvas.drawPath(sheenPath, sheenPaint);
 
         // 5. 24K Metallic Beveled Rim
-        rimPaint.setStrokeWidth(Math.max(dp(1.2f), s * 0.035f));
+        rimPaint.setStrokeWidth(Math.max(dp(1.2f), s * 0.036f));
         rimPaint.setShader(new LinearGradient(
                 box.left, box.top, box.right, box.bottom,
-                new int[]{0xFFF9E9C8, 0xFFC8A46B, 0xFF846232, 0xFFE8CB97},
+                new int[]{0xFFFBECCE, 0xFFC8A46B, 0xFF846232, 0xFFEAD09E},
                 new float[]{0f, 0.42f, 0.76f, 1f},
                 Shader.TileMode.CLAMP
         ));
         canvas.drawRoundRect(box, radius, radius, rimPaint);
 
-        // 6. Sculpted Vector Inner Glyph (mapped on a 64x64 virtual grid)
+        // 6. Sculpted Vector Inner Glyph (mapped on 64x64 virtual coordinate space)
         LinearGradient fgGrad = goldPedestal
                 ? new LinearGradient(0, pad, 0, h - pad, 0xFF1E1C22, 0xFF09090C, Shader.TileMode.CLAMP)
-                : new LinearGradient(0, pad, 0, h - pad, 0xFFFFF4D8, 0xFFD0AA6E, Shader.TileMode.CLAMP);
+                : new LinearGradient(0, pad, 0, h - pad, 0xFFFFF5DC, 0xFFD0AA6E, Shader.TileMode.CLAMP);
 
         glyphStroke.setShader(fgGrad);
         glyphFill.setShader(fgGrad);
-        glyphStroke.setStrokeWidth(Math.max(dp(1.6f), s * 0.045f));
+        glyphStroke.setStrokeWidth(Math.max(dp(1.6f), s * 0.046f));
 
         drawVectorGlyph(canvas, w, h, s);
     }
@@ -186,7 +199,6 @@ public final class Luxury3DIconView extends View {
                 glyphPath.lineTo(gx(18.5f, w), gy(46.5f, h));
                 glyphPath.lineTo(gx(26.5f, w), gy(43.8f, h));
                 c.drawPath(glyphPath, glyphStroke);
-                // Inner receiver arc
                 Path inner = new Path();
                 inner.moveTo(gx(27.5f, w), gy(25.8f, h));
                 inner.quadTo(gx(26.2f, w), gy(31.5f, h), gx(32.5f, w), gy(36.2f, h));
@@ -248,6 +260,10 @@ public final class Luxury3DIconView extends View {
                 c.drawLine(gx(21f, w), gy(32f, h), gx(43f, w), gy(32f, h), glyphStroke);
                 break;
             }
+            case ICON_MINUS: {
+                c.drawLine(gx(21f, w), gy(32f, h), gx(43f, w), gy(32f, h), glyphStroke);
+                break;
+            }
             case ICON_HEART: {
                 glyphPath.moveTo(gx(32f, w), gy(44f, h));
                 glyphPath.cubicTo(gx(18f, w), gy(35f, h), gx(18f, w), gy(21f, h), gx(26.5f, w), gy(21f, h));
@@ -264,9 +280,57 @@ public final class Luxury3DIconView extends View {
                 c.drawLine(gx(39f, w), gy(39.8f, h), gx(42.5f, w), gy(36.5f, h), glyphStroke);
                 break;
             }
+            case ICON_SEARCH: {
+                c.drawCircle(gx(29.5f, w), gy(29.5f, h), s * 0.145f, glyphStroke);
+                c.drawLine(gx(36.5f, w), gy(36.5f, h), gx(45f, w), gy(45f, h), glyphStroke);
+                break;
+            }
+            case ICON_EDIT: {
+                glyphPath.moveTo(gx(21f, w), gy(43f, h));
+                glyphPath.lineTo(gx(23f, w), gy(36f, h));
+                glyphPath.lineTo(gx(38.5f, w), gy(20.5f, h));
+                glyphPath.lineTo(gx(43.5f, w), gy(25.5f, h));
+                glyphPath.lineTo(gx(28f, w), gy(41f, h));
+                glyphPath.close();
+                c.drawPath(glyphPath, glyphStroke);
+                break;
+            }
+            case ICON_TRASH: {
+                c.drawLine(gx(20f, w), gy(23.5f, h), gx(44f, w), gy(23.5f, h), glyphStroke);
+                c.drawLine(gx(27.5f, w), gy(20f, h), gx(36.5f, w), gy(20f, h), glyphStroke);
+                RectF bin = new RectF(gx(23.5f, w), gy(23.5f, h), gx(40.5f, w), gy(44.5f, h));
+                c.drawRoundRect(bin, s * 0.04f, s * 0.04f, glyphStroke);
+                c.drawLine(gx(29.5f, w), gy(29f, h), gx(29.5f, w), gy(39.5f, h), glyphStroke);
+                c.drawLine(gx(34.5f, w), gy(29f, h), gx(34.5f, w), gy(39.5f, h), glyphStroke);
+                break;
+            }
+            case ICON_GIFT: {
+                RectF ribbonTop = new RectF(gx(19.5f, w), gy(25.5f, h), gx(44.5f, w), gy(31.5f, h));
+                RectF giftBody = new RectF(gx(21.5f, w), gy(31.5f, h), gx(42.5f, w), gy(45f, h));
+                c.drawRoundRect(ribbonTop, s * 0.03f, s * 0.03f, glyphStroke);
+                c.drawRoundRect(giftBody, s * 0.03f, s * 0.03f, glyphStroke);
+                c.drawLine(gx(32f, w), gy(25.5f, h), gx(32f, w), gy(45f, h), glyphStroke);
+                c.drawCircle(gx(28.5f, w), gy(22.2f, h), s * 0.045f, glyphStroke);
+                c.drawCircle(gx(35.5f, w), gy(22.2f, h), s * 0.045f, glyphStroke);
+                break;
+            }
+            case ICON_SHARE: {
+                c.drawCircle(gx(41f, w), gy(22f, h), s * 0.055f, glyphStroke);
+                c.drawCircle(gx(22f, w), gy(32f, h), s * 0.055f, glyphStroke);
+                c.drawCircle(gx(41f, w), gy(42f, h), s * 0.055f, glyphStroke);
+                c.drawLine(gx(25.5f, w), gy(30f, h), gx(37.5f, w), gy(24f, h), glyphStroke);
+                c.drawLine(gx(25.5f, w), gy(34f, h), gx(37.5f, w), gy(40f, h), glyphStroke);
+                break;
+            }
+            case ICON_CHART: {
+                c.drawLine(gx(20f, w), gy(44f, h), gx(45f, w), gy(44f, h), glyphStroke);
+                c.drawLine(gx(24f, w), gy(44f, h), gx(24f, w), gy(35f, h), glyphStroke);
+                c.drawLine(gx(32f, w), gy(44f, h), gx(32f, w), gy(28f, h), glyphStroke);
+                c.drawLine(gx(40f, w), gy(44f, h), gx(40f, w), gy(21f, h), glyphStroke);
+                break;
+            }
             case ICON_BOUTIQUE:
             default: {
-                // 4-point 3D Diamond Star
                 glyphPath.moveTo(gx(32f, w), gy(16.5f, h));
                 glyphPath.lineTo(gx(35.8f, w), gy(28.2f, h));
                 glyphPath.lineTo(gx(47.5f, w), gy(32f, h));

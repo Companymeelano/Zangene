@@ -116,11 +116,21 @@ public final class Models {
         public boolean active;
     }
 
+    public static final class TopProductRecord {
+        public String productName;
+        public int unitsSold;
+        public long revenue;
+    }
+
     public static final class DashboardSnapshot {
+        public long totalRevenue;
+        public long avgOrderValue;
         public long salesToday;
         public long salesWeek;
+        public long salesYesterday;
         public int activeOrdersCount;
         public int totalOrdersCount;
+        public int todayOrdersCount;
         public int lowStockCount;
         public int installmentOrdersCount;
         public int vipGiftOrdersCount;

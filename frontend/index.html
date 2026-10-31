@@ -37,6 +37,7 @@
         <nav class="nav-menu">
             <a href="#collection" class="nav-item active">کلکسیون منتخب</a>
             <a href="#routine-studio" class="nav-item">مشاور پوست و اصالت</a>
+            <a href="#vip-services" class="nav-item">سرویس‌های VIP</a>
             <a href="#concierge-hub" class="nav-item">ارتباط مستقیم با مدیریت</a>
             <a href="product_and_admin_prototype.html" class="nav-item">پنل مدیریت</a>
         </nav>
@@ -134,6 +135,50 @@
             </div>
         </section>
 
+
+        <!-- v5.0 Royal Atelier Services: order tracking, VIP club & private coupons -->
+        <section id="vip-services" class="vip-services">
+            <div class="section-head" style="margin-bottom:1.6rem;">
+                <div class="section-kicker">ROYAL ATELIER SERVICES</div>
+                <h2 class="section-title">سرویس‌های اختصاصی مشتریان مجموعه</h2>
+                <p class="section-sub">پیگیری لحظه‌ای سفارش، باشگاه مشتریان VIP و کوپن‌های تخفیف اختصاصی — بدون شلوغی، در سه کارت خلوت.</p>
+            </div>
+
+            <div class="vip-services-grid">
+                <article class="vip-card">
+                    <div class="vip-icon" id="vip-icon-track"></div>
+                    <h3>پیگیری سفارش</h3>
+                    <p>کد سفارش خود را وارد کنید تا وضعیت پردازش، بسته‌بندی و مرسوله را ببینید.</p>
+                    <div class="vip-inline">
+                        <input id="order-track-input" class="vip-input ltr-num" type="text" placeholder="AS-1405-9102" value="AS-1405-9102" aria-label="کد سفارش">
+                        <button class="vip-btn" onclick="window.trackOrder()">پیگیری</button>
+                    </div>
+                    <div id="order-track-result" class="vip-result" style="display:none;"></div>
+                </article>
+
+                <article class="vip-card">
+                    <div class="vip-icon" id="vip-icon-club"></div>
+                    <h3>باشگاه مشتریان VIP</h3>
+                    <p>با هر خرید، ۱٪ اعتبار خرید به کیف پول شما افزوده می‌شود؛ ارسال سفارش‌های بالای ۲ میلیون تومان رایگان است.</p>
+                    <div class="vip-badges">
+                        <span class="vip-badge">۱٪ اعتبار خرید</span>
+                        <span class="vip-badge">ارسال VIP رایگان</span>
+                        <span class="vip-badge">گواهی اصالت</span>
+                    </div>
+                </article>
+
+                <article class="vip-card">
+                    <div class="vip-icon" id="vip-icon-coupon"></div>
+                    <h3>کوپن‌های تخفیف اختصاصی</h3>
+                    <p>کد اختصاصی را لمس کنید تا در کلیپ‌بورد کپی شود و در سبد خرید اعمال گردد.</p>
+                    <div class="vip-badges">
+                        <button class="vip-coupon" onclick="window.copyCoupon('ASIYE20')">ASIYE20 · ۲۰٪ تخفیف</button>
+                        <button class="vip-coupon" onclick="window.copyCoupon('VIPGOLD')">VIPGOLD · ۲۵۰ هزار تومان</button>
+                    </div>
+                </article>
+            </div>
+        </section>
+
         <!-- Executive Owner & Direct Smart Concierge Hub: سرکار خانم زنگنه -->
         <section id="concierge-hub" class="owner-sanctuary">
             <div class="owner-top-grid">
@@ -227,6 +272,7 @@
             <div style="font-size:0.8rem; color:#C4BBAE;">
                 طراحی رابط کاربری لوکس و معماری اکوسیستم وب و اپلیکیشن اختصاصی
             </div>
+            <div class="designer-version">V5.0 — ROYAL ATELIER EDITION</div>
         </div>
     </footer>
 
@@ -365,6 +411,9 @@
         document.getElementById('medallion-wa').innerHTML = icon3D('whatsapp', 48);
         document.getElementById('medallion-ig').innerHTML = icon3D('instagram', 48);
         document.getElementById('designer-crest-slot').innerHTML = icon3D('crown', 40);
+        document.getElementById('vip-icon-track').innerHTML = icon3D('bag', 44);
+        document.getElementById('vip-icon-club').innerHTML = icon3D('crown', 44);
+        document.getElementById('vip-icon-coupon').innerHTML = icon3D('gift', 44);
 
         function renderGallery() {
             const box = document.getElementById('product-gallery');
@@ -534,6 +583,68 @@
             if (bag.length === 0) return;
             alert('سفارش شما با کد پیگیری AS-' + String(Date.now()).slice(-5) + ' ثبت اولیه شد. همچنین می‌توانید از دکمه واتس‌اپ جهت هماهنگی مستقیم ارسال با سرکار خانم زنگنه استفاده فرمایید.');
         });
+
+        // ── v5.0 Royal Atelier · order tracking & private coupons ─────────
+        const ORDER_BOOK = {
+            'AS-1405-9102': {
+                customer: 'سارا محمدی',
+                status: 'تحویل به پیک / پست پیشتاز',
+                total: 3110000,
+                tracking: '29481000841102',
+                date: 'دیروز — ۱۸:۴۰',
+                items: ['کرم روشن‌کننده و ضدلک گاتیو (۱۵۰ میل)', 'تونیک گیاهی هیرفرند (۳۰۰ میل)']
+            },
+            'AS-1405-9148': {
+                customer: 'نازنین رضایی',
+                status: 'در حال بسته‌بندی VIP',
+                total: 3560000,
+                tracking: '—',
+                date: 'امروز — ۱۱:۲۰',
+                items: ['تونر گلیکولیک اسید ۷٪ اوردینری (۲۴۰ میل)', 'پنکک لاکچری کوین SPF 25']
+            }
+        };
+
+        window.trackOrder = () => {
+            const input = document.getElementById('order-track-input');
+            const box = document.getElementById('order-track-result');
+            const code = (input.value || '').trim().toUpperCase().replace(/\s+/g, '');
+            const normalized = code.startsWith('AS-') ? code : 'AS-' + code;
+            const order = ORDER_BOOK[normalized];
+            box.style.display = 'block';
+            if (!order) {
+                box.innerHTML = '<span style="color:#F0B4AC;">سفارشی با این کد یافت نشد؛ لطفاً کد ارسال‌شده در واتس‌اپ مدیریت را بررسی کنید.</span>';
+                return;
+            }
+            box.innerHTML = `
+                <div style="display:flex; justify-content:space-between; gap:0.6rem; align-items:center; margin-bottom:0.45rem;">
+                    <strong class="ltr-num" style="color:#EBD6B0; letter-spacing:0.6px;">${normalized}</strong>
+                    <span style="font-size:0.72rem; padding:0.2rem 0.55rem; border-radius:999px; background:rgba(200,164,107,0.18); color:#EBD6B0;">${order.status}</span>
+                </div>
+                <div style="color:#BEB6AA;">${order.customer} • ${order.date}</div>
+                <div style="margin:0.35rem 0; color:#D9D1C4;">${order.items.join('<br>')}</div>
+                <div style="color:#EBD6B0; font-weight:700;">مبلغ نهایی: ${order.total.toLocaleString('fa-IR')} تومان</div>
+                <div style="color:#BEB6AA; font-size:0.74rem; margin-top:0.3rem;" class="ltr-num">کد رهگیری پست: ${order.tracking}</div>
+            `;
+        };
+
+        window.copyCoupon = (code) => {
+            const done = () => {
+                if (window.luxToast) window.luxToast('کد ' + code + ' کپی شد و در سبد خرید قابل اعمال است.');
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(done).catch(done);
+            } else {
+                const el = document.createElement('textarea');
+                el.value = code;
+                document.body.appendChild(el);
+                el.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                document.body.removeChild(el);
+                done();
+            }
+        };
+
+        window.trackOrder();
 
         renderGallery();
         updateAdvisor();

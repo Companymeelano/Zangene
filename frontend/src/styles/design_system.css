@@ -648,3 +648,144 @@ a:hover .lux-3d-svg {
     .contact-medallions-grid { grid-template-columns: 1fr; }
     .product-gallery { grid-template-columns: 1fr; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v5.0 Royal Atelier · VIP Services (order tracking / club / coupons)
+   ══════════════════════════════════════════════════════════════════════ */
+.vip-services {
+    padding: 0 0 5rem;
+}
+
+.vip-services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.4rem;
+}
+
+.vip-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    padding: 1.7rem 1.6rem;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.vip-card h3 {
+    margin: 0.2rem 0 0;
+    font-size: 1.06rem;
+    color: var(--obsidian);
+    font-weight: 800;
+}
+
+.vip-card p {
+    margin: 0 0 0.6rem;
+    font-size: 0.84rem;
+    line-height: 1.85;
+    color: var(--text-muted);
+}
+
+.vip-icon {
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vip-inline {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.vip-input {
+    flex: 1;
+    min-width: 0;
+    background: #FAF8F3;
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 0.72rem 0.85rem;
+    font-family: inherit;
+    font-size: 0.86rem;
+    color: var(--obsidian);
+    letter-spacing: 0.5px;
+}
+
+.vip-input:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(200, 164, 107, 0.14);
+}
+
+.vip-btn {
+    border: none;
+    cursor: pointer;
+    border-radius: 12px;
+    padding: 0.72rem 1.15rem;
+    background: linear-gradient(135deg, #F0E0C0, #D9BA85);
+    color: var(--obsidian);
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.85rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.vip-result {
+    margin-top: 0.75rem;
+    background: var(--obsidian);
+    color: #F2E8D8;
+    border: 1px solid rgba(200, 164, 107, 0.4);
+    border-radius: 14px;
+    padding: 0.85rem 0.95rem;
+    font-size: 0.8rem;
+    line-height: 1.9;
+}
+
+.vip-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: auto;
+}
+
+.vip-badge {
+    font-size: 0.75rem;
+    padding: 0.36rem 0.7rem;
+    border-radius: 999px;
+    background: #FAF8F3;
+    border: 1px solid var(--border-soft);
+    color: var(--text-muted);
+}
+
+.vip-coupon {
+    font-family: inherit;
+    font-size: 0.76rem;
+    padding: 0.44rem 0.78rem;
+    border-radius: 999px;
+    background: #FBF6EA;
+    border: 1px dashed rgba(200, 164, 107, 0.85);
+    color: #7C5F31;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    direction: ltr;
+}
+
+.vip-coupon:hover {
+    background: #F6EBD4;
+}
+
+.designer-version {
+    margin-top: 0.6rem;
+    font-size: 0.68rem;
+    letter-spacing: 3px;
+    color: #6F685E;
+}
+
+@media (max-width: 980px) {
+    .vip-services-grid {
+        grid-template-columns: 1fr;
+    }
+}
