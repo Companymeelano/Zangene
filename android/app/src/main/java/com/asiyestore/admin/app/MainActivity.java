@@ -20,6 +20,7 @@ import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.InputType;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -536,8 +537,9 @@ public final class MainActivity extends Activity {
 
         TextView caption = new TextView(this);
         caption.setText(label);
-        caption.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9.5f);
+        caption.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9.2f);
         caption.setSingleLine(true);
+        caption.setEllipsize(TextUtils.TruncateAt.END);
         caption.setGravity(Gravity.CENTER);
         caption.setTextColor(selected ? COL_GOLD_LIGHT : 0xFF948E85);
         caption.setPadding(0, dp(3), 0, 0);
@@ -3604,6 +3606,8 @@ public final class MainActivity extends Activity {
 
         LinearLayout top = row(Gravity.CENTER_VERTICAL);
         TextView title = text(plan.titleFa, 11.5f, COL_TEXT_MAIN, selected);
+        title.setSingleLine(true);
+        title.setEllipsize(TextUtils.TruncateAt.END);
         top.addView(title, weight(1f));
         TextView chip = text(plan.zeroInterest ? "بدون کارمزد" : plan.providerFa, 8.8f,
                 plan.zeroInterest ? COL_SUCCESS : COL_TEXT_MUTED, true);
@@ -3615,11 +3619,16 @@ public final class MainActivity extends Activity {
 
         LinearLayout bottom = row(Gravity.CENTER_VERTICAL);
         bottom.setPadding(0, dp(7), 0, 0);
-        bottom.addView(text(PersianFormatter.formatToman(plan.monthlyPayment) + " در ماه", 11f, COL_GOLD_DEEP, true),
-                weight(1f));
-        bottom.addView(text(plan.totalFee > 0
+        TextView monthly = text(PersianFormatter.formatToman(plan.monthlyPayment) + " در ماه",
+                11f, COL_GOLD_DEEP, true);
+        monthly.setSingleLine(true);
+        monthly.setEllipsize(TextUtils.TruncateAt.END);
+        bottom.addView(monthly, weight(1f));
+        TextView fee = text(plan.totalFee > 0
                 ? "کارمزد " + PersianFormatter.formatToman(plan.totalFee)
-                : "بدون هزینه اضافه", 9f, COL_TEXT_FAINT, false));
+                : "بدون هزینه اضافه", 9f, COL_TEXT_FAINT, false);
+        fee.setSingleLine(true);
+        bottom.addView(fee);
         box.addView(bottom);
 
         box.setOnClickListener(new View.OnClickListener() {
@@ -4243,7 +4252,7 @@ public final class MainActivity extends Activity {
         hero.setBackground(roundedShape(COL_OBSIDIAN, dp(16), 0, 0));
         ImageView heroImg = new ImageView(this);
         if (aiStudioPath != null && !aiStudioPath.isEmpty()) {
-            Bitmap bmp = BitmapFactory.decodeFile(aiStudioPath);
+            Bitmap bmp = decodeSampled(aiStudioPath, 900);
             if (bmp != null) heroImg.setImageBitmap(bmp);
             else heroImg.setImageResource(resolveProductImage(d.imageKey));
         } else {
@@ -4467,6 +4476,24 @@ public final class MainActivity extends Activity {
             opts.inSampleSize = sample;
             opts.inPreferredConfig = Bitmap.Config.RGB_565;
             return BitmapFactory.decodeFile(p.imagePath, opts);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    /** Generic sampled decode so 1080² studio renders never blow up the heap on the UI thread. */
+    private Bitmap decodeSampled(String path, int maxSideWanted) {
+        if (path == null || path.trim().isEmpty()) return null;
+        try {
+            BitmapFactory.Options bounds = new BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(path, bounds);
+            int sample = 1;
+            int maxSide = Math.max(bounds.outWidth, bounds.outHeight);
+            while (maxSide / sample > maxSideWanted) sample *= 2;
+            BitmapFactory.Options opts = new BitmapFactory.Options();
+            opts.inSampleSize = sample;
+            return BitmapFactory.decodeFile(path, opts);
         } catch (Throwable e) {
             return null;
         }
