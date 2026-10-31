@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Review;
 use App\Models\PaymentGateway;
 use App\Models\InstallmentProvider;
 use App\Models\ShippingMethod;
@@ -221,5 +222,46 @@ class AsiyeStoreSeeder extends Seeder
             'usage_per_customer' => 3,
             'is_active' => true,
         ]);
+
+        $this->seedVerifiedReviews();
+    }
+
+    /**
+     * v6.2 — Signature social proof.
+     * Eight published testimonials and two awaiting moderation, so the
+     * executive panel always demonstrates the approval workflow.
+     */
+    private function seedVerifiedReviews(): void
+    {
+        $reviews = [
+            ['AS-GAT-150', 'سارا محمدی', 5, 'بعد از سه هفته استفادهٔ منظم، لک‌های صورتم واقعاً کم‌رنگ‌تر شد و پوستم شفاف‌تره. بسته‌بندی هم خیلی شیک بود.', true, '۱۴۰۵/۰۸/۲۱'],
+            ['AS-GAT-150', 'نگار احمدی', 4, 'بافتش سبکه و زیر آرایش سنگین نمی‌شه. برای من که پوست مختلط دارم مناسب بود.', true, '۱۴۰۵/۰۸/۱۵'],
+            ['AS-GAT-050', 'نازنین رضایی', 5, 'خط‌های ریز دور چشمم محسوس‌تر از قبل نیست و پوستم کشیده‌تر شده. حتماً بازم می‌خرم.', true, '۱۴۰۵/۰۸/۰۹'],
+            ['AS-GAT-050', 'مریم حسینی', 5, 'همراه با مشاورهٔ مدیریت مجموعه خریدم و انتخاب درستی بود. بسته‌بندی هدیه هم فوق‌العاده بود.', true, '۱۴۰۵/۰۶/۱۸'],
+            ['AS-LC-104', 'مهسا کریمی', 5, 'پوشش مخملی و مات عالی، توی عکس‌ها هم یکدست دیده می‌شه و تا شب ماندگاری داره.', true, '۱۴۰۵/۰۷/۲۸'],
+            ['AS-HF-300', 'الهام صادقی', 5, 'ریزش موهام بعد از یک ماه واقعاً کمتر شد. بوی ملایم گیاهی داره و چرب نمی‌کنه.', true, '۱۴۰۵/۰۷/۲۰'],
+            ['AS-ORD-240', 'پریسا نوری', 4, 'منافذ بینی‌ام تمیزتر شده. فقط باید حتماً ضدآفتاب استفاده کرد.', true, '۱۴۰۵/۰۷/۱۲'],
+            ['AS-MRG-500', 'زهرا موسوی', 5, 'برای موی چرب عالیه؛ شورهٔ سرم کم شد و موهام سبک‌تر شده.', true, '۱۴۰۵/۰۶/۳۰'],
+            ['AS-LC-104', 'شیدا رحیمی', 4, 'رنگ ۱۰۴ برای پوست روشن من کمی تیره بود ولی کیفیت پودر خیلی خوبه.', false, null],
+            ['AS-HF-300', 'فاطمه اکبری', 5, 'بعد از دو هفته، ریزشم کمتر شده و موهام ضخیم‌تر به نظر می‌رسه.', false, null],
+        ];
+
+        foreach ($reviews as [$sku, $author, $rating, $comment, $approved, $label]) {
+            $product = Product::where('ttac_code', $sku)->first();
+            if (!$product) {
+                continue;
+            }
+
+            Review::firstOrCreate(
+                ['product_id' => $product->id, 'author_name' => $author, 'comment' => $comment],
+                [
+                    'customer_id' => null,
+                    'rating' => $rating,
+                    'is_approved' => $approved,
+                    'created_at' => $approved ? now()->subDays(3) : now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
     }
 }

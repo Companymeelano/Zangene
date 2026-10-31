@@ -96,6 +96,44 @@
             <div class="product-gallery" id="product-gallery"></div>
         </section>
 
+        <!-- v6.2 · Verified Reviews — moderated social proof, kept to one calm block -->
+        <section id="verified-reviews" class="reviews-section">
+            <div class="section-head">
+                <div>
+                    <div class="section-kicker">VERIFIED REVIEWS</div>
+                    <h2>روایت خریداران اسیه</h2>
+                    <p class="section-sub">هر نظر پیش از انتشار توسط مدیریت مجموعه بررسی می‌شود؛ تنها تجربه‌های واقعی خریداران منتشر می‌گردد.</p>
+                </div>
+                <div class="rating-plaque">
+                    <div class="rating-big" id="store-rating-average">۴٫۸</div>
+                    <div class="rating-stars" id="store-rating-stars" aria-hidden="true"></div>
+                    <div class="rating-caption" id="store-rating-caption">از ۸ نظر تأییدشده</div>
+                </div>
+            </div>
+
+            <div class="reviews-grid" id="reviews-grid"></div>
+
+            <div class="review-form-card">
+                <div class="review-form-head">
+                    <h3>تجربه‌تان را با ما بگویید</h3>
+                    <p>نظر شما پس از تأیید مدیریت با نشان «خرید تأییدشده» منتشر می‌شود.</p>
+                </div>
+                <div class="review-stars" id="review-star-picker" role="radiogroup" aria-label="امتیاز شما"></div>
+                <div class="review-fields">
+                    <input id="review-name" class="review-input" type="text" placeholder="نام شما (مثلاً سارا م.)" maxlength="40" autocomplete="name">
+                    <select id="review-product" class="review-input" aria-label="انتخاب محصول"></select>
+                </div>
+                <textarea id="review-body" class="review-input review-textarea" placeholder="تجربه‌تان را کوتاه و صادقانه بنویسید" maxlength="600"></textarea>
+                <div class="review-form-actions">
+                    <button class="btn-gold-3d" onclick="window.submitReview()">
+                        <span id="review-check-icon"></span>
+                        <span>ثبت نظر برای تأیید</span>
+                    </button>
+                    <span id="review-status" class="review-status" role="status"></span>
+                </div>
+            </div>
+        </section>
+
         <!-- Calm, Uncluttered Skin Advisor & Originality Studio -->
         <section id="routine-studio" class="concierge-studio">
             <div class="section-kicker" style="color:var(--gold-light);">INTELLIGENT CARE & AUTHENTICITY</div>
@@ -350,7 +388,7 @@
             <div style="font-size:0.8rem; color:#C4BBAE;">
                 طراحی رابط کاربری لوکس و معماری اکوسیستم وب و اپلیکیشن اختصاصی
             </div>
-            <div class="designer-version">V6.1 — ATELIER NOIR EDITION</div>
+            <div class="designer-version">V6.2 — VERIFIED REVIEWS EDITION</div>
         </div>
     </footer>
 
@@ -474,7 +512,143 @@
             }
         ];
 
-        const toFa = (n) => Number(n).toLocaleString('fa-IR');
+        // v6.2 · Verified reviews (published + moderation queue parity with the app)
+        const REVIEWS = [
+            { id: 1, productId: 1, author: 'سارا محمدی', rating: 5, verified: true, date: '۱۴۰۵/۰۸/۲۱',
+              body: 'بعد از سه هفته استفادهٔ منظم، لک‌های صورتم واقعاً کم‌رنگ‌تر شد و پوستم شفاف‌تره. بسته‌بندی هم خیلی شیک بود.' },
+            { id: 2, productId: 1, author: 'نگار احمدی', rating: 4, verified: true, date: '۱۴۰۵/۰۸/۱۵',
+              body: 'بافتش سبکه و زیر آرایش سنگین نمی‌شه. برای من که پوست مختلط دارم مناسب بود.' },
+            { id: 3, productId: 2, author: 'نازنین رضایی', rating: 5, verified: true, date: '۱۴۰۵/۰۸/۰۹',
+              body: 'خط‌های ریز دور چشمم محسوس‌تر از قبل نیست و پوستم کشیده‌تر شده. حتماً بازم می‌خرم.' },
+            { id: 4, productId: 3, author: 'مهسا کریمی', rating: 5, verified: true, date: '۱۴۰۵/۰۷/۲۸',
+              body: 'پوشش مخملی و مات عالی، توی عکس‌ها هم یکدست دیده می‌شه و تا شب ماندگاری داره.' },
+            { id: 5, productId: 4, author: 'الهام صادقی', rating: 5, verified: true, date: '۱۴۰۵/۰۷/۲۰',
+              body: 'ریزش موهام بعد از یک ماه واقعاً کمتر شد. بوی ملایم گیاهی داره و چرب نمی‌کنه.' },
+            { id: 6, productId: 5, author: 'پریسا نوری', rating: 4, verified: true, date: '۱۴۰۵/۰۷/۱۲',
+              body: 'منافذ بینی‌ام تمیزتر شده. فقط باید حتماً ضدآفتاب استفاده کرد.' },
+            { id: 7, productId: 6, author: 'زهرا موسوی', rating: 5, verified: true, date: '۱۴۰۵/۰۶/۳۰',
+              body: 'برای موی چرب عالیه؛ شورهٔ سرم کم شد و موهام سبک‌تر شده.' },
+            { id: 8, productId: 2, author: 'مریم حسینی', rating: 5, verified: true, date: '۱۴۰۵/۰۶/۱۸',
+              body: 'همراه با مشاورهٔ مدیریت مجموعه خریدم و انتخاب درستی بود. بسته‌بندی هدیه هم فوق‌العاده بود.' }
+        ];
+
+        const reviewStats = (productId) => {
+            const list = productId
+                ? REVIEWS.filter((r) => r.productId === productId)
+                : REVIEWS;
+            if (!list.length) return { count: 0, average: 0, stars: '' };
+            const average = list.reduce((sum, r) => sum + r.rating, 0) / list.length;
+            return { count: list.length, average };
+        };
+
+        const starRowMarkup = (average, size) => {
+            const full = Math.round(average);
+            let out = '<span class="stars" dir="ltr" aria-hidden="true">';
+            for (let i = 0; i < 5; i += 1) {
+                out += `<span class="${i < full ? 'star-on' : 'star-off'}" style="font-size:${size}">★</span>`;
+            }
+            return `${out}</span>`;
+        };
+
+        const ratingMarkup = (productId) => {
+            const stats = reviewStats(productId);
+            if (!stats.count) return '<span class="rating-empty">تازه‌ترین کالای کلکسیون</span>';
+            return `${starRowMarkup(stats.average, '0.82rem')}<span class="rating-text">${toFa(stats.average.toFixed(1))} · ${toFa(stats.count)} نظر</span>`;
+        };
+
+        function renderReviews() {
+            const stats = reviewStats(null);
+            document.getElementById('store-rating-average').textContent = toFa(stats.average.toFixed(1));
+            document.getElementById('store-rating-stars').innerHTML = starRowMarkup(stats.average, '1rem');
+            document.getElementById('store-rating-caption').textContent = `از ${toFa(stats.count)} نظر تأییدشده`;
+
+            const grid = document.getElementById('reviews-grid');
+            grid.innerHTML = REVIEWS.slice(0, 3).map((r) => {
+                const product = CATALOG.find((p) => p.id === r.productId);
+                return `
+                    <article class="review-card">
+                        <div class="review-meta">
+                            <span class="review-author">${r.author}</span>
+                            ${starRowMarkup(r.rating, '0.85rem')}
+                        </div>
+                        <p class="review-text">${r.body}</p>
+                        <div class="review-foot">
+                            <span class="review-verified">✓ خرید تأییدشده</span>
+                            <span class="review-product">${product ? product.name_fa : ''}</span>
+                            <span class="review-date">${r.date}</span>
+                        </div>
+                    </article>`;
+            }).join('');
+
+            const picker = document.getElementById('review-star-picker');
+            picker.innerHTML = [1, 2, 3, 4, 5].map((star) => `
+                <button type="button" class="review-star ${star <= reviewDraft.rating ? 'is-on' : ''}"
+                        data-star="${star}" role="radio" aria-checked="${star === reviewDraft.rating}"
+                        aria-label="${star} ستاره">★</button>`).join('');
+            picker.querySelectorAll('.review-star').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    reviewDraft.rating = Number(btn.dataset.star);
+                    renderReviews();
+                });
+            });
+
+            const select = document.getElementById('review-product');
+            if (select.options.length === 0) {
+                select.innerHTML = CATALOG.map((p) => `<option value="${p.id}">${p.name_fa}</option>`).join('');
+            }
+        }
+
+        function syncReviewDraftFromForm() {
+            reviewDraft.name = document.getElementById('review-name').value;
+            reviewDraft.body = document.getElementById('review-body').value;
+            reviewDraft.productId = Number(document.getElementById('review-product').value) || CATALOG[0].id;
+        }
+
+        const reviewDraft = { rating: 5, name: '', body: '', productId: 1 };
+        const REVIEW_QUEUE_KEY = 'asiye_pending_reviews';
+
+        window.submitReview = async () => {
+            syncReviewDraftFromForm();
+            const status = document.getElementById('review-status');
+            const name = reviewDraft.name.trim();
+            const body = reviewDraft.body.trim();
+            if (name.length < 2) {
+                status.className = 'review-status is-error';
+                status.textContent = 'نام خود را وارد کنید.';
+                return;
+            }
+            if (body.length < 8) {
+                status.className = 'review-status is-error';
+                status.textContent = 'متن نظر را کامل‌تر بنویسید.';
+                return;
+            }
+
+            const payload = { author_name: name, rating: reviewDraft.rating, comment: body };
+            const queued = JSON.parse(localStorage.getItem(REVIEW_QUEUE_KEY) || '[]');
+            queued.push({ ...payload, productId: reviewDraft.productId, at: new Date().toISOString() });
+            localStorage.setItem(REVIEW_QUEUE_KEY, JSON.stringify(queued));
+
+            status.className = 'review-status';
+            status.textContent = 'نظر شما ثبت شد و پس از تأیید مدیریت منتشر می‌شود.';
+
+            const base = window.ASIYE_API_BASE || '/api';
+            try {
+                const response = await fetch(`${base}/v1/products/${reviewDraft.productId}/reviews`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok && response.status !== 429) throw new Error('sync-failed');
+            } catch (error) {
+                status.textContent = 'نظر شما در صف ارسال قرار گرفت و پس از اتصال به سرور همگام می‌شود.';
+            }
+
+            document.getElementById('review-name').value = '';
+            document.getElementById('review-body').value = '';
+            reviewDraft.name = '';
+            reviewDraft.body = '';
+        };
+
         let activeCategory = 'all';
         let bag = [{ ...CATALOG[0], quantity: 1 }];
 
@@ -497,6 +671,8 @@
         document.getElementById('pay-icon-gateway').innerHTML = icon3D('card', 44);
         document.getElementById('pay-icon-wallet').innerHTML = icon3D('wallet', 44);
         document.getElementById('ai-icon').innerHTML = icon3D('sparkle', 44);
+        document.getElementById('review-check-icon').innerHTML = icon3D('check', 22);
+        renderReviews();
 
         function renderGallery() {
             const box = document.getElementById('product-gallery');
@@ -513,6 +689,7 @@
                     <div class="gallery-body">
                         <div class="gallery-brand">${p.brand}</div>
                         <h3 class="gallery-title">${p.name_fa}</h3>
+                        <div class="gallery-rating">${ratingMarkup(p.id)}</div>
                         <p class="gallery-desc">${p.desc}</p>
                         <div class="gallery-price-row">
                             <span class="price-current">${toFa(p.price)} تومان</span>

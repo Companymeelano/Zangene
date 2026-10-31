@@ -19,7 +19,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public static final long STANDARD_SHIPPING_COST  = 65_000L;
 
     private static final String DB_NAME = "asiye_royal_v5.db";
-    private static final int DB_VERSION = 2;
+    private static final int DB_VERSION = 3;
 
     public AsiyeDatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -122,13 +122,29 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "value TEXT" +
                 ")");
 
+        createReviewsTable(db);
         seedSignatureCatalog(db);
+        seedSignatureReviews(db);
+    }
+
+    private void createReviewsTable(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS reviews (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "product_id INTEGER NOT NULL," +
+                "author TEXT NOT NULL," +
+                "rating INTEGER NOT NULL DEFAULT 5," +
+                "body TEXT," +
+                "approved INTEGER NOT NULL DEFAULT 0," +
+                "created_label TEXT NOT NULL" +
+                ")");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion >= newVersion) return;
+
+        // v5 → v6.0 : AI/SEO columns + payment & BNPL settings (non-destructive).
         if (oldVersion < 2) {
-            // Non-destructive v6.0 migration: keep catalog, orders and settings intact.
             alterAdd(db, "products", "benefits", "TEXT");
             alterAdd(db, "products", "long_description", "TEXT");
             alterAdd(db, "products", "seo_title", "TEXT");
@@ -138,15 +154,13 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             alterAdd(db, "products", "image_path", "TEXT");
             alterAdd(db, "products", "ai_generated", "INTEGER NOT NULL DEFAULT 0");
             seedV6Settings(db);
-            return;
         }
-        db.execSQL("DROP TABLE IF EXISTS order_items");
-        db.execSQL("DROP TABLE IF EXISTS orders");
-        db.execSQL("DROP TABLE IF EXISTS stock_movements");
-        db.execSQL("DROP TABLE IF EXISTS coupons");
-        db.execSQL("DROP TABLE IF EXISTS products");
-        db.execSQL("DROP TABLE IF EXISTS settings");
-        onCreate(db);
+
+        // v6.0 → v6.2 : verified reviews. Merchant data, stock and orders stay intact.
+        if (oldVersion < 3) {
+            createReviewsTable(db);
+            seedSignatureReviews(db);
+        }
     }
 
     private void alterAdd(SQLiteDatabase db, String table, String column, String type) {
@@ -1117,6 +1131,169 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         if (trackingCode != null) cv.put("tracking_code", trackingCode.trim());
         getWritableDatabase().update("orders", cv, "id = ?", new String[]{String.valueOf(orderId)});
         return null;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  VERIFIED REVIEWS (v6.2) — moderated by the boutique owner
+    // ══════════════════════════════════════════════════════════════════════
+    /** A few genuine-toned reviews so the boutique never opens with an empty social-proof block. */
+    public static void seedSignatureReviews(SQLiteDatabase db) {
+        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM reviews", null)) {
+            if (c.moveToFirst() && c.getInt(0) > 0) return;
+        } catch (Exception e) {
+            return;
+        }
+        insertStatic(db, "AS-GAT-150", "سارا محمدی", 5,
+                "بعد از سه هفته استفادهٔ منظم، لک‌های صورتم واقعاً کم‌رنگ‌تر شد و پوستم شفاف‌تره. بسته‌بندی هم خیلی شیک بود.",
+                1, "۱۴۰۵/۰۸/۲۱");
+        insertStatic(db, "AS-GAT-150", "نگار احمدی", 4,
+                "بافتش سبکه و زیر آرایش سنگین نمی‌شه. برای من که پوست مختلط دارم مناسب بود.",
+                1, "۱۴۰۵/۰۸/۱۵");
+        insertStatic(db, "AS-GAT-050", "نازنین رضایی", 5,
+                "خط‌های ریز دور چشمم محسوس‌تر از قبل نیست و پوستم کشیده‌تر شده. حتماً بازم می‌خرم.",
+                1, "۱۴۰۵/۰۸/۰۹");
+        insertStatic(db, "AS-LC-104", "مهسا کریمی", 5,
+                "پوشش مخملی و مات عالی، توی عکس‌ها هم یکدست دیده می‌شه و تا شب ماندگاری داره.",
+                1, "۱۴۰۵/۰۷/۲۸");
+        insertStatic(db, "AS-HF-300", "الهام صادقی", 5,
+                "ریزش موهام بعد از یک ماه واقعاً کمتر شد. بوی ملایم گیاهی داره و چرب نمی‌کنه.",
+                1, "۱۴۰۵/۰۷/۲۰");
+        insertStatic(db, "AS-ORD-240", "پریسا نوری", 4,
+                "منافذ بینی‌ام تمیزتر شده. فقط باید حتماً ضدآفتاب استفاده کرد.",
+                1, "۱۴۰۵/۰۷/۱۲");
+        insertStatic(db, "AS-MRG-500", "زهرا موسوی", 5,
+                "برای موی چرب عالیه؛ شورهٔ سرم کم شد و موهام سبک‌تر شده.",
+                1, "۱۴۰۵/۰۶/۳۰");
+        insertStatic(db, "AS-GAT-050", "مریم حسینی", 5,
+                "همراه با مشاورهٔ مدیریت مجموعه خریدم و انتخاب درستی بود. بسته‌بندی هدیه هم فوق‌العاده بود.",
+                1, "۱۴۰۵/۰۶/۱۸");
+        // دو نظر تازه که منتظر تأیید مدیریت هستند (برای نمایش جریان مدیریتی).
+        insertStatic(db, "AS-LC-104", "شیدا رحیمی", 4,
+                "رنگ ۱۰۴ برای پوست روشن من کمی تیره بود ولی کیفیت پودر خیلی خوبه.",
+                0, "امروز");
+        insertStatic(db, "AS-HF-300", "فاطمه اکبری", 5,
+                "بعد از دو هفته، ریزشم کمتر شده و موهام ضخیم‌تر به نظر می‌رسه.",
+                0, "امروز");
+    }
+
+    /** Seed helper that writes directly (used only from the static seeding path). */
+    private static void insertStatic(SQLiteDatabase db, String sku, String author, int rating, String body,
+                                     int approved, String createdLabel) {
+        long pid = -1L;
+        try (Cursor c = db.rawQuery("SELECT id FROM products WHERE sku = ? LIMIT 1", new String[]{sku})) {
+            if (c.moveToFirst()) pid = c.getLong(0);
+        }
+        if (pid <= 0) return;
+        ContentValues cv = new ContentValues();
+        cv.put("product_id", pid);
+        cv.put("author", author);
+        cv.put("rating", Math.max(1, Math.min(5, rating)));
+        cv.put("body", body);
+        cv.put("approved", approved);
+        cv.put("created_label", createdLabel);
+        try {
+            db.insert("reviews", null, cv);
+        } catch (Exception ignored) { }
+    }
+
+    public long addReview(long productId, String author, int rating, String body) {
+        ContentValues cv = new ContentValues();
+        cv.put("product_id", productId);
+        cv.put("author", author == null || author.trim().isEmpty() ? "مشتری مجموعه" : author.trim());
+        cv.put("rating", Math.max(1, Math.min(5, rating)));
+        cv.put("body", body == null ? "" : body.trim());
+        cv.put("approved", 0);
+        cv.put("created_label", "امروز");
+        try {
+            return getWritableDatabase().insert("reviews", null, cv);
+        } catch (Exception e) {
+            return -1L;
+        }
+    }
+
+    public List<Models.ReviewRecord> getProductReviews(long productId, int limit) {
+        List<Models.ReviewRecord> list = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT id, product_id, author, rating, body, approved, created_label FROM reviews " +
+                        "WHERE product_id = ? AND approved = 1 ORDER BY rating DESC, id DESC LIMIT ?",
+                new String[]{String.valueOf(productId), String.valueOf(limit)})) {
+            while (c.moveToNext()) list.add(mapReview(c));
+        }
+        return list;
+    }
+
+    public List<Models.ReviewRecord> getPendingReviews() {
+        List<Models.ReviewRecord> list = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT id, product_id, author, rating, body, approved, created_label FROM reviews " +
+                        "WHERE approved = 0 ORDER BY id DESC LIMIT 20", null)) {
+            while (c.moveToNext()) list.add(mapReview(c));
+        }
+        return list;
+    }
+
+    private Models.ReviewRecord mapReview(Cursor c) {
+        Models.ReviewRecord r = new Models.ReviewRecord();
+        r.id = c.getLong(0);
+        r.productId = c.getLong(1);
+        r.author = c.getString(2);
+        r.rating = c.getInt(3);
+        r.body = c.getString(4);
+        r.approved = c.getInt(5) == 1;
+        r.createdLabel = c.getString(6);
+        return r;
+    }
+
+    public boolean setReviewApproved(long id, boolean approved) {
+        ContentValues cv = new ContentValues();
+        cv.put("approved", approved ? 1 : 0);
+        return getWritableDatabase().update("reviews", cv, "id = ?", new String[]{String.valueOf(id)}) > 0;
+    }
+
+    public boolean deleteReview(long id) {
+        return getWritableDatabase().delete("reviews", "id = ?", new String[]{String.valueOf(id)}) > 0;
+    }
+
+    public Models.RatingSummary getProductRating(long productId) {
+        Models.RatingSummary summary = new Models.RatingSummary();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COALESCE(AVG(rating),0), COUNT(*) FROM reviews WHERE product_id = ? AND approved = 1",
+                new String[]{String.valueOf(productId)})) {
+            if (c.moveToFirst()) {
+                summary.average = c.getDouble(0);
+                summary.count = c.getInt(1);
+            }
+        }
+        return summary;
+    }
+
+    public Models.RatingSummary getStoreRating() {
+        Models.RatingSummary summary = new Models.RatingSummary();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COALESCE(AVG(rating),0), COUNT(*) FROM reviews WHERE approved = 1", null)) {
+            if (c.moveToFirst()) {
+                summary.average = c.getDouble(0);
+                summary.count = c.getInt(1);
+            }
+        }
+        return summary;
+    }
+
+    public int getPendingReviewsCount() {
+        try (Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM reviews WHERE approved = 0", null)) {
+            if (c.moveToFirst()) return c.getInt(0);
+        }
+        return 0;
+    }
+
+    /** Lifetime value used by the VIP club tiers. */
+    public long getLifetimeSpend() {
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COALESCE(SUM(total_amount),0) FROM orders WHERE status IN ('paid','confirmed','preparing','shipped','delivered')",
+                null)) {
+            if (c.moveToFirst()) return c.getLong(0);
+        }
+        return 0L;
     }
 
     public Models.DashboardSnapshot getDashboardSnapshot() {

@@ -8,6 +8,7 @@ use App\Http\Controllers\API\InstallmentController;
 use App\Http\Controllers\API\MarketplaceFeedController;
 use App\Http\Controllers\API\OrderStatusController;
 use App\Http\Controllers\API\ProductController;
+use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\ProductManagementController;
@@ -24,6 +25,13 @@ Route::prefix('v1')->middleware([EnsureTransactionSafety::class])->group(functio
     Route::get('/catalog/meta', [ProductController::class, 'catalogMeta']);
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{id}', [ProductController::class, 'show'])->whereNumber('id');
+
+    // Verified Reviews — public read, moderated write (v6.2)
+    Route::get('/reviews/summary', [ReviewController::class, 'summary']);
+    Route::get('/products/{id}/reviews', [ReviewController::class, 'index'])->whereNumber('id');
+    Route::post('/products/{id}/reviews', [ReviewController::class, 'store'])
+        ->whereNumber('id')
+        ->middleware('throttle:12,1');
 
     // AI Skin Analyzer, Fragrance Sommelier & Anti-Counterfeit TTAC Verification
     Route::post('/concierge/skin-analyze', [BeautyConciergeController::class, 'analyzeSkin']);
@@ -70,6 +78,10 @@ Route::prefix('v1')->middleware([EnsureTransactionSafety::class])->group(functio
             Route::post('/products', [ProductManagementController::class, 'store']);
             Route::put('/products/{id}', [ProductManagementController::class, 'update'])->whereNumber('id');
             Route::delete('/products/{id}', [ProductManagementController::class, 'destroy'])->whereNumber('id');
+
+            Route::get('/reviews/pending', [ReviewController::class, 'pending']);
+            Route::post('/reviews/{id}/approve', [ReviewController::class, 'approve'])->whereNumber('id');
+            Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->whereNumber('id');
 
             Route::get('/inventory', [InventoryController::class, 'index']);
             Route::post('/inventory/adjust', [InventoryController::class, 'adjust']);

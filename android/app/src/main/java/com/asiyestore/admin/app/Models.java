@@ -42,6 +42,24 @@ public final class Models {
         public boolean aiGenerated;
     }
 
+
+    /** A verified customer review (moderated by the boutique owner). */
+    public static final class ReviewRecord {
+        public long id;
+        public long productId;
+        public String author;
+        public int rating;
+        public String body;
+        public boolean approved;
+        public String createdLabel;
+    }
+
+    /** Aggregated star rating for a product or the whole boutique. */
+    public static final class RatingSummary {
+        public double average;
+        public int count;
+    }
+
     /** One selectable BNPL / installment plan computed by InstallmentEngine. */
     public static final class InstallmentPlan {
         public String id;
