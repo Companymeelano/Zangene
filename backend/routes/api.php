@@ -2,8 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\BeautyConciergeController;
 use App\Http\Controllers\API\CartController;
 use App\Http\Controllers\API\InstallmentController;
+use App\Http\Controllers\API\MarketplaceFeedController;
 use App\Http\Controllers\API\OrderStatusController;
 use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -14,7 +16,7 @@ use App\Http\Middleware\EnsureRoleOrPermission;
 use App\Http\Middleware\EnsureTransactionSafety;
 
 Route::prefix('v1')->middleware([EnsureTransactionSafety::class])->group(function () {
-    // 1. Public Catalog & Authentication Endpoints
+    // 1. Public Catalog, Authentication, AI Beauty Concierge, Authenticity & Comparison Feeds
     Route::post('/auth/send-otp', [AuthController::class, 'sendOtp']);
     Route::post('/auth/verify-otp', [AuthController::class, 'verifyOtp']);
     Route::post('/auth/admin/login', [AuthController::class, 'adminLogin']);
@@ -23,6 +25,15 @@ Route::prefix('v1')->middleware([EnsureTransactionSafety::class])->group(functio
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{id}', [ProductController::class, 'show'])->whereNumber('id');
 
+    // AI Skin Analyzer, Fragrance Sommelier & Anti-Counterfeit TTAC Verification
+    Route::post('/concierge/skin-analyze', [BeautyConciergeController::class, 'analyzeSkin']);
+    Route::post('/concierge/fragrance-finder', [BeautyConciergeController::class, 'matchFragrance']);
+    Route::get('/authenticity/verify/{code}', [BeautyConciergeController::class, 'verifyAuthenticity']);
+
+    // Official Torob & Emalls Price/Stock Feeds
+    Route::get('/feeds/torob', [MarketplaceFeedController::class, 'torob']);
+    Route::get('/feeds/emalls', [MarketplaceFeedController::class, 'emalls']);
+
     // Signed Installment Provider Webhook Callback (HMAC verified in controller)
     Route::post('/installment/callback/{provider}', [InstallmentController::class, 'callback']);
 
@@ -30,6 +41,10 @@ Route::prefix('v1')->middleware([EnsureTransactionSafety::class])->group(functio
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+        // Gold Cashback Wallet & Smart Replenishment CRM
+        Route::get('/customer/wallet', [BeautyConciergeController::class, 'walletSummary']);
+        Route::get('/customer/replenishments', [BeautyConciergeController::class, 'customerReplenishments']);
 
         // Cart & Coupon
         Route::get('/cart', [CartController::class, 'index']);

@@ -1,0 +1,19 @@
+{
+  "name": "ASIYE STORE — Imperial Luxury Beauty Maison",
+  "short_name": "ASIYE STORE",
+  "description": "فروشگاه فوق‌لوکس زیبایی، مراقبت پوست و عطر اختصاصی با هوش مصنوعی زیبایی و ضمانت اصالت TTAC",
+  "lang": "fa-IR",
+  "dir": "rtl",
+  "start_url": "/frontend/index.html",
+  "display": "standalone",
+  "background_color": "#121110",
+  "theme_color": "#C6A16C",
+  "icons": [
+    {
+      "src": "/images/app_icon_dark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

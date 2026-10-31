@@ -27,6 +27,10 @@ class Product extends Model
         'hair_type',
         'sku',
         'barcode',
+        'ttac_code',
+        'cold_chain_required',
+        'replenishment_days',
+        'olfactory_notes',
         'original_price',
         'sale_price',
         'discount_percent',
@@ -37,6 +41,8 @@ class Product extends Model
         'original_price' => 'decimal:2',
         'sale_price' => 'decimal:2',
         'discount_percent' => 'integer',
+        'cold_chain_required' => 'boolean',
+        'replenishment_days' => 'integer',
         'published' => 'boolean',
     ];
 

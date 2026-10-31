@@ -10,6 +10,11 @@ public final class Models {
     public static final class Product {
         public long id;
         public String sku;
+        public String ttacSerial;
+        public String batchCode;
+        public String expiryLabel;
+        public boolean coldChain;
+        public int replenishDays;
         public String nameFa;
         public String nameEn;
         public String category;
@@ -24,7 +29,7 @@ public final class Models {
         public int stock;
         public int lowStockThreshold;
         public boolean published;
-        public String imageKey; // "serum", "lipstick", "perfume"
+        public String imageKey; // "serum", "caviar", "lipstick", "perfume", "elixir", "giftbox"
         public boolean wishlisted;
     }
 
@@ -57,12 +62,37 @@ public final class Models {
         public int installmentsCount;
         public long subtotal;
         public long discount;
+        public long walletUsed;
         public long shippingCost;
         public long totalAmount;
+        public long cashbackEarned;
+        public boolean vipGiftBox;
+        public boolean coldChain;
+        public String scentedTissue;
+        public String giftMessage;
+        public String certificateCode;
         public String status;
         public String trackingCode;
         public String createdAtLabel;
         public List<OrderItemRecord> items = new ArrayList<>();
+    }
+
+    public static final class WalletTransactionRecord {
+        public long id;
+        public long amount; // + credit, - debit
+        public String type;
+        public String description;
+        public String createdAtLabel;
+    }
+
+    public static final class CertificateRecord {
+        public long id;
+        public String certCode;
+        public String productName;
+        public String sku;
+        public String batchCode;
+        public String ownerName;
+        public String issuedAtLabel;
     }
 
     public static final class StockMovementRecord {
@@ -70,7 +100,7 @@ public final class Models {
         public long productId;
         public String productName;
         public int deltaQuantity;
-        public String type; // in, out, adjustment, return_restore
+        public String type;
         public String reason;
         public String actor;
         public String createdAtLabel;
@@ -93,6 +123,7 @@ public final class Models {
         public int totalOrdersCount;
         public int lowStockCount;
         public int installmentOrdersCount;
+        public int vipGiftOrdersCount;
         public int totalProductsCount;
         public long[] sevenDayRevenue = new long[7];
         public String[] sevenDayLabels = new String[7];

@@ -28,6 +28,12 @@ class CheckoutController extends Controller
             'payment_gateway_id' => ['nullable', 'integer', 'exists:payment_gateways,id'],
             'payment_type' => ['nullable', 'in:online,installment'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
+            'use_gold_wallet' => ['nullable', 'boolean'],
+            'is_vip_gift_box' => ['nullable', 'boolean'],
+            'scented_tissue' => ['nullable', 'string', 'max:60'],
+            'gift_card_message' => ['nullable', 'string', 'max:400'],
+            'complimentary_samples' => ['nullable', 'array', 'max:2'],
+            'cold_chain_packaging' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -121,13 +127,24 @@ class CheckoutController extends Controller
                     }
                 }
 
+                // Apply ASIYE Gold Cashback Wallet balance if requested
+                $afterCoupon = max(0.0, $subtotal - $discountAmount);
+                $walletDeduction = 0.0;
+                $lockedCustomer = Customer::where('id', $customer->id)->lockForUpdate()->first();
+                if (!empty($validated['use_gold_wallet']) && $lockedCustomer && $lockedCustomer->wallet_balance > 0) {
+                    $walletDeduction = min((float) $lockedCustomer->wallet_balance, $afterCoupon);
+                }
+                $afterDiscounts = max(0.0, $afterCoupon - $walletDeduction);
+
                 // Calculate Shipping Cost (Free above luxury threshold)
                 $freeThreshold = (float) env('FREE_SHIPPING_THRESHOLD_TOMAN', 3000000);
-                $shippingCost = ($subtotal - $discountAmount) >= $freeThreshold
+                $shippingCost = $afterDiscounts >= $freeThreshold
                     ? 0.0
                     : (float) $shippingMethod->base_cost;
 
-                $totalAmount = max(0, ($subtotal - $discountAmount) + $shippingCost);
+                $totalAmount = max(0, $afterDiscounts + $shippingCost);
+                $cashbackRate = ($lockedCustomer?->tier === 'black_diamond') ? 0.07 : (($lockedCustomer?->tier === 'gold') ? 0.05 : 0.03);
+                $cashbackEarned = round($totalAmount * $cashbackRate);
                 $orderNumber = 'AS-' . now()->format('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
 
                 $order = $customer->orders()->create([
@@ -139,11 +156,70 @@ class CheckoutController extends Controller
                     'subtotal_amount' => $subtotal,
                     'shipping_cost' => $shippingCost,
                     'discount_amount' => $discountAmount,
+                    'wallet_deduction' => $walletDeduction,
                     'total_amount' => $totalAmount,
+                    'cashback_earned' => $cashbackEarned,
                     'status' => 'pending_payment',
                     'payment_type' => $paymentType,
+                    'is_vip_gift_box' => $validated['is_vip_gift_box'] ?? true,
+                    'scented_tissue' => $validated['scented_tissue'] ?? 'damask_rose_oud',
+                    'gift_card_message' => $validated['gift_card_message'] ?? null,
+                    'complimentary_samples' => !empty($validated['complimentary_samples'])
+                        ? json_encode($validated['complimentary_samples'], JSON_UNESCAPED_UNICODE)
+                        : null,
+                    'cold_chain_packaging' => $validated['cold_chain_packaging'] ?? true,
                     'notes' => $validated['notes'] ?? null,
                 ]);
+
+                // Update Gold Cashback Wallet Ledger & Mint Digital Authenticity Certificate
+                if ($lockedCustomer) {
+                    $newBalance = ((float) $lockedCustomer->wallet_balance - $walletDeduction) + $cashbackEarned;
+                    $lockedCustomer->update(['wallet_balance' => $newBalance]);
+                    if ($walletDeduction > 0) {
+                        DB::table('wallet_transactions')->insert([
+                            'customer_id' => $lockedCustomer->id,
+                            'order_id' => $order->id,
+                            'amount' => -$walletDeduction,
+                            'type' => 'order_redemption',
+                            'description' => "کسر کیف پول طلایی بابت سفارش {$order->order_number}",
+                            'balance_after' => (float) $lockedCustomer->wallet_balance + $walletDeduction - $walletDeduction,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                    if ($cashbackEarned > 0) {
+                        DB::table('wallet_transactions')->insert([
+                            'customer_id' => $lockedCustomer->id,
+                            'order_id' => $order->id,
+                            'amount' => $cashbackEarned,
+                            'type' => 'cashback_reward',
+                            'description' => "پاداش کش‌بک طلایی بابت سفارش {$order->order_number}",
+                            'balance_after' => $newBalance,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+
+                $certificateSerial = 'AS-CERT-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                $firstVariantId = $itemsData[0]['product_variant_id'] ?? null;
+                $firstProductId = $firstVariantId ? ProductVariant::where('id', $firstVariantId)->value('product_id') : null;
+                if ($firstProductId) {
+                    DB::table('authenticity_certificates')->insert([
+                        'serial_code' => $certificateSerial,
+                        'ttac_uid' => 'TTAC-' . random_int(1000000000, 9999999999),
+                        'product_id' => $firstProductId,
+                        'order_id' => $order->id,
+                        'batch_code' => 'LOT-IMP-' . now()->format('ym'),
+                        'manufactured_at' => now()->subMonths(2)->toDateString(),
+                        'expires_at' => now()->addMonths(28)->toDateString(),
+                        'origin_atelier' => 'Paris / ASIYE Certified Cold-Chain Vault',
+                        'storage_temp_celsius' => '18.0°C Controlled',
+                        'is_authentic' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
 
                 foreach ($itemsData as $data) {
                     $order->items()->create($data);
@@ -190,10 +266,10 @@ class CheckoutController extends Controller
                 // Clear active server-side cart
                 $customer->cart?->items()->delete();
 
-                return [$order, $paymentAuthority];
+                return [$order, $paymentAuthority, $certificateSerial];
             });
 
-            [$order, $authority] = $result;
+            [$order, $authority, $certificateSerial] = $result;
 
             return response()->json([
                 'order_id' => $order->id,
@@ -201,8 +277,11 @@ class CheckoutController extends Controller
                 'total_amount' => $order->total_amount,
                 'shipping_cost' => $order->shipping_cost,
                 'discount_amount' => $order->discount_amount,
+                'wallet_deduction' => $order->wallet_deduction,
+                'cashback_earned' => $order->cashback_earned,
+                'authenticity_certificate' => $certificateSerial,
                 'payment_authority' => $authority,
-                'message' => 'سفارش لوکس شما با موفقیت ثبت شد. در حال انتقال به درگاه پرداخت امن...',
+                'message' => 'سفارش تشریفاتی شما با گواهی اصالت و پاداش کش‌بک طلایی ثبت شد.',
             ], 201);
         } catch (ValidationException $ve) {
             return response()->json(['errors' => $ve->errors()], 422);

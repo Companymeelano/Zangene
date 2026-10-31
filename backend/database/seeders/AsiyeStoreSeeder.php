@@ -67,7 +67,7 @@ class AsiyeStoreSeeder extends Seeder
         $catSkincare = Category::firstOrCreate(['slug' => 'skin-care'], ['name_fa' => 'مراقبت از پوست', 'name_en' => 'Skin Care', 'order' => 1]);
         $catMakeup = Category::firstOrCreate(['slug' => 'lip-makeup'], ['name_fa' => 'آرایش لب و صورت', 'name_en' => 'Makeup', 'order' => 2]);
         $catPerfume = Category::firstOrCreate(['slug' => 'fragrance'], ['name_fa' => 'عطر و ادکلن لوکس', 'name_en' => 'Fragrance', 'order' => 3]);
-        Category::firstOrCreate(['slug' => 'hair-care'], ['name_fa' => 'مراقبت از مو', 'name_en' => 'Hair Care', 'order' => 4]);
+        $catHair = Category::firstOrCreate(['slug' => 'hair-care'], ['name_fa' => 'مراقبت از مو', 'name_en' => 'Hair Care', 'order' => 4]);
 
         // 4. Signature Luxury Products
         $serum = Product::firstOrCreate(
@@ -147,12 +147,86 @@ class AsiyeStoreSeeder extends Seeder
         $perfVar->inventory()->firstOrCreate([], ['quantity' => 19, 'low_stock_threshold' => 5]);
         $perfume->images()->firstOrCreate(['path' => '/images/product_perfume_luxury.png'], ['is_primary' => true, 'order' => 1]);
 
-        // 5. Gateways, Installment Providers, Shipping & Coupons
+        $caviar = Product::firstOrCreate(
+            ['sku' => 'AS-CRM-108'],
+            [
+                'brand_id' => $brand->id,
+                'category_id' => $catSkincare->id,
+                'name_fa' => 'کرم شب خاویار سیاه و پپتید طلایی',
+                'name_en' => 'Imperial Caviar & Gold Peptide Night Crème',
+                'slug' => 'imperial-caviar-gold-night-creme',
+                'description' => 'کرم بازسازی‌کننده عمیق شبانه با عصاره خاویار سیاه و کمپلکس مس-پپتید برای تغذیه عمقی و استحکام سد دفاعی پوست.',
+                'country' => 'سوئیس / فرانسه',
+                'volume_weight' => '۵۰ میلی‌لیتر',
+                'ttac_code' => 'AS-AUTH-2026-9902',
+                'cold_chain_required' => true,
+                'replenishment_days' => 60,
+                'original_price' => 3100000,
+                'sale_price' => 2690000,
+                'discount_percent' => 13,
+                'published' => true,
+            ]
+        );
+        $cavVar = $caviar->variants()->firstOrCreate(['size' => '۵۰ میلی‌لیتر'], ['price_offset' => 0]);
+        $cavVar->inventory()->firstOrCreate([], ['quantity' => 14, 'low_stock_threshold' => 5]);
+        $caviar->images()->firstOrCreate(['path' => '/images/product_caviar_cream_luxury.jpg'], ['is_primary' => true, 'order' => 1]);
+
+        $elixir = Product::firstOrCreate(
+            ['sku' => 'AS-ELX-305'],
+            [
+                'brand_id' => $brand->id,
+                'category_id' => $catHair->id,
+                'name_fa' => 'الکسیر ابریشم و طلای ۲۴ عیار مو',
+                'name_en' => '24K Gold & Silk Hair Elixir',
+                'slug' => '24k-gold-silk-hair-elixir',
+                'description' => 'الکسیر کریستالی حاوی ورقه‌های معلق طلای ۲۴ عیار و روغن آرگان خالص برای احیای ساقه مو و درخشش آینه‌ای.',
+                'country' => 'فرانسه',
+                'volume_weight' => '۱۰۰ میلی‌لیتر',
+                'ttac_code' => 'AS-AUTH-2026-9905',
+                'cold_chain_required' => false,
+                'replenishment_days' => 75,
+                'original_price' => 1580000,
+                'sale_price' => 1290000,
+                'discount_percent' => 18,
+                'published' => true,
+            ]
+        );
+        $elxVar = $elixir->variants()->firstOrCreate(['size' => '۱۰۰ میلی‌لیتر'], ['price_offset' => 0]);
+        $elxVar->inventory()->firstOrCreate([], ['quantity' => 22, 'low_stock_threshold' => 5]);
+        $elixir->images()->firstOrCreate(['path' => '/images/product_hair_elixir_luxury.jpg'], ['is_primary' => true, 'order' => 1]);
+
+        $coffret = Product::firstOrCreate(
+            ['sku' => 'AS-DSC-777'],
+            [
+                'brand_id' => $brand->id,
+                'category_id' => $catPerfume->id,
+                'name_fa' => 'کافره مخمل هدیه VIP و پک تستر عطر Discovery',
+                'name_en' => 'VIP Velvet Coffret & Fragrance Discovery Set',
+                'slug' => 'vip-velvet-fragrance-discovery-set',
+                'description' => 'شامل ۳ ویال کریستالی ۵ میل عطرهای اختصاصی در جعبه مخمل مشکی با مهر طلایی AS و ۱۰۰٪ بازگشت وجه روی خرید نسخه اصلی.',
+                'country' => 'پاریس / بسته‌بندی دست‌ساز',
+                'volume_weight' => '۳ × ۵ میلی‌لیتر',
+                'ttac_code' => 'AS-AUTH-2026-9906',
+                'cold_chain_required' => true,
+                'replenishment_days' => 30,
+                'original_price' => 980000,
+                'sale_price' => 790000,
+                'discount_percent' => 19,
+                'published' => true,
+            ]
+        );
+        $cofVar = $coffret->variants()->firstOrCreate(['size' => '۳ × ۵ میلی‌لیتر'], ['price_offset' => 0]);
+        $cofVar->inventory()->firstOrCreate([], ['quantity' => 16, 'low_stock_threshold' => 5]);
+        $coffret->images()->firstOrCreate(['path' => '/images/vip_gift_box_luxury.jpg'], ['is_primary' => true, 'order' => 1]);
+
+        // 5. Gateways, 4 BNPL Installment Providers, Shipping & Coupons
         PaymentGateway::firstOrCreate(['slug' => 'zarinpal'], ['name' => 'درگاه پرداخت امن زرین‌پال', 'is_active' => true]);
         PaymentGateway::firstOrCreate(['slug' => 'direct_bank'], ['name' => 'درگاه مستقیم بانکی (شاپرک)', 'is_active' => true]);
 
         InstallmentProvider::firstOrCreate(['slug' => 'snapp_pay'], ['name' => 'سرویس اقساطی اسنپ‌پی (۴ قسط بدون کارمزد)', 'max_installments' => 4, 'is_active' => true]);
         InstallmentProvider::firstOrCreate(['slug' => 'tara'], ['name' => 'اعتبار خرید اقساطی تارا', 'max_installments' => 6, 'is_active' => true]);
+        InstallmentProvider::firstOrCreate(['slug' => 'digipay'], ['name' => 'دیجی‌پی — پرداخت اعتباری هوشمند', 'max_installments' => 12, 'is_active' => true]);
+        InstallmentProvider::firstOrCreate(['slug' => 'azkivam'], ['name' => 'ازکی‌وام — خرید اقساطی کلکسیونی', 'max_installments' => 12, 'is_active' => true]);
 
         ShippingMethod::firstOrCreate(['slug' => 'vip_courier'], ['name' => 'پیک اختصاصی VIP (بسته‌بندی لوکس)', 'base_cost' => 95000, 'estimated_delivery' => 'تحویل امروز (تهران)', 'is_active' => true]);
         ShippingMethod::firstOrCreate(['slug' => 'pishtaz_post'], ['name' => 'پست پیشتاز ویژه سراسر کشور', 'base_cost' => 65000, 'estimated_delivery' => '۲ تا ۴ روز کاری', 'is_active' => true]);
@@ -181,6 +255,20 @@ class AsiyeStoreSeeder extends Seeder
                 'end_at' => now()->addYear(),
                 'usage_limit' => 200,
                 'usage_per_customer' => 1,
+                'is_active' => true,
+            ]
+        );
+
+        Coupon::firstOrCreate(
+            ['code' => 'REFILL10'],
+            [
+                'discount_percent' => 10,
+                'min_purchase' => 200000,
+                'max_discount' => 500000,
+                'start_at' => now()->subDay(),
+                'end_at' => now()->addYear(),
+                'usage_limit' => 1000,
+                'usage_per_customer' => 10,
                 'is_active' => true,
             ]
         );

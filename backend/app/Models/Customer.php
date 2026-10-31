@@ -6,10 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
-    protected $fillable = ['user_id', 'birth_date', 'loyalty_points', 'tier'];
+    protected $fillable = [
+        'user_id',
+        'birth_date',
+        'loyalty_points',
+        'wallet_balance',
+        'lifetime_spend',
+        'tier',
+    ];
 
     protected $casts = [
         'loyalty_points' => 'decimal:2',
+        'wallet_balance' => 'decimal:2',
+        'lifetime_spend' => 'decimal:2',
     ];
 
     public function user()

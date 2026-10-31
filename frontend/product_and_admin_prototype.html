@@ -3,139 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASIYE STORE — پیش‌نمایش پنل مدیریت تحت وب و اندروید</title>
+    <title>ASIYE STORE — فرماندهی اجرایی، انبار FEFO، بارکدخوان و فید ترب</title>
     <link rel="stylesheet" href="src/styles/design_system.css">
     <link rel="icon" href="../images/favicon.png" type="image/png">
     <style>
-        .admin-shell {
-            display: grid;
-            grid-template-columns: 260px 1fr;
-            min-height: calc(100vh - 76px);
-        }
+        .admin-shell { display: grid; grid-template-columns: 270px 1fr; min-height: calc(100vh - 78px); }
         .admin-sidebar {
-            background: var(--luxury-black);
-            color: var(--warm-white);
+            background: #0A0A0C;
+            color: #FBF9F5;
             padding: 2rem 1.25rem;
             border-left: 1px solid rgba(198, 161, 108, 0.35);
         }
         .admin-nav-link {
-            display: block;
-            padding: 0.85rem 1rem;
-            border-radius: var(--radius-sm);
-            color: var(--platinum-gray);
-            text-decoration: none;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
+            display: block; padding: 0.85rem 1rem; border-radius: 12px;
+            color: #D8D1C5; text-decoration: none; margin-bottom: 0.5rem; font-weight: 600;
+            transition: all 0.25s ease;
         }
         .admin-nav-link.active, .admin-nav-link:hover {
-            background: var(--champagne-gold);
-            color: var(--luxury-black);
+            background: linear-gradient(135deg, #C6A16C, #E2C28E);
+            color: #0A0A0C;
         }
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-            gap: 1.25rem;
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 1.2rem; margin-bottom: 2rem; }
+        .kpi-card {
+            background: #FFFFFF; padding: 1.35rem; border-radius: 16px;
+            border-right: 4px solid #C6A16C; box-shadow: 0 10px 30px rgba(10,10,12,0.06);
+        }
+        .lux-table {
+            width: 100%; border-collapse: collapse; background: #FFFFFF;
+            border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(10,10,12,0.06);
             margin-bottom: 2rem;
         }
-        .kpi-card {
-            background: var(--warm-white);
-            padding: 1.4rem;
-            border-radius: var(--radius-md);
-            border-right: 4px solid var(--champagne-gold);
-            box-shadow: var(--shadow-soft);
+        .lux-table th, .lux-table td { padding: 0.95rem 1rem; text-align: right; border-bottom: 1px solid rgba(198,161,108,0.18); font-size: 0.92rem; }
+        .lux-table th { background: #0A0A0C; color: #E2C28E; }
+        .scanner-panel {
+            background: linear-gradient(135deg, #0E0E12, #1B1920);
+            color: #FBF9F5; border: 1px solid rgba(198,161,108,0.45);
+            border-radius: 18px; padding: 1.5rem; margin-bottom: 2rem;
         }
-        .orders-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--warm-white);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            box-shadow: var(--shadow-soft);
-        }
-        .orders-table th, .orders-table td {
-            padding: 0.95rem 1rem;
-            text-align: right;
-            border-bottom: 1px solid rgba(198, 161, 108, 0.2);
-        }
-        .orders-table th {
-            background: var(--luxury-black);
-            color: var(--soft-gold);
-        }
-        @media (max-width: 900px) {
-            .admin-shell { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 900px) { .admin-shell { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
     <header class="luxury-header">
         <a href="index.html" class="logo-container">
             <img src="../images/app_icon_dark.png" alt="ASIYE STORE" class="logo-img">
-            <div class="logo-text">ASIYE STORE ADMIN<span class="slogan">Executive Control Suite</span></div>
+            <div class="logo-text">ASIYE EXECUTIVE SUITE<span class="slogan">Imperial v3.0 • FEFO • Barcode • BNPL</span></div>
         </a>
-        <a href="index.html" class="btn-luxury" style="text-decoration:none;">مشاهده ویترین فروشگاه</a>
+        <div style="display:flex; gap:0.75rem; align-items:center;">
+            <a href="/download/ASIYE_STORE_LUXURY_FINAL.apk" class="btn-outline-gold" style="text-decoration:none; padding:0.55rem 1rem; border-radius:999px;">دانلود اپلیکیشن اندروید v3.0</a>
+            <a href="index.html" class="btn-luxury" style="text-decoration:none;">بازگشت به ویترین سلطنتی</a>
+        </div>
     </header>
 
     <div class="admin-shell">
         <aside class="admin-sidebar">
-            <div style="text-align:center; margin-bottom:2rem;">
-                <img src="../images/logo_horizontal_luxury.png" alt="ASIYE Logo" style="max-width:180px; border-radius:8px;">
+            <div style="text-align:center; margin-bottom:1.75rem;">
+                <img src="../images/logo_horizontal_luxury.png" alt="ASIYE Logo" style="max-width:175px; border-radius:10px;">
             </div>
-            <a href="#" class="admin-nav-link active">داشبورد اجرایی</a>
-            <a href="#orders-sec" class="admin-nav-link">مدیریت سفارش‌ها</a>
-            <a href="src/pages/luxury_product_samples.html" class="admin-nav-link">مدیریت محصولات</a>
-            <a href="index.html" class="admin-nav-link">تنظیمات درگاه و اقساط</a>
+            <a href="#kpi" class="admin-nav-link active">◈ داشبورد فرماندهی</a>
+            <a href="#scanner" class="admin-nav-link">▣ بارکدخوان بسته‌بندی VIP</a>
+            <a href="#fefo" class="admin-nav-link">⏳ انبارداری FEFO و بچ‌کد</a>
+            <a href="#orders" class="admin-nav-link">🎁 سفارش‌ها و کانسیرژ هدیه</a>
+            <a href="#feeds" class="admin-nav-link">⚡ فید رسمی ترب و ایمالز</a>
         </aside>
 
         <main style="padding: 2rem 4%;">
-            <h1 style="margin-top:0;">داشبورد مدیریتی یکپارچه ASIYE STORE</h1>
+            <h1 id="kpi" style="margin-top:0;">فرماندهی یکپارچه امپریال ASIYE STORE</h1>
+            <p style="color:#6B655D; margin-bottom:1.75rem;">همگام با اپلیکیشن اندروید نسخه ۳.۰، درگاه‌های چهارگانه اقساطی، زنجیره سرد و اصالت‌سنجی TTAC</p>
+
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <div style="color:#78716C; font-size:0.88rem;">فروش تاییدشده امروز</div>
-                    <div style="font-size:1.65rem; font-weight:800; margin-top:0.35rem;">۱۴۵,۸۵۰,۰۰۰ تومان</div>
+                    <div style="color:#6B655D; font-size:0.88rem;">فروش ۷ روز اخیر مزون</div>
+                    <h2 style="margin:0.4rem 0; color:#0A0A0C;">۲۶۴,۶۰۰,۰۰۰ تومان</h2>
+                    <span style="color:#1C6B4A; font-size:0.82rem; font-weight:700;">+۲۸٪ رشد پس از فعال‌سازی ۴ درگاه اقساطی</span>
                 </div>
                 <div class="kpi-card">
-                    <div style="color:#78716C; font-size:0.88rem;">سفارش‌های در جریان</div>
-                    <div style="font-size:1.65rem; font-weight:800; margin-top:0.35rem;">۲۴ سفارش</div>
+                    <div style="color:#6B655D; font-size:0.88rem;">سفارش‌های تشریفاتی هدیه VIP</div>
+                    <h2 style="margin:0.4rem 0; color:#9B7844;">۱۹ مرسوله مخمل</h2>
+                    <span style="color:#6B655D; font-size:0.82rem;">مهر موم طلایی AS + کاغذ ابریشمی معطر</span>
                 </div>
                 <div class="kpi-card">
-                    <div style="color:#78716C; font-size:0.88rem;">هشدار کسری موجودی</div>
-                    <div style="font-size:1.65rem; font-weight:800; color:#9B2226; margin-top:0.35rem;">۱ تنوع (شامپاینی نود)</div>
+                    <div style="color:#6B655D; font-size:0.88rem;">پاداش کش‌بک طلایی در گردش</div>
+                    <h2 style="margin:0.4rem 0; color:#1C6B4A;">۱۲,۴۵۰,۰۰۰ تومان</h2>
+                    <span style="color:#6B655D; font-size:0.82rem;">نرخ بازگشت مجدد اعضای الماس سیاه: ۶۴٪</span>
                 </div>
                 <div class="kpi-card">
-                    <div style="color:#78716C; font-size:0.88rem;">فروش اقساطی (اسنپ‌پی / تارا)</div>
-                    <div style="font-size:1.65rem; font-weight:800; color:#2D6A4F; margin-top:0.35rem;">۳۸٪ کل فروش</div>
+                    <div style="color:#6B655D; font-size:0.88rem;">وضعیت سلامت بچ‌های FEFO</div>
+                    <h2 style="margin:0.4rem 0; color:#A36A1E;">۱ هشدار موجودی</h2>
+                    <span style="color:#A63232; font-size:0.82rem;">رژ لب شامپاینی نود (LOT-VLV-319): ۴ عدد</span>
                 </div>
             </div>
 
-            <h2 id="orders-sec">آخرین سفارش‌های ثبت‌شده</h2>
-            <table class="orders-table">
+            <!-- Interactive Warehouse Barcode Packing Verifier -->
+            <section id="scanner" class="scanner-panel">
+                <h3 style="margin-top:0; color:#E2C28E;">▣ شبیه‌ساز بارکدخوان بسته‌بندی سریع انبار (خطای صفر در ارسال)</h3>
+                <p style="font-size:0.9rem; color:#D8D1C5;">کد SKU، بارکد EAN یا کد هولوگرام TTAC را اسکن کنید تا سیستم تطابق آن با بچ اولویت‌دار FEFO و سلامت زنجیره سرد را تایید کند:</p>
+                <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.85rem;">
+                    <input id="packBarcodeInput" type="text" value="AS-SRM-001" style="flex:1; min-width:220px; padding:0.75rem 1rem; border-radius:12px; border:1px solid #C6A16C; background:#141318; color:#fff;">
+                    <button class="btn-luxury" onclick="verifyPackScan()">اسکن و تایید خروج FEFO</button>
+                    <button class="btn-outline-gold" style="color:#E2C28E;" onclick="document.getElementById('packBarcodeInput').value='TTAC-8849201140'; verifyPackScan();">تست اسکن ادوپرفیوم</button>
+                </div>
+                <div id="packScanResult" style="margin-top:1rem; padding:0.9rem 1rem; border-radius:12px; background:rgba(28,107,74,0.22); border:1px solid #2E9E6F; color:#9FF3C9; font-size:0.9rem;">
+                    ✓ آماده اسکن بارکد انبار — استاندارد FEFO (اولین انقضا، اولین خروج) فعال است.
+                </div>
+            </section>
+
+            <!-- FEFO Batch & Expiry Inventory Table -->
+            <h2 id="fefo">⏳ جدول انبارداری بچ‌کد، تاریخ انقضا (FEFO) و زنجیره سرد</h2>
+            <table class="lux-table">
                 <thead>
                     <tr>
-                        <th>کد سفارش</th>
-                        <th>مشتری</th>
-                        <th>مبلغ کل</th>
-                        <th>روش پرداخت</th>
-                        <th>وضعیت</th>
+                        <th>محصول لوکس</th>
+                        <th>کد SKU / هولوگرام TTAC</th>
+                        <th>بچ اولویت خروج (FEFO)</th>
+                        <th>تاریخ انقضا</th>
+                        <th>زنجیره سرد</th>
+                        <th>موجودی</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>AS-20261031-A91F</td>
-                        <td>سارا محمدی (تهران)</td>
-                        <td>۳,۹۵۰,۰۰۰ تومان</td>
-                        <td>اسنپ‌پی (۴ قسط)</td>
-                        <td><span class="chip active">پرداخت شده — آماده ارسال VIP</span></td>
+                        <td><strong>سرم طلایی احیاکننده ۲۴ عیار</strong></td>
+                        <td>AS-SRM-001 / AS-AUTH-2026-9901</td>
+                        <td>LOT-24K-881</td>
+                        <td>۱۴۰۷/۰۸</td>
+                        <td style="color:#1C6B4A; font-weight:700;">❄ الزامی (۱۸°C)</td>
+                        <td>۲۸ عدد</td>
                     </tr>
                     <tr>
-                        <td>AS-20261031-B44C</td>
-                        <td>نازنین رضایی (اصفهان)</td>
-                        <td>۱,۸۵۰,۰۰۰ تومان</td>
-                        <td>درگاه زرین‌پال</td>
-                        <td><span class="chip">تحویل به پست پیشتاز</span></td>
+                        <td><strong>کرم شب خاویار سیاه و پپتید طلایی</strong></td>
+                        <td>AS-CRM-108 / AS-AUTH-2026-9902</td>
+                        <td>LOT-CAV-502</td>
+                        <td>۱۴۰۷/۰۶ (اولویت ۱)</td>
+                        <td style="color:#1C6B4A; font-weight:700;">❄ الزامی (۱۸°C)</td>
+                        <td>۱۴ عدد</td>
+                    </tr>
+                    <tr>
+                        <td><strong>رژ لب مخملی مات ASIYE Couture</strong></td>
+                        <td>AS-LIP-042 / AS-AUTH-2026-9903</td>
+                        <td>LOT-VLV-319</td>
+                        <td>۱۴۰۷/۱۰</td>
+                        <td>استاندارد</td>
+                        <td style="color:#A63232; font-weight:700;">۴ عدد (نیاز به شارژ)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ادوپرفیوم سلطنتی ASIYE Signature</strong></td>
+                        <td>AS-PRF-999 / TTAC-8849201140</td>
+                        <td>LOT-PAR-999</td>
+                        <td>۱۴۰۸/۱۲</td>
+                        <td style="color:#1C6B4A; font-weight:700;">❄ کیف عایق حرارت</td>
+                        <td>۱۹ عدد</td>
+                    </tr>
+                    <tr>
+                        <td><strong>الکسیر ابریشم و طلای ۲۴ عیار مو</strong></td>
+                        <td>AS-ELX-305 / AS-AUTH-2026-9905</td>
+                        <td>LOT-ELX-712</td>
+                        <td>۱۴۰۷/۰۹</td>
+                        <td>استاندارد</td>
+                        <td>۲۲ عدد</td>
+                    </tr>
+                    <tr>
+                        <td><strong>کافره مخمل هدیه VIP و Discovery Set</strong></td>
+                        <td>AS-DSC-777 / AS-AUTH-2026-9906</td>
+                        <td>LOT-VIP-777</td>
+                        <td>۱۴۰۸/۰۵</td>
+                        <td style="color:#1C6B4A; font-weight:700;">❄ کیف عایق حرارت</td>
+                        <td>۱۶ عدد</td>
                     </tr>
                 </tbody>
             </table>
+
+            <!-- Orders with White-Glove Gift Concierge Details -->
+            <h2 id="orders">🎁 آخرین سفارش‌ها به همراه دستورالعمل کانسیرژ هدیه VIP</h2>
+            <table class="lux-table">
+                <thead>
+                    <tr>
+                        <th>شماره سفارش</th>
+                        <th>مشتری VIP</th>
+                        <th>روش پرداخت</th>
+                        <th>تشریفات جعبه مخمل و رایحه ابریشم</th>
+                        <th>پیام کارت پستال طلاکوب</th>
+                        <th>گواهی اصالت</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>AS-1405-8841</strong></td>
+                        <td>سارا محمدی</td>
+                        <td>اسنپ‌پی (۴ قسط)</td>
+                        <td>جعبه مخمل مشکی + رایحه رز دمشقی و عود + کیف زنجیره سرد</td>
+                        <td>«تولدت مبارک عزیزم — با عشق جاودان»</td>
+                        <td>AS-CERT-884100</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AS-1405-8839</strong></td>
+                        <td>نازنین رضایی</td>
+                        <td>دیجی‌پی (۴ قسط)</td>
+                        <td>جعبه مخمل مشکی + رایحه وانیل ماداگاسکار + ۲ سمپل عطر</td>
+                        <td>—</td>
+                        <td>AS-CERT-883902</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Torob & Emalls Live Feed Status -->
+            <h2 id="feeds">⚡ وضعیت فیدهای خودکار ترب (Torob) و ایمالز (Emalls)</h2>
+            <div class="kpi-card" style="margin-bottom:2rem;">
+                <p style="margin:0 0 0.5rem;"><strong>• Endpoint فید ترب (JSON):</strong> <code>/api/v1/feeds/torob</code> — همگام‌سازی لحظه‌ای قیمت، تخفیف و وضعیت موجودی هر ۶ محصول لوکس</p>
+                <p style="margin:0 0 0.5rem;"><strong>• Endpoint فید ایمالز (XML):</strong> <code>/api/v1/feeds/emalls</code> — ساختار استاندارد XML با شناسه گارانتی اصالت TTAC</p>
+                <p style="margin:0;"><strong>• اسکیما سئو Google Rich Snippets:</strong> داده‌های ساختاریافته <code>Product</code> + <code>AggregateRating</code> در صفحه اصلی فعال است.</p>
+            </div>
         </main>
     </div>
+
+    <script>
+        const fefoCatalog = {
+            'AS-SRM-001': { name: 'سرم طلایی احیاکننده ۲۴ عیار', batch: 'LOT-24K-881', exp: '۱۴۰۷/۰۸', cold: true },
+            'AS-AUTH-2026-9901': { name: 'سرم طلایی احیاکننده ۲۴ عیار', batch: 'LOT-24K-881', exp: '۱۴۰۷/۰۸', cold: true },
+            'AS-CRM-108': { name: 'کرم شب خاویار سیاه و پپتید طلایی', batch: 'LOT-CAV-502', exp: '۱۴۰۷/۰۶', cold: true },
+            'AS-LIP-042': { name: 'رژ لب مخملی مات ASIYE Couture', batch: 'LOT-VLV-319', exp: '۱۴۰۷/۱۰', cold: false },
+            'TTAC-8849201140': { name: 'ادوپرفیوم سلطنتی ASIYE Signature', batch: 'LOT-PAR-999', exp: '۱۴۰۸/۱۲', cold: true },
+            'AS-PRF-999': { name: 'ادوپرفیوم سلطنتی ASIYE Signature', batch: 'LOT-PAR-999', exp: '۱۴۰۸/۱۲', cold: true }
+        };
+        function verifyPackScan() {
+            const val = document.getElementById('packBarcodeInput').value.trim().toUpperCase();
+            const box = document.getElementById('packScanResult');
+            const hit = fefoCatalog[val];
+            if (hit) {
+                box.style.background = 'rgba(28,107,74,0.28)';
+                box.style.borderColor = '#2E9E6F';
+                box.style.color = '#9FF3C9';
+                box.innerHTML = '✓ <strong>تایید خروج بارکد:</strong> ' + hit.name +
+                    ' | بچ اولویت FEFO: <strong>' + hit.batch + '</strong> (انقضا: ' + hit.exp + ')' +
+                    (hit.cold ? ' | ❄ <strong>الزام قرارگیری پد خنک‌کننده زنجیره سرد در جعبه مخمل VIP</strong>' : '');
+            } else {
+                box.style.background = 'rgba(166,50,50,0.28)';
+                box.style.borderColor = '#D9534F';
+                box.style.color = '#FFB4B4';
+                box.innerHTML = '⚠ کد اسکن‌شده در لیست انتظار بسته‌بندی یافت نشد! جلوی ارسال اشتباه گرفته شد.';
+            }
+        }
+    </script>
 </body>
 </html>

@@ -14,8 +14,8 @@ class InstallmentController extends Controller
     {
         $validated = $request->validate([
             'order_id' => ['required', 'integer', 'exists:orders,id'],
-            'provider' => ['required', 'string', 'in:snapp_pay,tara'],
-            'installments' => ['required', 'integer', 'in:2,3,4,6'],
+            'provider' => ['required', 'string', 'in:snapp_pay,tara,digipay,azkivam'],
+            'installments' => ['required', 'integer', 'in:2,3,4,6,9,12'],
         ]);
 
         $customer = $request->user()?->customer;

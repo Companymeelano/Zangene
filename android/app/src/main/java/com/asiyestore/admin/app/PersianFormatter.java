@@ -104,6 +104,8 @@ public final class PersianFormatter {
             case "direct_bank": return "درگاه مستقیم شاپرک";
             case "snapp_pay": return "اسنپ‌پی (۴ قسط بدون کارمزد)";
             case "tara": return "اعتبار خرید اقساطی تارا";
+            case "digipay": return "دیجی‌پی (اعتبار هوشمند)";
+            case "azkivam": return "ازکی‌وام (کلکسیونی)";
             default: return code;
         }
     }
