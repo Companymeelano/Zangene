@@ -70,7 +70,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.5 · COMPLETE SUITE";
+    private static final String APP_VERSION         = "V6.6 · SIGNATURE SEAL";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static final int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -795,6 +795,9 @@ public final class MainActivity extends Activity {
         contentContainer.addView(space(2));
         contentContainer.addView(bundleCard());
         contentContainer.addView(space(18));
+
+        contentContainer.addView(brandStoryCard());
+        contentContainer.addView(space(16));
 
         View recent = recentlyViewedStrip();
         if (recent != null) {
@@ -1619,6 +1622,17 @@ public final class MainActivity extends Activity {
         }), weight(1f));
         body.addView(actions);
         body.addView(space(12));
+        if (p.ingredients != null && !p.ingredients.trim().isEmpty()) {
+            TextView gloss = text("واژه‌نامهٔ ترکیبات: " + p.ingredients, 9.4f, COL_GOLD_DEEP, false);
+            gloss.setLineSpacing(dp(2), 1f);
+            gloss.setPadding(dp(11), dp(9), dp(11), dp(9));
+            gloss.setBackground(roundedShape(SURF_CHIP, dp(12), SURF_CHIP_LINE, dp(1)));
+            gloss.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { showIngredientGlossary(p.ingredients); }
+            });
+            body.addView(gloss);
+            body.addView(space(10));
+        }
         final boolean inCompare = compareIds.contains(p.id);
         body.addView(ghostGoldButton(inCompare ? "حذف از مقایسه" : "افزودن به مقایسهٔ کالاها",
                 new Runnable() {
@@ -2264,6 +2278,206 @@ public final class MainActivity extends Activity {
     }
 
     // ══════════════════════════════════════════════════════════════════════
+    //  v6.6 · BRAND STORY · INGREDIENT GLOSSARY · INVOICE EXPORT
+    // ══════════════════════════════════════════════════════════════════════
+
+    /** "پشت ویترین" — the boutique's story, told in three quiet frames. */
+    private View brandStoryCard() {
+        LinearLayout card = whiteCard();
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        FrameLayout logo = new FrameLayout(this);
+        logo.setLayoutParams(new LinearLayout.LayoutParams(dp(52), dp(52)));
+        logo.setClipToOutline(true);
+        logo.setBackground(roundedShape(COL_OBSIDIAN, dp(16), 0x55C8A46B, dp(1)));
+        ImageView mark = new ImageView(this);
+        mark.setImageResource(R.drawable.img_brand_emblem);
+        mark.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        logo.addView(mark, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        head.addView(logo);
+
+        LinearLayout titles = new LinearLayout(this);
+        titles.setOrientation(LinearLayout.VERTICAL);
+        titles.setPadding(dp(11), 0, dp(11), 0);
+        titles.addView(text("پشت ویترین اسیه", 13f, COL_TEXT_MAIN, true));
+        titles.addView(text("سه اصل ثابت در هر انتخاب", 9.4f, COL_TEXT_MUTED, false));
+        head.addView(titles, weight(1f));
+        card.addView(head);
+
+        String[][] frames = {
+                {"۱", "انتخاب علمی", "هر کالا با پروندهٔ ترکیبات و شناسهٔ اصالت وارد ویترین می‌شود؛ تنها فرمول‌هایی که برای پوست ایرانی آزموده شده‌اند."},
+                {"۲", "بسته‌بندی آیینی", "کارتن مخملی، کاغذ کتان و مهر مُوم طلایی؛ هر سفارش مثل یک هدیه بسته‌بندی می‌شود."},
+                {"۳", "مراقبت پس از خرید", "مشاورهٔ مستقیم مدیریت مجموعه و پیگیری وضعیت تا تحویل و پس از آن."}
+        };
+        for (String[] f : frames) {
+            card.addView(space(10));
+            View divider = new View(this);
+            divider.setBackgroundColor(SURF_DIVIDER);
+            card.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+            card.addView(space(9));
+
+            LinearLayout line = row(Gravity.TOP);
+            TextView num = text(f[0], 10f, COL_OBSIDIAN, true);
+            num.setGravity(Gravity.CENTER);
+            num.setBackground(roundedShape(COL_GOLD_LIGHT, dp(18), 0, 0));
+            num.setLayoutParams(new LinearLayout.LayoutParams(dp(22), dp(22)));
+            line.addView(num);
+
+            LinearLayout texts = new LinearLayout(this);
+            texts.setOrientation(LinearLayout.VERTICAL);
+            texts.setPadding(dp(9), 0, dp(9), 0);
+            texts.addView(text(f[1], 10.8f, COL_TEXT_MAIN, true));
+            TextView body = text(f[2], 9.6f, COL_TEXT_MUTED, false);
+            body.setLineSpacing(dp(3), 1f);
+            body.setPadding(0, dp(3), 0, 0);
+            texts.addView(body);
+            line.addView(texts, weight(1f));
+            card.addView(line);
+        }
+        return card;
+    }
+
+    /** Tap an ingredient, get a two-line honest explanation. */
+    private void showIngredientGlossary(String raw) {
+        String ingredient = raw == null ? "" : raw.trim();
+        if (ingredient.isEmpty()) return;
+
+        String[][] known = {
+                {"نیاسینامید", "ویتامین B3؛ ترمیم سد پوستی، تنظیم چربی و کاهش لک."},
+                {"پپتید", "زنجیرهٔ اسید آمینه که کلاژن‌سازی را تحریک می‌کند و خطوط ریز را نرم می‌کند."},
+                {"گلیکولیک", "آلفا هیدروکسی اسید؛ لایه‌برداری سطحی و شفاف‌سازی منافذ."},
+                {"هیالورونیک", "جذب آب در لایهٔ سطحی؛ آبرسانی فوری و پرکردن ظاهری خطوط."},
+                {"ویتامین C", "آنتی‌اکسیدان روشن‌کننده؛ یکدست‌سازی تناژ و محافظت در برابر آلودگی."},
+                {"سرامید", "چربی طبیعی پوست؛ بازسازی سد محافظ و کاهش خشکی."},
+                {"روغن مورینگا", "مغذی سبک برای ساقهٔ مو؛ درخشش بدون سنگینی."},
+                {"درخت چای", "ضدباکتری طبیعی؛ کنترل چربی کف سر و کمک به رفع شوره."},
+                {"آلوئه", "آرام‌کننده و خنک‌کننده؛ مناسب پوست‌های حساس و پس از اصلاح."},
+                {"جینسنگ", "محافظت آنتی‌اکسیدانی و کمک به شادابی پوست."}
+        };
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(22), dp(22), dp(22), dp(18));
+        box.setBackgroundColor(COL_WHITE);
+        box.addView(text("واژه‌نامهٔ ترکیبات", 14f, COL_TEXT_MAIN, true));
+        box.addView(space(4));
+        box.addView(text(ingredient, 9.8f, COL_TEXT_MUTED, false));
+        box.addView(space(12));
+
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        int found = 0;
+        for (String[] k : known) {
+            if (ingredient.contains(k[0]) || k[0].contains(ingredient)) {
+                LinearLayout line = new LinearLayout(this);
+                line.setOrientation(LinearLayout.VERTICAL);
+                line.setPadding(0, dp(7), 0, dp(7));
+                line.addView(text(k[0], 11f, COL_GOLD_DEEP, true));
+                TextView d = text(k[1], 9.8f, COL_TEXT_MUTED, false);
+                d.setLineSpacing(dp(3), 1f);
+                line.addView(d);
+                box.addView(line);
+                found++;
+            }
+        }
+        if (found == 0) {
+            TextView d = text("این ترکیب در واژه‌نامه نیست؛ برای توضیح دقیق با مشاور مجموعه در واتس‌اپ گفت‌وگو کنید.",
+                    9.8f, COL_TEXT_MUTED, false);
+            d.setLineSpacing(dp(3), 1f);
+            box.addView(d);
+        }
+        box.addView(space(14));
+        box.addView(primaryButton("متوجه شدم", Luxury3DIconView.ICON_CHECK, new Runnable() {
+            @Override public void run() { dialog.dismiss(); }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    /** Renders the invoice as a PNG into the Downloads folder (Android 10+). */
+    private void exportInvoicePng(Models.OrderRecord o) {
+        try {
+            int w = 900, h = 1200;
+            Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas c = new android.graphics.Canvas(bmp);
+            c.drawColor(COL_OBSIDIAN);
+            android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+            p.setColor(COL_GOLD);
+            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeWidth(3f);
+            c.drawRect(36, 36, w - 36, h - 36, p);
+
+            p.setStyle(Paint.Style.FILL);
+            p.setColor(0xFFEBD6B0);
+            p.setTextSize(30f);
+            p.setTextAlign(Paint.Align.CENTER);
+            c.drawText("ASIYE STORE", w / 2f, 120, p);
+
+            p.setColor(0xFFF6EFE3);
+            p.setTextSize(22f);
+            c.drawText("فاکتور فروش", w / 2f, 168, p);
+
+            p.setColor(0xFFBEB6AA);
+            p.setTextSize(17f);
+            c.drawText("شمارهٔ سفارش: " + o.orderNumber, w / 2f, 214, p);
+            c.drawText("تاریخ: " + o.createdAtLabel, w / 2f, 246, p);
+
+            float y = 310;
+            p.setTextSize(17f);
+            for (Models.OrderItemRecord item : o.items) {
+                p.setColor(0xFFF6EFE3);
+                p.setTextAlign(Paint.Align.RIGHT);
+                c.drawText(item.productName, w - 80, y, p);
+                p.setColor(0xFFBEB6AA);
+                p.setTextAlign(Paint.Align.LEFT);
+                c.drawText(PersianFormatter.toPersianDigits(String.valueOf(item.quantity)) + " × "
+                        + PersianFormatter.formatToman(item.unitPrice), 80, y, p);
+                y += 34;
+                p.setColor(0x33C8A46B);
+                c.drawLine(80, y - 12, w - 80, y - 12, p);
+            }
+
+            y += 24;
+            p.setColor(0xFFF6EFE3);
+            p.setTextSize(19f);
+            p.setTextAlign(Paint.Align.RIGHT);
+            c.drawText("جمع کل: " + PersianFormatter.formatToman(o.totalAmount), w - 80, y, p);
+
+            p.setColor(0xFFA79E90);
+            p.setTextSize(15f);
+            p.setTextAlign(Paint.Align.CENTER);
+            c.drawText("مدیریت مجموعه: سرکار خانم زنگنه · " + OWNER_PHONE_DISPLAY, w / 2f, h - 90, p);
+            c.drawText(INSTAGRAM_HANDLE, w / 2f, h - 62, p);
+
+            String name = "asiye-invoice-" + o.orderNumber.replace("/", "-") + ".png";
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                android.content.ContentValues cv = new android.content.ContentValues();
+                cv.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name);
+                cv.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/png");
+                cv.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/ASIYE STORE");
+                android.net.Uri uri = getContentResolver()
+                        .insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv);
+                if (uri != null) {
+                    java.io.OutputStream out = getContentResolver().openOutputStream(uri);
+                    if (out != null) {
+                        bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
+                        out.close();
+                    }
+                    toast("فاکتور در پوشهٔ Download/ASIYE STORE ذخیره شد.");
+                    return;
+                }
+            }
+            java.io.File dir = getExternalFilesDir(null);
+            if (dir == null) dir = getFilesDir();
+            java.io.File file = new java.io.File(dir, name);
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            fos.close();
+            toast("فاکتور ذخیره شد: " + file.getAbsolutePath());
+        } catch (Throwable t) {
+            toast("ساخت تصویر فاکتور ممکن نشد.");
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
     //  v6.5 · SKIN-TYPE FILTER · PRODUCT COMPARISON
     // ══════════════════════════════════════════════════════════════════════
 
@@ -2590,6 +2804,12 @@ public final class MainActivity extends Activity {
             TextView inv = text("فاکتور", 9.2f, COL_GOLD_DEEP, true);
             inv.setPadding(dp(10), dp(6), dp(10), dp(6));
             inv.setBackground(roundedShape(COL_IVORY_BG, dp(9), COL_BORDER, dp(1)));
+            inv.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override public boolean onLongClick(View v) {
+                    exportInvoicePng(o);
+                    return true;
+                }
+            });
             inv.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) { shareInvoice(o); }
             });
@@ -3397,7 +3617,7 @@ public final class MainActivity extends Activity {
 
         // ══ Checkout economics ═══════════════════════════════════════════
         long subtotal = calculateCartSubtotal();
-        long shipping = subtotal >= AsiyeDatabaseHelper.FREE_SHIPPING_THRESHOLD
+        long shipping = subtotal >= db.getFreeShippingThreshold()
                 ? 0L : AsiyeDatabaseHelper.STANDARD_SHIPPING_COST;
         long basePayable = Math.max(0L, subtotal - appliedCouponValue) + shipping;
 
@@ -3502,7 +3722,7 @@ public final class MainActivity extends Activity {
         if (shipping > 0L) {
             summary.addView(space(6));
             summary.addView(text("با خرید " + PersianFormatter.formatToman(
-                    AsiyeDatabaseHelper.FREE_SHIPPING_THRESHOLD - subtotal) + " بیشتر، ارسال رایگان می‌شود.",
+                    db.getFreeShippingThreshold() - subtotal) + " بیشتر، ارسال رایگان می‌شود.",
                     9.5f, SURF_INACTIVE, false));
         }
         contentContainer.addView(summary);
@@ -3651,7 +3871,7 @@ public final class MainActivity extends Activity {
         }
 
         long subtotal = calculateCartSubtotal();
-        long shipping = subtotal >= AsiyeDatabaseHelper.FREE_SHIPPING_THRESHOLD
+        long shipping = subtotal >= db.getFreeShippingThreshold()
                 ? 0L : AsiyeDatabaseHelper.STANDARD_SHIPPING_COST;
         long basePayable = Math.max(0L, subtotal - appliedCouponValue) + shipping;
         InstallmentEngine.Config instCfg = InstallmentEngine.load(db);
@@ -5836,6 +6056,26 @@ public final class MainActivity extends Activity {
 
         contentContainer.addView(look);
         contentContainer.addView(space(14));
+        // ── SHIPPING (v6.6) ──────────────────────────────────────────────
+        LinearLayout ship = whiteCard();
+        LinearLayout shipHead = row(Gravity.CENTER_VERTICAL);
+        shipHead.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_TRUCK, "مدیر حمل‌ونقل"), weight(1f));
+        TextView shipHint = text("تأثیر مستقیم بر مبلغ نهایی سبد", 8.6f, COL_TEXT_FAINT, false);
+        shipHead.addView(shipHint);
+        ship.addView(shipHead);
+        ship.addView(space(8));
+        ship.addView(settingsText("ship_cost", "هزینهٔ ارسال عادی (تومان)",
+                String.valueOf(db.getShippingCost()), true));
+        ship.addView(settingsText("ship_free_threshold", "آستانهٔ ارسال رایگان (تومان)",
+                String.valueOf(db.getFreeShippingThreshold()), true));
+        ship.addView(space(6));
+        TextView shipNote = text("این دو عدد در صفحهٔ سبد خرید و در محاسبهٔ نهایی سفارش استفاده می‌شوند.",
+                8.8f, COL_TEXT_FAINT, false);
+        shipNote.setLineSpacing(dp(2), 1f);
+        ship.addView(shipNote);
+        contentContainer.addView(ship);
+        contentContainer.addView(space(14));
+
         contentContainer.addView(operationsCard());
         contentContainer.addView(space(14));
 

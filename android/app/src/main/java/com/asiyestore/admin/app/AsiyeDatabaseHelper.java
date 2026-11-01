@@ -476,6 +476,25 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         return "امروز — " + PersianFormatter.toPersianDigits(sdf.format(new Date()));
     }
 
+    /** v6.6 · the shipping tariff is now merchant-configurable, not compiled in. */
+    public long getShippingCost() {
+        try {
+            long v = Long.parseLong(getSetting("ship_cost", "").trim());
+            return v >= 0 ? v : STANDARD_SHIPPING_COST;
+        } catch (Exception e) {
+            return STANDARD_SHIPPING_COST;
+        }
+    }
+
+    public long getFreeShippingThreshold() {
+        try {
+            long v = Long.parseLong(getSetting("ship_free_threshold", "").trim());
+            return v > 0 ? v : FREE_SHIPPING_THRESHOLD;
+        } catch (Exception e) {
+            return FREE_SHIPPING_THRESHOLD;
+        }
+    }
+
     public String getSetting(String key, String fallback) {
         SQLiteDatabase db = getReadableDatabase();
         try (Cursor c = db.rawQuery("SELECT value FROM settings WHERE key = ?", new String[]{key})) {
@@ -918,7 +937,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 if (eval > 0) discount = eval;
             }
             long afterDisc = Math.max(0L, subtotal - discount);
-            long shipping = afterDisc >= FREE_SHIPPING_THRESHOLD ? 0L : STANDARD_SHIPPING_COST;
+            long shipping = afterDisc >= getFreeShippingThreshold() ? 0L : getShippingCost();
             long total = afterDisc + shipping;
             String orderNumber = "AS-1405-" + (1000 + new Random().nextInt(8999));
 
@@ -999,7 +1018,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 if (eval > 0) discount = eval;
             }
             long afterDisc = Math.max(0L, subtotal - discount);
-            long shipping = afterDisc >= FREE_SHIPPING_THRESHOLD ? 0L : STANDARD_SHIPPING_COST;
+            long shipping = afterDisc >= getFreeShippingThreshold() ? 0L : getShippingCost();
             long fee = Math.max(0L, extraFinancingFee);
             long total = afterDisc + shipping + fee;
             String orderNumber = "AS-1405-" + (1000 + new Random().nextInt(8999));

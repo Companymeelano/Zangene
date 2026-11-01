@@ -1288,3 +1288,96 @@ a:hover .lux-3d-svg {
     font-size: 0.76rem;
     color: var(--gold-deep);
 }
+
+/* v6.6 · Brand story — logo medallion + three numbered frames */
+.brand-story {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 2.2rem;
+    align-items: center;
+    padding: 2.4rem;
+    margin: 0 0 4rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(150deg, #14131A 0%, #0B0B0E 100%);
+    border: 1px solid rgba(200, 164, 107, 0.32);
+    box-shadow: var(--shadow-luxe);
+}
+
+.story-crest {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.story-logo {
+    width: 100%;
+    max-width: 210px;
+    height: auto;
+    border-radius: 50%;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(200, 164, 107, 0.45);
+    animation: crestLevitate 9s ease-in-out infinite;
+}
+
+.brand-story h2 {
+    margin: 0.2rem 0 0.3rem;
+    font-size: 1.5rem;
+    color: #F6EFE3;
+}
+
+.brand-story .section-sub {
+    color: #BEB6AA;
+    margin: 0 0 1.1rem;
+}
+
+.story-frames {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.9rem;
+}
+
+.story-frames li {
+    display: flex;
+    gap: 0.8rem;
+    align-items: flex-start;
+}
+
+.frame-num {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gold-light);
+    color: #0B0B0E;
+    font-weight: 800;
+    font-size: 0.8rem;
+}
+
+.story-frames strong {
+    color: #F6EFE3;
+    font-size: 0.94rem;
+    display: block;
+    margin-bottom: 0.15rem;
+}
+
+.story-frames p {
+    margin: 0;
+    color: #B9AF9F;
+    font-size: 0.84rem;
+    line-height: 1.85;
+}
+
+@media (max-width: 860px) {
+    .brand-story {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .story-frames li {
+        text-align: right;
+    }
+}
