@@ -73,6 +73,7 @@ public final class Luxury3DIconView extends View {
     public static final int PALETTE_GOLD    = 0;
     public static final int PALETTE_EMERALD = 1;
     public static final int PALETTE_SAPPHIRE = 2;
+    public static final int PALETTE_ROSE = 3;
     public static int palette = PALETTE_GOLD;
 
     private final Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -188,6 +189,7 @@ public final class Luxury3DIconView extends View {
         float radius = s * 0.29f;
         final boolean emerald = palette == PALETTE_EMERALD;
         final boolean sapphire = palette == PALETTE_SAPPHIRE;
+        final boolean rose = palette == PALETTE_ROSE;
 
         // 1. Soft 3D Ground Shadow
         shadowBox.set(pad + s * 0.02f, pad + s * 0.055f, w - pad - s * 0.02f, h - pad + s * 0.045f);
@@ -206,7 +208,7 @@ public final class Luxury3DIconView extends View {
         } else if (pedestalStyle == PEDESTAL_IVORY) {
             bodyPaint.setShader(new RadialGradient(
                     w * 0.32f, h * 0.24f, s * 0.82f,
-                    sapphire ? new int[]{0xFFFFFFFF, 0xFFF3F8FF, 0xFFD9E8F8} : emerald ? new int[]{0xFFFFFFFF, 0xFFF3FAF5, 0xFFD9EBDF}
+                    rose ? new int[]{0xFFFFFEFE, 0xFFFFF1F4, 0xFFF2D4DC} : sapphire ? new int[]{0xFFFFFFFF, 0xFFF3F8FF, 0xFFD9E8F8} : emerald ? new int[]{0xFFFFFFFF, 0xFFF3FAF5, 0xFFD9EBDF}
                             : new int[]{0xFFFFFFFF, 0xFFF7F0E3, 0xFFE6D9C2},
                     new float[]{0f, 0.55f, 1f},
                     Shader.TileMode.CLAMP
@@ -214,7 +216,7 @@ public final class Luxury3DIconView extends View {
         } else {
             bodyPaint.setShader(new RadialGradient(
                     w * 0.32f, h * 0.24f, s * 0.78f,
-                    sapphire ? new int[]{0xFF477EB4, 0xFF153963, 0xFF07172F} : emerald ? new int[]{0xFF35886A, 0xFF0F3A29, 0xFF04140D}
+                    rose ? new int[]{0xFFA85E76, 0xFF603746, 0xFF321821} : sapphire ? new int[]{0xFF477EB4, 0xFF153963, 0xFF07172F} : emerald ? new int[]{0xFF35886A, 0xFF0F3A29, 0xFF04140D}
                             : new int[]{0xFF34303E, 0xFF15141C, 0xFF08080B},
                     new float[]{0f, 0.55f, 1f},
                     Shader.TileMode.CLAMP
@@ -273,7 +275,7 @@ public final class Luxury3DIconView extends View {
                     ? new LinearGradient(0, pad, 0, h - pad, 0xFFF9F1DC, 0xFFD8BE8C, Shader.TileMode.CLAMP)
                     : new LinearGradient(0, pad, 0, h - pad, 0xFFFFF7E4, 0xFFD2AC70, Shader.TileMode.CLAMP);
         } else if (pedestalStyle == PEDESTAL_IVORY) {
-            fgGrad = sapphire ? new LinearGradient(0, pad, 0, h - pad, 0xFF174777, 0xFF091D3B, Shader.TileMode.CLAMP) : emerald
+            fgGrad = rose ? new LinearGradient(0, pad, 0, h - pad, 0xFF8A4058, 0xFF49232F, Shader.TileMode.CLAMP) : sapphire ? new LinearGradient(0, pad, 0, h - pad, 0xFF174777, 0xFF091D3B, Shader.TileMode.CLAMP) : emerald
                     ? new LinearGradient(0, pad, 0, h - pad, 0xFF0B4832, 0xFF06271B, Shader.TileMode.CLAMP)
                     : new LinearGradient(0, pad, 0, h - pad, 0xFF4A3B25, 0xFF1A1610, Shader.TileMode.CLAMP);
         } else {

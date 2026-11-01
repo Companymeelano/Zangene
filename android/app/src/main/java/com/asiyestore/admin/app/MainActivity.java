@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.9.6 · SAPPHIRE MAISON";
+    private static final String APP_VERSION         = "V6.9.7 · ROSE ATELIER";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -125,6 +125,7 @@ public final class MainActivity extends Activity {
     private static final int THEME_EMERALD = 1;
     private static final int THEME_NIGHT  = 2;
     private static final int THEME_SAPPHIRE = 3;
+    private static final int THEME_ROSE = 4;
     private static int themeMode = THEME_IVORY;
     private static boolean darkMode = false;
     private static final String PREF_THEME = "asiye_prefs";
@@ -467,6 +468,42 @@ public final class MainActivity extends Activity {
             COL_METAL          = 0xFFC8A46B;
             ACCENT_ON_DARK     = 0xFFE4C69A;
             SUCCESS_ON_DARK    = 0xFF9BD8B4;
+        } else if (themeMode == THEME_ROSE) {
+            // ROSE ATELIER: blush porcelain, deep berry ink and champagne metal.
+            COL_OBSIDIAN      = 0xFF40232E;
+            COL_OBSIDIAN_SOFT = 0xFF603746;
+            COL_GOLD          = 0xFF934A60;
+            COL_GOLD_LIGHT    = 0xFFFFEDF1;
+            COL_GOLD_DEEP     = 0xFF713144;
+            COL_IVORY_BG      = 0xFFFFF4F6;
+            COL_SILK_CREAM    = 0xFFF8E5E9;
+            COL_WHITE         = 0xFFFFFCFC;
+            COL_TEXT_MAIN     = 0xFF38232A;
+            COL_TEXT_MUTED    = 0xFF70525D;
+            COL_TEXT_FAINT    = 0xFF80616C;
+            COL_BORDER        = 0xFFECD5DC;
+            COL_SUCCESS       = 0xFF176B4C;
+            COL_SUCCESS_SOFT  = 0xFFEAF5EF;
+            COL_DANGER        = 0xFFA3332F;
+            COL_WARN          = 0xFF805A0F;
+            SURF_CHIP         = 0xFFF9E8ED;
+            SURF_STRIP        = 0xFFFFF7F8;
+            SURF_SOFT         = 0xFFFFF5F7;
+            SURF_CHIP_LINE    = 0xFFE8CDD5;
+            SURF_SUCCESS_LINE = 0xFFB6DCCF;
+            SURF_GOLD_LINE    = 0xFFE8D3CE;
+            SURF_STAR_OFF     = 0xFFE4D1D4;
+            STAR_ON           = 0xFF8E6C3A;
+            SURF_INACTIVE     = 0xFF9B7D85;
+            SURF_DIVIDER      = 0x1A40232E;
+            TEXT_BODY         = 0xFF614952;
+            TEXT_BODY_2       = 0xFF6A4C57;
+            TEXT_ON_DARK       = 0xFFFFF4F5;
+            TEXT_ON_DARK_MUTED = 0xFFE2CBD1;
+            TEXT_ON_DARK_FAINT = 0xFFD2B6BF;
+            COL_METAL          = 0xFFC79E7C;
+            ACCENT_ON_DARK     = 0xFFF1D2B6;
+            SUCCESS_ON_DARK    = 0xFFB8E5CD;
         } else if (darkMode) {
             COL_OBSIDIAN      = 0xFF0B0B0E;
             COL_OBSIDIAN_SOFT = 0xFF141319;
@@ -541,11 +578,12 @@ public final class MainActivity extends Activity {
         // every medallion in the house follows the active metal family
         boolean emerald = themeMode == THEME_EMERALD;
         boolean sapphire = themeMode == THEME_SAPPHIRE;
-        Luxury3DIconView.palette = sapphire ? Luxury3DIconView.PALETTE_SAPPHIRE
+        boolean rose = themeMode == THEME_ROSE;
+        Luxury3DIconView.palette = rose ? Luxury3DIconView.PALETTE_ROSE : sapphire ? Luxury3DIconView.PALETTE_SAPPHIRE
                 : emerald ? Luxury3DIconView.PALETTE_EMERALD : Luxury3DIconView.PALETTE_GOLD;
-        LuxuryCanvas.metal = sapphire ? LuxuryCanvas.METAL_SAPPHIRE
+        LuxuryCanvas.metal = rose ? LuxuryCanvas.METAL_ROSE : sapphire ? LuxuryCanvas.METAL_SAPPHIRE
                 : emerald ? LuxuryCanvas.METAL_EMERALD : LuxuryCanvas.METAL_GOLD;
-        SalesChartView.metal = sapphire ? SalesChartView.METAL_SAPPHIRE
+        SalesChartView.metal = rose ? SalesChartView.METAL_ROSE : sapphire ? SalesChartView.METAL_SAPPHIRE
                 : emerald ? SalesChartView.METAL_EMERALD : SalesChartView.METAL_GOLD;
 
         Window window = getWindow();
@@ -586,11 +624,12 @@ public final class MainActivity extends Activity {
         }
     }
 
-    /** Cycles ivory, emerald, sapphire and night, preserving the choice. */
+    /** Cycles ivory, emerald, sapphire, rose and night, preserving the choice. */
     private void toggleTheme() {
         themeMode = themeMode == THEME_IVORY ? THEME_EMERALD
                 : themeMode == THEME_EMERALD ? THEME_SAPPHIRE
-                : themeMode == THEME_SAPPHIRE ? THEME_NIGHT : THEME_IVORY;
+                : themeMode == THEME_SAPPHIRE ? THEME_ROSE
+                : themeMode == THEME_ROSE ? THEME_NIGHT : THEME_IVORY;
         persistTheme();
     }
 
@@ -616,6 +655,7 @@ public final class MainActivity extends Activity {
     private String themeLabel(int mode) {
         if (mode == THEME_EMERALD) return "زمرد سلطنتی (روشن)";
         if (mode == THEME_SAPPHIRE) return "یاقوت کبود";
+        if (mode == THEME_ROSE) return "رز آتلیه";
         if (mode == THEME_NIGHT) return "شب ابسیدین";
         return "روز عاجی";
     }
@@ -7776,17 +7816,17 @@ public final class MainActivity extends Activity {
         look.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_SUN, "ظاهر و تجربهٔ برنامه"));
         look.addView(space(9));
 
-        TextView lookHint = text("چهار حالت طراحی‌شده برای اسیه — عاجی گرم، زمرد سلطنتی، یاقوت کبود و شب ابسیدین."
+        TextView lookHint = text("پنج حالت طراحی‌شده برای اسیه — عاجی، زمرد، یاقوت کبود، رز آتلیه و شب ابسیدین."
                 + " کاشی‌ها، آیکن‌های سه‌بعدی و همهٔ بخش‌ها با هم تغییر می‌کنند و انتخاب شما ذخیره می‌شود.",
                 9.4f, COL_TEXT_MUTED, false);
         lookHint.setLineSpacing(dp(3), 1f);
         look.addView(lookHint);
         look.addView(space(10));
 
-        final int[] modes = { THEME_IVORY, THEME_EMERALD, THEME_SAPPHIRE, THEME_NIGHT };
-        final int[] faces = { 0xFFFAF8F3, 0xFFF3F8F4, 0xFF14345F, 0xFF0B0B0E };
-        final int[] inks = { 0xFF8E6C3A, 0xFF0B4832, 0xFFD9B478, 0xFFD9B478 };
-        final String[] names = { "روز عاجی", "زمرد سلطنتی", "یاقوت کبود", "شب ابسیدین" };
+        final int[] modes = { THEME_IVORY, THEME_EMERALD, THEME_SAPPHIRE, THEME_ROSE, THEME_NIGHT };
+        final int[] faces = { 0xFFFAF8F3, 0xFFF3F8F4, 0xFF14345F, 0xFFFFE7ED, 0xFF0B0B0E };
+        final int[] inks = { 0xFF8E6C3A, 0xFF0B4832, 0xFFD9B478, 0xFF934A60, 0xFFD9B478 };
+        final String[] names = { "روز عاجی", "زمرد سلطنتی", "یاقوت کبود", "رز آتلیه", "شب ابسیدین" };
         LinearLayout paletteRow = null;
 
         for (int i = 0; i < modes.length; i++) {
@@ -7833,6 +7873,8 @@ public final class MainActivity extends Activity {
             paletteRow.addView(tile, tlp);
         }
 
+        // Keep the final odd tile half-width, aligned with the rows above.
+        if (modes.length % 2 != 0) paletteRow.addView(space(0), weight(1f));
         look.addView(space(11));
         LinearLayout lookRow2 = row(Gravity.CENTER_VERTICAL);
         LinearLayout lookText2 = new LinearLayout(this);

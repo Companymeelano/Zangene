@@ -18,7 +18,7 @@ class SapphireThemeTest(unittest.TestCase):
         s = SOURCE.read_text(encoding='utf8')
         self.assertIn('THEME_SAPPHIRE = 3', s)
         self.assertIn('themeMode == THEME_EMERALD ? THEME_SAPPHIRE', s)
-        self.assertIn('THEME_EMERALD, THEME_SAPPHIRE, THEME_NIGHT', s)
+        self.assertIn('THEME_EMERALD, THEME_SAPPHIRE, THEME_ROSE, THEME_NIGHT', s)
         self.assertIn('.putInt("theme_mode", themeMode)', s)
         self.assertIn('getInt("theme_mode"', s)
         self.assertIn('PALETTE_SAPPHIRE', s)

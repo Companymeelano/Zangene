@@ -42,6 +42,7 @@ public final class LuxuryCanvas {
     public static final int METAL_GOLD    = 0;
     public static final int METAL_EMERALD = 1;
     public static final int METAL_SAPPHIRE = 2;
+    public static final int METAL_ROSE = 3;
     public static int metal = METAL_GOLD;
 
     private static final int EMERALD       = 0xFF1E7A57;
@@ -49,6 +50,25 @@ public final class LuxuryCanvas {
     private static final int EMERALD_DEEP  = 0xFF0B4832;
 
     private static int m(int gold, int emerald) {
+        if (metal == METAL_ROSE) {
+            switch (emerald) {
+                case 0xFF1E7A57: return 0xFF934A60;
+                case 0xFF0B4832: return 0xFF713144;
+                case 0xFF08251A: return 0xFF40232E;
+                case 0xFF0F3A29: return 0xFF603746;
+                case 0xFF0F2A20: return 0xFF4B2935;
+                case 0xFF35886A: return 0xFFA85E76;
+                case 0xFFEAF4EE: return 0xFFFFEDF1;
+                case 0xFFE6F0E9: return 0xFFF8E5E9;
+                case 0xFF7B8F82: return 0xFF80616C;
+                case 0xFF435C4D: return 0xFF70525D;
+                case 0xFF10241B: return 0xFF38232A;
+                case 0x22EAF4EE: return 0x22FFEDF1;
+                case 0x220B4832: return 0x22713144;
+                case 0x221E7A57: return 0x22934A60;
+                default: return emerald;
+            }
+        }
         if (metal == METAL_SAPPHIRE) {
             switch (emerald) {
                 case 0xFF1E7A57: return 0xFF19528E;
