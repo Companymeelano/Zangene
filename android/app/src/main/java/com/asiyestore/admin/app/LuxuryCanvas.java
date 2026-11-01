@@ -38,17 +38,17 @@ public final class LuxuryCanvas {
     private static final int GOLD_DEEP   = 0xFF8E6C3A;
     private static final int OBSIDIAN    = 0xFF0B0B0E;
 
-    // v6.9.1 · the metalwork follows the mood — champagne bullion or icy platinum.
-    public static final int METAL_GOLD     = 0;
-    public static final int METAL_PLATINUM = 1;
+    // v6.9.2 · the stone follows the mood — obsidian or a polished emerald.
+    public static final int METAL_GOLD    = 0;
+    public static final int METAL_EMERALD = 1;
     public static int metal = METAL_GOLD;
 
-    private static final int PLAT       = 0xFFA9C2E4;
-    private static final int PLAT_LIGHT = 0xFFDCE7F8;
-    private static final int PLAT_DEEP  = 0xFF17356E;
+    private static final int EMERALD       = 0xFF1E7A57;
+    private static final int EMERALD_LIGHT = 0xFFEAF4EE;
+    private static final int EMERALD_DEEP  = 0xFF0B4832;
 
-    private static int m(int gold, int platinum) {
-        return metal == METAL_PLATINUM ? platinum : gold;
+    private static int m(int gold, int emerald) {
+        return metal == METAL_EMERALD ? emerald : gold;
     }
 
     private static int dp(Context c, float v) {
@@ -209,7 +209,7 @@ public final class LuxuryCanvas {
         protected void onDraw(Canvas c) {
             super.onDraw(c);
             if (!built) buildLattice(getWidth(), getHeight());
-            ink.setColor(goldInk ? m(GOLD, PLAT) : m(0xFF8A7F6D, 0xFF7B89A5));
+            ink.setColor(goldInk ? m(GOLD, EMERALD) : m(0xFF8A7F6D, 0xFF7B8F82));
             ink.setAlpha(intensity);
             c.drawPath(lattice, ink);
 
@@ -286,14 +286,14 @@ public final class LuxuryCanvas {
             int h = getHeight();
             if (w <= 0 || h <= 0) return;
 
-            base.setColor(dark ? m(0xFF16151C, 0xFF12244C) : m(0xFFEFE9DE, 0xFFE3EAF7));
+            base.setColor(dark ? m(0xFF16151C, 0xFF0F2A20) : m(0xFFEFE9DE, 0xFFE6F0E9));
             c.drawRect(0, 0, w, h, base);
 
             // a faint centred crest so the empty state still feels like the maison
             Paint crest = new Paint(Paint.ANTI_ALIAS_FLAG);
             crest.setStyle(Paint.Style.STROKE);
             crest.setStrokeWidth(Math.max(1f, dp(getContext(), 0.8f)));
-            crest.setColor(dark ? m(0x22EBD6B0, 0x22DCE7F8) : m(0x228E6C3A, 0x223A63B8));
+            crest.setColor(dark ? m(0x22EBD6B0, 0x22EAF4EE) : m(0x228E6C3A, 0x220B4832));
             float r = Math.min(w, h) * 0.16f;
             c.drawCircle(w / 2f, h / 2f, r, crest);
             c.drawCircle(w / 2f, h / 2f, r * 1.35f, crest);
@@ -375,16 +375,16 @@ public final class LuxuryCanvas {
             float r = Math.min(w, h) * 0.38f * stamp;
 
             halo.setShader(new RadialGradient(cx, cy, r * (2.1f + glow * 0.9f),
-                    new int[]{ m(0x55EBD6B0, 0x55DCE7F8), m(0x22C8A46B, 0x223A63B8), 0x00000000 },
+                    new int[]{ m(0x55EBD6B0, 0x55DCE7F8), m(0x22C8A46B, 0x221E7A57), 0x00000000 },
                     null, Shader.TileMode.CLAMP));
             c.drawCircle(cx, cy, r * (2.1f + glow * 0.9f), halo);
 
             disc.setShader(new RadialGradient(cx - r * 0.3f, cy - r * 0.34f, r * 1.7f,
-                    new int[]{ m(0xFF2A2118, 0xFF22345A), m(0xFF14110C, 0xFF0E1B33), m(OBSIDIAN, 0xFF0A1836) }, null, Shader.TileMode.CLAMP));
+                    new int[]{ m(0xFF2A2118, 0xFF35886A), m(0xFF14110C, 0xFF0F3A29), m(OBSIDIAN, 0xFF08251A) }, null, Shader.TileMode.CLAMP));
             c.drawCircle(cx, cy, r, disc);
 
             ring.setShader(new LinearGradient(cx - r, cy - r, cx + r, cy + r,
-                    new int[]{ m(GOLD_LIGHT, PLAT_LIGHT), m(GOLD, PLAT), m(GOLD_DEEP, PLAT_DEEP), m(GOLD, PLAT) }, null, Shader.TileMode.CLAMP));
+                    new int[]{ GOLD_LIGHT, GOLD, GOLD_DEEP, GOLD }, null, Shader.TileMode.CLAMP));
             ring.setStrokeWidth(Math.max(1.5f, r * 0.075f));
             c.drawCircle(cx, cy, r * 0.88f, ring);
 
@@ -402,12 +402,12 @@ public final class LuxuryCanvas {
                 c.drawLine(x1, y1, x2, y2, ring);
             }
 
-            glyph.setColor(m(0xFFF3E3C4, 0xFFEAF1FE));
+            glyph.setColor(0xFFF3E3C4);
             glyph.setTextSize(r * 0.86f);
             float baseline = cy - (glyph.descent() + glyph.ascent()) / 2f;
             c.drawText("AS", cx, baseline, glyph);
 
-            glyph.setColor(m(0xAAEBD6B0, 0xAADCE7F8));
+            glyph.setColor(0xAAEBD6B0);
             glyph.setTextSize(r * 0.2f);
             glyph.setLetterSpacing(0.22f);
             c.drawText("ASIYE", cx, cy + r * 0.62f, glyph);

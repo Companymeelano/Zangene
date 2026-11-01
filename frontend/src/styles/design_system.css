@@ -1701,42 +1701,41 @@ a:hover .lux-3d-svg {
     .account-grid { max-width: none; }
 }
 
-/* v6.9.1 · ROYAL COBALT — the maison's sapphire daylight.
-   Porcelain-blue ground, sapphire ink, platinum metalwork.
-   Applied to <html data-theme="cobalt">. */
-html[data-theme="cobalt"] {
-    --obsidian: #0A1836;
-    --obsidian-elevated: #14264F;
-    --obsidian-soft: #1B3060;
-    --gold-24k: #4A72C8;
-    --gold-light: #DCE7F8;
-    --gold-deep: #17356E;
-    --ivory-bg: #F2F6FD;
+/* v6.9.2 · ROYAL EMERALD — the maison's daylight: mineral green with 24K gold.
+   Applied to <html data-theme="emerald">. */
+html[data-theme="emerald"] {
+    --obsidian: #08251A;
+    --obsidian-elevated: #10382A;
+    --obsidian-soft: #14332A;
+    --gold-24k: #2E8A66;
+    --gold-light: #EAF4EE;
+    --gold-deep: #0B4832;
+    --ivory-bg: #F3F8F4;
     --ivory-card: #FFFFFF;
-    --silk-cream: #E3EAF7;
-    --text-primary: #0F1B32;
-    --text-muted: #47587A;
-    --border-hairline: rgba(58, 99, 184, 0.26);
-    --shadow-whisper: 0 14px 38px rgba(11, 24, 54, 0.07);
-    --shadow-luxe: 0 22px 56px rgba(11, 24, 54, 0.16);
+    --silk-cream: #E4EFE7;
+    --text-primary: #10241B;
+    --text-muted: #435C4D;
+    --border-hairline: rgba(30, 122, 87, 0.24);
+    --shadow-whisper: 0 14px 38px rgba(8, 37, 26, 0.06);
+    --shadow-luxe: 0 22px 56px rgba(8, 37, 26, 0.14);
 }
 
-html[data-theme="cobalt"] body {
+html[data-theme="emerald"] body {
     background-image:
-        radial-gradient(1200px 620px at 88% -10%, rgba(169, 194, 228, 0.42), transparent 62%),
-        radial-gradient(900px 520px at 4% 6%, rgba(58, 99, 184, 0.12), transparent 58%);
+        radial-gradient(1200px 620px at 88% -10%, rgba(180, 214, 195, 0.40), transparent 62%),
+        radial-gradient(900px 520px at 4% 6%, rgba(30, 122, 87, 0.10), transparent 58%);
 }
 
-html[data-theme="cobalt"] .account-hub,
-html[data-theme="cobalt"] .vip-card {
-    background: linear-gradient(160deg, #FFFFFF 0%, #ECF2FC 100%);
+html[data-theme="emerald"] .account-hub,
+html[data-theme="emerald"] .vip-card {
+    background: linear-gradient(160deg, #FFFFFF 0%, #EAF3EC 100%);
 }
 
-html[data-theme="cobalt"] .brand-story {
-    background: linear-gradient(150deg, #14264F 0%, #0A1836 100%);
+html[data-theme="emerald"] .brand-story {
+    background: linear-gradient(150deg, #10382A 0%, #08251A 100%);
 }
 
-html[data-theme="cobalt"] .foil-divider span {
+html[data-theme="emerald"] .foil-divider span {
     color: var(--gold-deep);
 }
 
@@ -1759,7 +1758,7 @@ html[data-theme="cobalt"] .foil-divider span {
 }
 
 .theme-dot[data-mode="ivory"] { background: linear-gradient(140deg, #FAF8F4, #E7CC9B); }
-.theme-dot[data-mode="cobalt"] { background: linear-gradient(140deg, #F2F6FD, #17356E); }
+.theme-dot[data-mode="emerald"] { background: linear-gradient(140deg, #F3F8F4, #0B4832); }
 .theme-dot[data-mode="night"] { background: linear-gradient(140deg, #2A1A1B, #0B0B0E); }
 
 .theme-dot:hover { transform: translateY(-1px) scale(1.06); }

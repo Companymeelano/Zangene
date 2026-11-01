@@ -69,9 +69,9 @@ public final class Luxury3DIconView extends View {
     public static final int PEDESTAL_GOLD     = 1;
     public static final int PEDESTAL_IVORY    = 2;
 
-    /** v6.9.1 · the metal family of every medallion: 24K champagne or icy platinum. */
-    public static final int PALETTE_GOLD     = 0;
-    public static final int PALETTE_PLATINUM = 1;
+    /** v6.9.2 · the family of every medallion: 24K champagne, or emerald set in gold. */
+    public static final int PALETTE_GOLD    = 0;
+    public static final int PALETTE_EMERALD = 1;
     public static int palette = PALETTE_GOLD;
 
     private final Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -181,7 +181,7 @@ public final class Luxury3DIconView extends View {
         float s = Math.min(w, h);
         float pad = s * 0.085f;
         float radius = s * 0.29f;
-        final boolean plat = palette == PALETTE_PLATINUM;
+        final boolean emerald = palette == PALETTE_EMERALD;
 
         // 1. Soft 3D Ground Shadow
         shadowBox.set(pad + s * 0.02f, pad + s * 0.055f, w - pad - s * 0.02f, h - pad + s * 0.045f);
@@ -193,24 +193,23 @@ public final class Luxury3DIconView extends View {
         if (pedestalStyle == PEDESTAL_GOLD) {
             bodyPaint.setShader(new RadialGradient(
                     w * 0.32f, h * 0.25f, s * 0.78f,
-                    plat ? new int[]{0xFFF5F9FF, 0xFFC6D8F2, 0xFF6D8ABA}
-                         : new int[]{0xFFFFF8E6, 0xFFDCBC85, 0xFF9A7440},
+                    new int[]{0xFFFFF8E6, 0xFFDCBC85, 0xFF9A7440},
                     new float[]{0f, 0.58f, 1f},
                     Shader.TileMode.CLAMP
             ));
         } else if (pedestalStyle == PEDESTAL_IVORY) {
             bodyPaint.setShader(new RadialGradient(
                     w * 0.32f, h * 0.24f, s * 0.82f,
-                    plat ? new int[]{0xFFFFFFFF, 0xFFF2F7FF, 0xFFDCE6F7}
-                         : new int[]{0xFFFFFFFF, 0xFFF7F0E3, 0xFFE6D9C2},
+                    emerald ? new int[]{0xFFFFFFFF, 0xFFF3FAF5, 0xFFD9EBDF}
+                            : new int[]{0xFFFFFFFF, 0xFFF7F0E3, 0xFFE6D9C2},
                     new float[]{0f, 0.55f, 1f},
                     Shader.TileMode.CLAMP
             ));
         } else {
             bodyPaint.setShader(new RadialGradient(
                     w * 0.32f, h * 0.24f, s * 0.78f,
-                    plat ? new int[]{0xFF32456A, 0xFF13223F, 0xFF070E1D}
-                         : new int[]{0xFF34303E, 0xFF15141C, 0xFF08080B},
+                    emerald ? new int[]{0xFF35886A, 0xFF0F3A29, 0xFF04140D}
+                            : new int[]{0xFF34303E, 0xFF15141C, 0xFF08080B},
                     new float[]{0f, 0.55f, 1f},
                     Shader.TileMode.CLAMP
             ));
@@ -255,8 +254,7 @@ public final class Luxury3DIconView extends View {
         rimPaint.setStrokeWidth(Math.max(dp(1.2f), s * 0.036f));
         rimPaint.setShader(new LinearGradient(
                 box.left, box.top, box.right, box.bottom,
-                plat ? new int[]{0xFFEAF3FF, 0xFFA9C2E4, 0xFF53719E, 0xFFDDE9FB}
-                     : new int[]{0xFFFBECCE, 0xFFC8A46B, 0xFF846232, 0xFFEAD09E},
+                new int[]{0xFFFBECCE, 0xFFC8A46B, 0xFF846232, 0xFFEAD09E},
                 new float[]{0f, 0.42f, 0.76f, 1f},
                 Shader.TileMode.CLAMP
         ));
@@ -265,22 +263,20 @@ public final class Luxury3DIconView extends View {
         // 6. Sculpted Vector Inner Glyph (mapped on 64x64 virtual coordinate space)
         LinearGradient fgGrad;
         if (pedestalStyle == PEDESTAL_OBSIDIAN) {
-            fgGrad = plat
-                    ? new LinearGradient(0, pad, 0, h - pad, 0xFFF4F9FF, 0xFFB9CDEC, Shader.TileMode.CLAMP)
+            fgGrad = emerald
+                    ? new LinearGradient(0, pad, 0, h - pad, 0xFFF9F1DC, 0xFFD8BE8C, Shader.TileMode.CLAMP)
                     : new LinearGradient(0, pad, 0, h - pad, 0xFFFFF7E4, 0xFFD2AC70, Shader.TileMode.CLAMP);
         } else if (pedestalStyle == PEDESTAL_IVORY) {
-            fgGrad = plat
-                    ? new LinearGradient(0, pad, 0, h - pad, 0xFF1A2B4A, 0xFF091223, Shader.TileMode.CLAMP)
+            fgGrad = emerald
+                    ? new LinearGradient(0, pad, 0, h - pad, 0xFF0B4832, 0xFF06271B, Shader.TileMode.CLAMP)
                     : new LinearGradient(0, pad, 0, h - pad, 0xFF4A3B25, 0xFF1A1610, Shader.TileMode.CLAMP);
         } else {
-            fgGrad = plat
-                    ? new LinearGradient(0, pad, 0, h - pad, 0xFF17253E, 0xFF070D1B, Shader.TileMode.CLAMP)
-                    : new LinearGradient(0, pad, 0, h - pad, 0xFF221F27, 0xFF0A0A0D, Shader.TileMode.CLAMP);
+            fgGrad = new LinearGradient(0, pad, 0, h - pad, 0xFF221F27, 0xFF0A0A0D, Shader.TileMode.CLAMP);
         }
 
         // 5b. Engraved inner hairline — the mark of a hand-finished medallion.
         rimPaint.setShader(null);
-        rimPaint.setColor(pedestalStyle == PEDESTAL_IVORY ? 0x33FFFFFF : plat ? 0x26E9F2FF : 0x26F6E7C8);
+        rimPaint.setColor(pedestalStyle == PEDESTAL_IVORY ? 0x33FFFFFF : 0x26F6E7C8);
         rimPaint.setStrokeWidth(Math.max(dp(0.9f), s * 0.016f));
         int inset = (int) Math.max(dp(3f), s * 0.085f);
         canvas.drawRoundRect(new RectF(box.left + inset, box.top + inset,
@@ -289,7 +285,7 @@ public final class Luxury3DIconView extends View {
         // 5c. Bottom reflected glint — sells the depth of the pedestal.
         sheenPaint.setShader(new LinearGradient(
                 box.left, box.top + s * 0.55f, box.left, box.bottom,
-                0x00FFFFFF, pedestalStyle == PEDESTAL_IVORY ? 0x3AFFFFFF : plat ? 0x22E6F0FF : 0x22FBEFD6, Shader.TileMode.CLAMP));
+                0x00FFFFFF, pedestalStyle == PEDESTAL_IVORY ? 0x3AFFFFFF : 0x22FBEFD6, Shader.TileMode.CLAMP));
         Path baseGlint = new Path();
         baseGlint.moveTo(box.left + radius * 0.4f, box.bottom - s * 0.005f);
         baseGlint.lineTo(box.right - radius * 0.4f, box.bottom - s * 0.005f);
@@ -310,7 +306,7 @@ public final class Luxury3DIconView extends View {
             float band = s * 0.30f;
             sweepPaint.setShader(new LinearGradient(
                     cx - band, box.top, cx + band, box.bottom,
-                    new int[]{plat ? 0x00EAF3FF : 0x00FFF6DF, pedestalStyle == PEDESTAL_IVORY ? 0x66FFFFFF : plat ? 0x5CE9F2FF : 0x5CFFF3D2, 0x00FFF6DF},
+                    new int[]{0x00FFF6DF, pedestalStyle == PEDESTAL_IVORY ? 0x66FFFFFF : 0x5CFFF3D2, 0x00FFF6DF},
                     null, Shader.TileMode.CLAMP));
             canvas.save();
             Path clip = new Path();

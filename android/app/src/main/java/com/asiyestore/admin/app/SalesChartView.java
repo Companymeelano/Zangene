@@ -39,13 +39,13 @@ public final class SalesChartView extends View {
     private long[] values = new long[]{15_200_000L, 19_400_000L, 18_100_000L, 24_600_000L, 23_200_000L, 29_500_000L, 35_400_000L};
     private String[] labels = new String[]{"ش", "ی", "د", "س", "چ", "پ", "امروز"};
 
-    /** v6.9.1 · champagne chart in the warm moods, platinum in royal cobalt. */
-    public static final int METAL_GOLD     = 0;
-    public static final int METAL_PLATINUM = 1;
+    /** v6.9.2 · champagne chart in the warm moods, emerald and gold in the daylight one. */
+    public static final int METAL_GOLD    = 0;
+    public static final int METAL_EMERALD = 1;
     public static int metal = METAL_GOLD;
 
-    private int m(int gold, int platinum) {
-        return metal == METAL_PLATINUM ? platinum : gold;
+    private int m(int gold, int emerald) {
+        return metal == METAL_EMERALD ? emerald : gold;
     }
 
     public SalesChartView(Context context) {
@@ -55,37 +55,37 @@ public final class SalesChartView extends View {
         gridPaint.setStrokeWidth(dp(1));
         gridPaint.setPathEffect(new DashPathEffect(new float[]{dp(4), dp(4)}, 0));
 
-        labelPaint.setColor(m(0xFF70685E, 0xFF47587A));
+        labelPaint.setColor(m(0xFF70685E, 0xFF435C4D));
         labelPaint.setTextSize(sp(11f));
         labelPaint.setTextAlign(Paint.Align.CENTER);
 
-        peakLabelPaint.setColor(m(0xFF141418, 0xFF0F1B32));
+        peakLabelPaint.setColor(m(0xFF141418, 0xFF10241B));
         peakLabelPaint.setTextSize(sp(11f));
         peakLabelPaint.setFakeBoldText(true);
         peakLabelPaint.setTextAlign(Paint.Align.CENTER);
 
-        valuePaint.setColor(m(0xFF9A7742, 0xFF17356E));
+        valuePaint.setColor(m(0xFF9A7742, 0xFF0B4832));
         valuePaint.setTextSize(sp(9.5f));
         valuePaint.setFakeBoldText(true);
         valuePaint.setTextAlign(Paint.Align.CENTER);
 
-        pillPaint.setColor(m(0xFF111116, 0xFF0A1836));
+        pillPaint.setColor(m(0xFF111116, 0xFF08251A));
         pillPaint.setStyle(Paint.Style.FILL);
 
-        pillTextPaint.setColor(m(0xFFF3DEC0, 0xFFEAF1FE));
+        pillTextPaint.setColor(m(0xFFF3DEC0, 0xFFEAF4EE));
         pillTextPaint.setTextSize(sp(9.5f));
         pillTextPaint.setFakeBoldText(true);
         pillTextPaint.setTextAlign(Paint.Align.CENTER);
 
-        linePaint.setColor(m(0xFFB88E52, 0xFF3A63B8));
+        linePaint.setColor(m(0xFFB88E52, 0xFF1E7A57));
         linePaint.setStyle(Paint.Style.STROKE);
         linePaint.setStrokeWidth(dp(2.4f));
         linePaint.setStrokeCap(Paint.Cap.ROUND);
 
-        dotOuterPaint.setColor(m(0xFF111116, 0xFF0A1836));
+        dotOuterPaint.setColor(m(0xFF111116, 0xFF08251A));
         dotOuterPaint.setStyle(Paint.Style.FILL);
 
-        dotInnerPaint.setColor(m(0xFFE7CA96, 0xFFDCE7F8));
+        dotInnerPaint.setColor(m(0xFFE7CA96, 0xFFE7CA96));
         dotInnerPaint.setStyle(Paint.Style.FILL);
     }
 
@@ -132,7 +132,7 @@ public final class SalesChartView extends View {
         ));
         peakBarPaint.setShader(new LinearGradient(
                 0, topPad, 0, barBottom,
-                m(0xFFD4AF73, 0xFFA9C2E4), m(0xFF9A733B, 0xFF53719E), Shader.TileMode.CLAMP
+                m(0xFFD4AF73, 0xFF35886A), m(0xFF9A733B, 0xFF0B4832), Shader.TileMode.CLAMP
         ));
         areaPaint.setShader(new LinearGradient(
                 0, topPad, 0, barBottom,
