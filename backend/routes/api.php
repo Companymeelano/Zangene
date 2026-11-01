@@ -13,6 +13,8 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\OperationsController;
 use App\Http\Controllers\Admin\ProductManagementController;
+use App\Http\Controllers\Customer\AccountController;
+use App\Http\Controllers\Admin\SmsController;
 use App\Http\Controllers\Customer\CheckoutController;
 use App\Http\Middleware\EnsureRoleOrPermission;
 use App\Http\Middleware\EnsureTransactionSafety;
@@ -63,6 +65,24 @@ Route::prefix('v1')->middleware([EnsureTransactionSafety::class])->group(functio
 
         // Atomic Checkout, Installment Initiation & Order Tracking
         Route::post('/checkout', [CheckoutController::class, 'processCheckout']);
+
+    // v6.8 · the customer's own account surface
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/account', [AccountController::class, 'show']);
+        Route::put('/account', [AccountController::class, 'update']);
+        Route::get('/account/orders', [AccountController::class, 'orders']);
+        Route::post('/account/sms-test', [AccountController::class, 'smsTest'])->middleware('throttle:6,1');
+    });
+
+    // v6.8 · merchant SMS control centre
+    Route::middleware('auth:sanctum')->prefix('admin/sms')->group(function () {
+        Route::get('/overview', [SmsController::class, 'overview']);
+        Route::put('/settings', [SmsController::class, 'saveSettings']);
+        Route::put('/templates/{key}', [SmsController::class, 'saveTemplate']);
+        Route::get('/templates/defaults', [SmsController::class, 'defaults']);
+        Route::post('/test', [SmsController::class, 'test']);
+        Route::post('/retry', [SmsController::class, 'retry']);
+    });
         Route::post('/installment/request', [InstallmentController::class, 'createRequest']);
         Route::get('/orders/track/{orderId}', [OrderStatusController::class, 'track'])->whereNumber('orderId');
     });

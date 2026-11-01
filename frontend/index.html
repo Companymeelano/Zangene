@@ -41,6 +41,7 @@
             <a href="#vip-services" class="nav-item">سرویس‌های VIP</a>
             <a href="#payment-studio" class="nav-item">قسط و پرداخت</a>
             <a href="#caption-studio" class="nav-item">استودیو کپشن</a>
+            <a href="#account-hub" class="nav-item">حساب من</a>
             <a href="#concierge-hub" class="nav-item">ارتباط مستقیم با مدیریت</a>
             <a href="product_and_admin_prototype.html" class="nav-item">پنل مدیریت</a>
         </nav>
@@ -330,6 +331,76 @@
             </div>
         </section>
 
+        <!-- v6.8 · Account hub — registration, sign-in, order book, SMS consent -->
+        <div class="foil-divider jewel" aria-hidden="true"><span></span></div>
+        <section id="account-hub" class="account-hub">
+            <div class="section-kicker"><span class="section-crest" data-crest="users"></span>MAISON ACCOUNT</div>
+            <h2>حساب من</h2>
+            <p class="section-sub">سفارش‌ها، نشانی‌ها و گواهی اصالت شما در یک نگاه — با پیامک خودکار در هر مرحله.</p>
+
+            <div class="account-grid">
+                <article class="account-card" id="account-guest">
+                    <h3>ساخت حساب یا ورود</h3>
+                    <p class="account-hint">با شمارهٔ موبایل و یک رمز ۵ رقمی؛ کد تأیید پیامک می‌شود.</p>
+
+                    <div class="account-tabs">
+                        <button class="account-tab active" data-mode="signup">ساخت حساب</button>
+                        <button class="account-tab" data-mode="login">ورود</button>
+                    </div>
+
+                    <label class="account-field">
+                        <span>شمارهٔ موبایل</span>
+                        <input id="acc-mobile" inputmode="numeric" placeholder="۰۹۱۲۳۴۵۶۷۸۹" autocomplete="tel">
+                    </label>
+                    <label class="account-field" id="acc-name-field">
+                        <span>نام و نام خانوادگی</span>
+                        <input id="acc-name" placeholder="مثلاً سارا رضایی">
+                    </label>
+                    <label class="account-field">
+                        <span>رمز ۵ رقمی</span>
+                        <input id="acc-pin" inputmode="numeric" placeholder="•••••" maxlength="8">
+                    </label>
+                    <label class="account-check">
+                        <input type="checkbox" id="acc-sms" checked>
+                        <span>دریافت پیامک سفارش، یادآور و هدیهٔ تولد</span>
+                    </label>
+
+                    <button class="btn-obsidian-3d account-submit" id="acc-submit">ساخت حساب</button>
+                    <p class="account-status" id="acc-status" role="status"></p>
+                </article>
+
+                <article class="account-card account-card--member" id="account-member" hidden>
+                    <div class="account-head">
+                        <div class="account-avatar" id="acc-avatar">ا</div>
+                        <div>
+                            <strong id="acc-member-name">مشتری گرامی</strong>
+                            <span id="acc-member-mobile">—</span>
+                        </div>
+                        <button class="account-logout" id="acc-logout">خروج</button>
+                    </div>
+
+                    <div class="account-stats">
+                        <div><strong id="acc-orders-count">۰</strong><span>سفارش</span></div>
+                        <div><strong id="acc-spend">۰</strong><span>مجموع خرید</span></div>
+                        <div><strong id="acc-tier">عضو تازه</strong><span>سطح باشگاه</span></div>
+                    </div>
+
+                    <div class="account-prefs">
+                        <label class="account-check">
+                            <input type="checkbox" id="acc-sms-member" checked>
+                            <span>پیامک سفارش و یادآورها فعال باشد</span>
+                        </label>
+                        <p class="account-hint" id="acc-prefs-note">تنظیم شما فوراً ذخیره می‌شود.</p>
+                    </div>
+
+                    <h4 class="account-subtitle">دفترچهٔ سفارش‌ها</h4>
+                    <ul class="account-orders" id="acc-orders">
+                        <li class="account-empty">هنوز سفارشی ثبت نشده است.</li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+
         <!-- Executive Owner & Direct Smart Concierge Hub: سرکار خانم زنگنه -->
         <div class="foil-divider jewel" aria-hidden="true"><span></span></div>
         <section id="concierge-hub" class="owner-sanctuary">
@@ -424,7 +495,7 @@
             <div style="font-size:0.8rem; color:#C4BBAE;">
                 طراحی رابط کاربری لوکس و معماری اکوسیستم وب و اپلیکیشن اختصاصی
             </div>
-            <div class="designer-version">V6.7 — GOLDEN HOUR EDITION</div>
+            <div class="designer-version">V6.8 — CONCIERGE ID EDITION</div>
         </div>
     </footer>
 
@@ -889,6 +960,180 @@
                 renderGallery();
             });
         });
+
+
+        // ══════════════════════════════════════════════════════════════════
+        //  v6.8 · MAISON ACCOUNT — registration, sign-in, preferences
+        // ══════════════════════════════════════════════════════════════════
+        const ACC_KEY = 'asiye_accounts';
+        const ACC_SESSION = 'asiye_session';
+
+        const readAccounts = () => {
+            try { return JSON.parse(localStorage.getItem(ACC_KEY) || '{}'); } catch (e) { return {}; }
+        };
+        const writeAccounts = (all) => localStorage.setItem(ACC_KEY, JSON.stringify(all));
+        const normalizeMobile = (raw) => {
+            const map = { '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9' };
+            let v = String(raw || '').replace(/[۰-۹]/g, (d) => map[d] || d).replace(/[^0-9+]/g, '');
+            if (v.startsWith('+98')) v = '0' + v.slice(3);
+            if (v.length === 10 && v.startsWith('9')) v = '0' + v;
+            return v;
+        };
+        const hashCode = async (text) => {
+            if (window.crypto && window.crypto.subtle) {
+                const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+                return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+            }
+            let hash = 0;
+            for (let i = 0; i < text.length; i++) hash = (hash * 31 + text.charCodeAt(i)) | 0;
+            return String(hash);
+        };
+        const faNum = (n) => Number(n || 0).toLocaleString('fa-IR');
+
+        const accountUi = {
+            guest: document.getElementById('account-guest'),
+            member: document.getElementById('account-member'),
+            status: document.getElementById('acc-status'),
+            submit: document.getElementById('acc-submit')
+        };
+        let accountMode = 'signup';
+
+        function setAccountStatus(text, ok) {
+            if (!accountUi.status) return;
+            accountUi.status.textContent = text;
+            accountUi.status.classList.toggle('is-error', !ok);
+        }
+
+        function paintAccount() {
+            const mobile = localStorage.getItem(ACC_SESSION);
+            const accounts = readAccounts();
+            const acc = mobile ? accounts[mobile] : null;
+
+            if (!acc) {
+                if (accountUi.guest) accountUi.guest.hidden = false;
+                if (accountUi.member) accountUi.member.hidden = true;
+                return;
+            }
+
+            accountUi.guest.hidden = true;
+            accountUi.member.hidden = false;
+
+            const nameEl = document.getElementById('acc-member-name');
+            const mobEl = document.getElementById('acc-member-mobile');
+            const avatar = document.getElementById('acc-avatar');
+            if (nameEl) nameEl.textContent = acc.name || 'مشتری گرامی';
+            if (mobEl) mobEl.textContent = acc.mobile;
+            if (avatar) avatar.textContent = (acc.name || 'ا').trim().charAt(0);
+
+            const orders = Array.isArray(acc.orders) ? acc.orders : [];
+            const spend = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+            document.getElementById('acc-orders-count').textContent = faNum(orders.length);
+            document.getElementById('acc-spend').textContent = faNum(spend);
+            document.getElementById('acc-tier').textContent =
+                spend >= 15000000 ? 'الماس' : spend >= 5000000 ? 'طلایی' : spend > 0 ? 'نقره‌ای' : 'تازه';
+
+            const list = document.getElementById('acc-orders');
+            if (list) {
+                list.innerHTML = orders.length
+                    ? orders.slice(0, 6).map((o) => `
+                        <li>
+                            <span class="order-number">${o.number}</span>
+                            <span class="order-status">${o.status || 'ثبت‌شده'}</span>
+                            <span class="order-total">${faNum(o.total)} تومان</span>
+                        </li>`).join('')
+                    : '<li class="account-empty">هنوز سفارشی ثبت نشده است.</li>';
+            }
+
+            const smsToggle = document.getElementById('acc-sms-member');
+            if (smsToggle) smsToggle.checked = acc.sms !== false;
+        }
+
+        document.querySelectorAll('.account-tab').forEach((tab) => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.account-tab').forEach((t) => t.classList.remove('active'));
+                tab.classList.add('active');
+                accountMode = tab.dataset.mode;
+                document.getElementById('acc-name-field').style.display =
+                    accountMode === 'signup' ? 'block' : 'none';
+                accountUi.submit.textContent = accountMode === 'signup' ? 'ساخت حساب' : 'ورود به حساب';
+                setAccountStatus('', true);
+            });
+        });
+
+        if (accountUi.submit) {
+            accountUi.submit.addEventListener('click', async () => {
+                const mobile = normalizeMobile(document.getElementById('acc-mobile').value);
+                const name = document.getElementById('acc-name').value.trim();
+                const pin = document.getElementById('acc-pin').value.trim();
+                const sms = document.getElementById('acc-sms').checked;
+                const accounts = readAccounts();
+
+                if (!/^09\d{9}$/.test(mobile)) {
+                    setAccountStatus('شمارهٔ موبایل معتبر نیست.', false);
+                    return;
+                }
+                if (!/^\d{5,8}$/.test(pin)) {
+                    setAccountStatus('رمز باید ۵ تا ۸ رقم باشد.', false);
+                    return;
+                }
+
+                if (accountMode === 'signup') {
+                    if (name.length < 3) {
+                        setAccountStatus('نام و نام خانوادگی را کامل بنویسید.', false);
+                        return;
+                    }
+                    if (accounts[mobile]) {
+                        setAccountStatus('این شماره قبلاً ثبت‌نام کرده است؛ وارد شوید.', false);
+                        return;
+                    }
+                    accounts[mobile] = {
+                        mobile,
+                        name,
+                        pinHash: await hashCode(pin + ':' + mobile),
+                        sms,
+                        tier: 'member',
+                        orders: [],
+                        createdAt: new Date().toISOString()
+                    };
+                    writeAccounts(accounts);
+                    localStorage.setItem(ACC_SESSION, mobile);
+                    setAccountStatus('حساب شما ساخته شد. خوش آمدید.', true);
+                } else {
+                    const acc = accounts[mobile];
+                    if (!acc) {
+                        setAccountStatus('حسابی با این شماره نداریم؛ ابتدا ثبت‌نام کنید.', false);
+                        return;
+                    }
+                    const hash = await hashCode(pin + ':' + mobile);
+                    if (hash !== acc.pinHash) {
+                        setAccountStatus('رمز وارد شده درست نیست.', false);
+                        return;
+                    }
+                    localStorage.setItem(ACC_SESSION, mobile);
+                    setAccountStatus('خوش آمدید.', true);
+                }
+                paintAccount();
+            });
+        }
+
+        document.getElementById('acc-logout')?.addEventListener('click', () => {
+            localStorage.removeItem(ACC_SESSION);
+            paintAccount();
+        });
+
+        document.getElementById('acc-sms-member')?.addEventListener('change', (e) => {
+            const mobile = localStorage.getItem(ACC_SESSION);
+            const accounts = readAccounts();
+            if (!mobile || !accounts[mobile]) return;
+            accounts[mobile].sms = e.target.checked;
+            writeAccounts(accounts);
+            const note = document.getElementById('acc-prefs-note');
+            if (note) note.textContent = e.target.checked
+                ? 'فعال شد — پیامک سفارش و یادآورها ارسال می‌شود.'
+                : 'خاموش شد — فقط اعلان درون‌حسابی می‌بینید.';
+        });
+
+        paintAccount();
 
         // Routine Advisor
         const concernMap = {

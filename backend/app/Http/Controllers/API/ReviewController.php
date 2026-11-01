@@ -119,8 +119,23 @@ class ReviewController extends Controller
         ]);
 
         $review = Review::findOrFail($id);
+        $wasApproved = (bool) $review->is_approved;
         $review->is_approved = $validated['approved'] ?? true;
         $review->save();
+
+        // v6.8 · thank the author the moment the review goes live
+        if ($review->is_approved && !$wasApproved) {
+            try {
+                $review->loadMissing('customer.user');
+                $user = $review->customer?->user;
+                if ($user && $user->sms_optin) {
+                    \App\Services\Sms\SmsService::send('review_approved', $user->mobile, [
+                        'name' => $user->name ?: 'مشتری گرامی',
+                    ]);
+                }
+            } catch (\Throwable $ignored) {
+            }
+        }
 
         return response()->json([
             'message' => $review->is_approved ? 'نظر تأیید و منتشر شد.' : 'انتشار نظر لغو شد.',

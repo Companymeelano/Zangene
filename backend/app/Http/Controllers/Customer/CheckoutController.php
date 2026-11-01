@@ -271,6 +271,26 @@ class CheckoutController extends Controller
 
             [$order, $authority, $certificateSerial] = $result;
 
+            // v6.8 · the two messages every order earns
+            try {
+                $customerName = $order->customer?->user?->name ?: 'مشتری گرامی';
+                $vars = [
+                    'name' => $customerName,
+                    'order' => $order->order_number,
+                    'total' => number_format((float) $order->total_amount) . ' تومان',
+                ];
+                if ($order->customer?->user?->sms_optin !== false) {
+                    \App\Services\Sms\SmsService::send('order_placed', $order->customer?->user?->mobile, $vars);
+                }
+                \App\Services\Sms\SmsService::send(
+                    'owner_alert',
+                    config('services.sms.owner_mobile'),
+                    $vars
+                );
+            } catch (\Throwable $ignored) {
+                // a messaging hiccup must never break a paid checkout
+            }
+
             return response()->json([
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,

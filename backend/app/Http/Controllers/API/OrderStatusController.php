@@ -87,6 +87,23 @@ class OrderStatusController extends Controller
                 );
             }
 
+            // v6.8 · tell the customer, automatically
+            try {
+                $map = [
+                    'paid' => 'order_paid',
+                    'shipped' => 'order_shipped',
+                    'delivered' => 'order_delivered',
+                ];
+                if (isset($map[$newStatus]) && $previousStatus !== $newStatus) {
+                    \App\Services\Sms\SmsService::send($map[$newStatus], $order->customer?->user?->mobile, [
+                        'name' => $order->customer?->user?->name ?: 'مشتری گرامی',
+                        'order' => $order->order_number,
+                        'tracking' => $validated['tracking_code'] ?? optional($order->shipments()->first())->tracking_code ?? '',
+                    ]);
+                }
+            } catch (\Throwable $ignored) {
+            }
+
             return response()->json($order->load(['items.variant.product', 'histories', 'shipments']));
         });
     }

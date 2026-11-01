@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.7 · GOLDEN HOUR";
+    private static final String APP_VERSION         = "V6.8 · CONCIERGE ID";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static final int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -244,6 +244,14 @@ public final class MainActivity extends Activity {
         setContentView(shell);
         renderCurrentScreen();
         showSplash(shell);
+
+        // v6.8 · the autopilot: a daily routine plus one immediate pass after launch
+        try { AutomationReceiver.schedule(this); } catch (Throwable ignored) { }
+        try {
+            if (SmsGateway.isEnabled(db)) {
+                SmsGateway.flushAsync(this, db);
+            }
+        } catch (Throwable ignored) { }
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -2420,8 +2428,314 @@ public final class MainActivity extends Activity {
     }
 
     // ══════════════════════════════════════════════════════════════════════
+    //  v6.8 · SMS CONTROL CENTRE
+    // ══════════════════════════════════════════════════════════════════════
+
+    private View smsCenterCard() {
+        LinearLayout card = whiteCard();
+
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        head.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_SMS, "مرکز پیامک و اتوماسیون"), weight(1f));
+        boolean on = SmsGateway.isEnabled(db);
+        TextView state = text(on ? "فعال" : "خاموش", 9f,
+                on ? COL_SUCCESS : COL_TEXT_MUTED, true);
+        state.setPadding(dp(9), dp(4), dp(9), dp(4));
+        state.setBackground(roundedShape(on ? COL_SUCCESS_SOFT : COL_IVORY_BG, dp(9),
+                on ? SURF_SUCCESS_LINE : COL_BORDER, dp(1)));
+        head.addView(state);
+        card.addView(head);
+
+        card.addView(space(7));
+        TextView hint = text("درگاه پیامک را یک‌بار تنظیم کنید؛ از آن پس همهٔ پیام‌های سفارش، یادآورها و گزارش روزانه خودکار ارسال می‌شوند.",
+                9.5f, COL_TEXT_MUTED, false);
+        hint.setLineSpacing(dp(3), 1f);
+        card.addView(hint);
+        card.addView(space(11));
+
+        // provider chips
+        card.addView(text("درگاه ارسال", 9.4f, COL_TEXT_MUTED, false));
+        card.addView(space(6));
+        final String[] providers = { SmsGateway.PROVIDER_KAVENEGAR, SmsGateway.PROVIDER_MELLI,
+                SmsGateway.PROVIDER_SMSIR, SmsGateway.PROVIDER_GHASEDAK, SmsGateway.PROVIDER_SANDBOX };
+        final String current = db.getSetting("sms_provider", SmsGateway.PROVIDER_SANDBOX);
+        android.widget.HorizontalScrollView scroll = new android.widget.HorizontalScrollView(this);
+        LinearLayout chips = new LinearLayout(this);
+        chips.setOrientation(LinearLayout.HORIZONTAL);
+        chips.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        for (final String provider : providers) {
+            boolean selected = provider.equals(current);
+            TextView chip = text(SmsGateway.providerLabel(provider), 9.2f,
+                    selected ? COL_OBSIDIAN : COL_TEXT_MUTED, selected);
+            chip.setPadding(dp(10), dp(6), dp(10), dp(6));
+            chip.setBackground(selected ? roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0)
+                    : roundedShape(COL_IVORY_BG, dp(11), COL_BORDER, dp(1)));
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            clp.setMarginEnd(dp(6));
+            chip.setLayoutParams(clp);
+            chip.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    db.setSetting("sms_provider", provider);
+                    toast("درگاه روی «" + SmsGateway.providerLabel(provider) + "» تنظیم شد.");
+                    renderCurrentScreen();
+                }
+            });
+            chips.addView(chip);
+        }
+        scroll.addView(chips);
+        card.addView(scroll);
+
+        card.addView(space(10));
+        card.addView(settingsText("sms_api_key", "کلید API (کاوه‌نگار / sms.ir / قاصدک)", "", false));
+        card.addView(settingsText("sms_sender", "شماره خط ارسال", "", false));
+        card.addView(settingsText("sms_username", "نام کاربری ملی‌پیامک (در صورت استفاده)", "", false));
+        card.addView(settingsText("sms_password", "رمز ملی‌پیامک", "", false));
+        card.addView(settingsText("sms_test_mobile", "شمارهٔ تست پیامک", "", true));
+
+        card.addView(space(8));
+        LinearLayout actions = row(Gravity.CENTER_VERTICAL);
+        actions.addView(smallGoldAction("ارسال پیام تست", new Runnable() {
+            @Override public void run() {
+                String to = db.getSetting("sms_test_mobile", "");
+                if (!SmsGateway.isValidMobile(to)) {
+                    toast("ابتدا شمارهٔ تست را درست وارد کنید.");
+                    return;
+                }
+                String body = "اسیه استور\nاین یک پیام تست است. درگاه «"
+                        + SmsGateway.providerLabel(db.getSetting("sms_provider", "sandbox"))
+                        + "» با موفقیت تنظیم شده است.";
+                db.enqueueSms(to, "manual_test", body);
+                SmsGateway.flushAsync(MainActivity.this, db);
+                toast("پیام تست در صف ارسال قرار گرفت.");
+                renderCurrentScreen();
+            }
+        }), weight(1f));
+        actions.addView(spaceH(7));
+        actions.addView(smallAction("ارسال صف", new Runnable() {
+            @Override public void run() {
+                int sent = SmsGateway.flush(MainActivity.this, db);
+                toast(sent > 0 ? PersianFormatter.toPersianDigits(String.valueOf(sent)) + " پیام ارسال شد."
+                        : "صف خالی است یا درگاه تنظیم نشده.");
+                renderCurrentScreen();
+            }
+        }), weight(1f));
+        card.addView(actions);
+
+        card.addView(space(11));
+        card.addView(resultDarkLine("در صف ارسال", PersianFormatter.toPersianDigits(String.valueOf(db.countSmsPending()))));
+        card.addView(resultDarkLine("ارسال‌شده امروز", PersianFormatter.toPersianDigits(String.valueOf(db.countSmsSentToday()))));
+        card.addView(resultDarkLine("ناموفق (نیازمند بررسی)", PersianFormatter.toPersianDigits(String.valueOf(db.countSmsFailed()))));
+
+        card.addView(space(11));
+        card.addView(foilDivider(false));
+        card.addView(text("اتوماسیون خودکار", 11f, COL_TEXT_MAIN, true));
+        card.addView(space(8));
+
+        final String[][] autos = {
+                {"auto_reorder", "یادآور سفارش مجدد", "پیش از پایان محصول، پیام یادآوری"},
+                {"auto_birthday", "هدیهٔ تولد", "کوپن اختصاصی در روز تولد مشتری"},
+                {"auto_review_request", "درخواست نظر پس از تحویل", "دعوت به ثبت نظر خرید تأییدشده"},
+                {"auto_owner_alert", "گزارش روزانهٔ مدیر", "خلاصهٔ سفارش‌ها و موجودی هر صبح"}
+        };
+        for (String[] a : autos) {
+            final String key = a[0];
+            final boolean enabled = db.getSettingBool(key, true);
+            LinearLayout line = row(Gravity.CENTER_VERTICAL);
+            line.setPadding(0, dp(7), 0, dp(7));
+            LinearLayout texts = new LinearLayout(this);
+            texts.setOrientation(LinearLayout.VERTICAL);
+            texts.addView(text(a[1], 10.6f, COL_TEXT_MAIN, true));
+            texts.addView(text(a[2], 9f, COL_TEXT_FAINT, false));
+            line.addView(texts, weight(1f));
+            final TextView toggle = text(enabled ? "روشن" : "خاموش", 9f,
+                    enabled ? COL_SUCCESS : COL_TEXT_MUTED, true);
+            toggle.setPadding(dp(10), dp(5), dp(10), dp(5));
+            toggle.setBackground(roundedShape(enabled ? COL_SUCCESS_SOFT : COL_IVORY_BG, dp(9),
+                    enabled ? SURF_SUCCESS_LINE : COL_BORDER, dp(1)));
+            toggle.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    boolean now = !db.getSettingBool(key, true);
+                    db.setSetting(key, now ? "1" : "0");
+                    toggle.setText(now ? "روشن" : "خاموش");
+                    toggle.setTextColor(now ? COL_SUCCESS : COL_TEXT_MUTED);
+                    toggle.setBackground(roundedShape(now ? COL_SUCCESS_SOFT : COL_IVORY_BG, dp(9),
+                            now ? SURF_SUCCESS_LINE : COL_BORDER, dp(1)));
+                }
+            });
+            line.addView(toggle);
+            card.addView(line);
+        }
+
+        card.addView(space(11));
+        card.addView(smallGoldAction("ویرایش قالب‌های پیام", Luxury3DIconView.ICON_EDIT, new Runnable() {
+            @Override public void run() { showTemplateListDialog(); }
+        }));
+        card.addView(space(8));
+        card.addView(text("تغییرات این بخش با لمس «ذخیرهٔ تنظیمات» در پایین صفحه ثبت می‌شود.",
+                8.8f, COL_TEXT_FAINT, false));
+        return card;
+    }
+
+    private void showTemplateListDialog() {
+        final LinearLayout box = dialogBox();
+        box.addView(dialogTitle("قالب‌های پیام", "متن هر رویداد را می‌توانید با جای‌نگهدارها بنویسید"));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+
+        android.widget.ScrollView scroll = new android.widget.ScrollView(this);
+        LinearLayout list = new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        scroll.addView(list);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(420));
+        box.addView(scroll, lp);
+
+        for (Models.SmsTemplateRecord t : db.getTemplates()) {
+            LinearLayout rowItem = new LinearLayout(this);
+            rowItem.setOrientation(LinearLayout.VERTICAL);
+            rowItem.setPadding(dp(11), dp(9), dp(11), dp(9));
+            rowItem.setBackground(roundedShape(COL_IVORY_BG, dp(12), COL_BORDER, dp(1)));
+            LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            ilp.setMargins(0, 0, 0, dp(7));
+
+            LinearLayout top = row(Gravity.CENTER_VERTICAL);
+            top.addView(text(t.title, 10.6f, COL_TEXT_MAIN, true), weight(1f));
+            top.addView(text(t.enabled ? "فعال" : "خاموش", 8.6f,
+                    t.enabled ? COL_SUCCESS : COL_TEXT_FAINT, true));
+            rowItem.addView(top);
+            TextView preview = text(t.body.replace("\n", " "), 9f, COL_TEXT_MUTED, false);
+            preview.setMaxLines(2);
+            preview.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            preview.setPadding(0, dp(4), 0, 0);
+            rowItem.addView(preview);
+
+            final String key = t.key;
+            rowItem.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    dialog.dismiss();
+                    showTemplateEditor(key);
+                }
+            });
+            list.addView(rowItem, ilp);
+        }
+
+        box.addView(space(8));
+        box.addView(ghostButton("بستن", new Runnable() {
+            @Override public void run() { dialog.dismiss(); }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    private void showTemplateEditor(final String key) {
+        final String currentBody = db.getTemplateBody(key);
+        final EditText body = makeInput("متن پیام", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE, false);
+        body.setText(currentBody == null ? SmsGateway.defaultTemplate(key) : currentBody);
+        body.setMinLines(4);
+        body.setGravity(Gravity.TOP | Gravity.START);
+
+        final LinearLayout box = dialogBox();
+        box.addView(dialogTitle(SmsGateway.defaultTitle(key),
+                "جای‌نگهدارها: {name} {order} {total} {tracking} {product} {days} {code} {coupon} {store}"));
+        box.addView(body);
+        box.addView(space(9));
+        box.addView(text("پیش‌نمایش با دادهٔ نمونه:", 9f, COL_TEXT_FAINT, false));
+        box.addView(space(4));
+        final TextView preview = text(SmsGateway.preview(db, key), 9.6f, COL_TEXT_MUTED, false);
+        preview.setPadding(dp(10), dp(8), dp(10), dp(8));
+        preview.setBackground(roundedShape(COL_IVORY_BG, dp(10), COL_BORDER, dp(1)));
+        box.addView(preview);
+        box.addView(space(12));
+
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ذخیرهٔ قالب", Luxury3DIconView.ICON_CHECK, new Runnable() {
+            @Override public void run() {
+                db.setTemplate(key, body.getText().toString().trim(), db.isTemplateEnabled(key));
+                dialog.dismiss();
+                toast("قالب ذخیره شد.");
+            }
+        }));
+        box.addView(space(8));
+        box.addView(ghostButton("بازگشت به پیش‌فرض", new Runnable() {
+            @Override public void run() {
+                body.setText(SmsGateway.defaultTemplate(key));
+                preview.setText(SmsGateway.render(SmsGateway.defaultTemplate(key), SmsGateway.demoVars()));
+            }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    private TextView smallGoldAction(String label, Runnable action) {
+        TextView t = text(label, 9.6f, COL_OBSIDIAN, true);
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(dp(11), dp(9), dp(11), dp(9));
+        t.setBackground(roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0));
+        t.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { action.run(); }
+        });
+        return t;
+    }
+
+    private View smallGoldAction(String label, int iconType, final Runnable action) {
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setOrientation(LinearLayout.HORIZONTAL);
+        wrap.setGravity(Gravity.CENTER);
+        wrap.setPadding(dp(11), dp(9), dp(11), dp(9));
+        wrap.setBackground(roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0));
+        wrap.addView(new Luxury3DIconView(this, iconType, false),
+                new LinearLayout.LayoutParams(dp(16), dp(16)));
+        TextView t = text(label, 9.6f, COL_OBSIDIAN, true);
+        t.setPadding(dp(6), 0, 0, 0);
+        wrap.addView(t);
+        wrap.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { action.run(); }
+        });
+        return wrap;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
     //  v6.6 · BRAND STORY · INGREDIENT GLOSSARY · INVOICE EXPORT
     // ══════════════════════════════════════════════════════════════════════
+
+    /** v6.8 · one glance: are the machines doing their job today? */
+    private View automationStatusCard() {
+        LinearLayout card = whiteCard();
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        head.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_AI, "اتوماسیون مجموعه"), weight(1f));
+        boolean smsOn = SmsGateway.isEnabled(db);
+        TextView pill = text(smsOn ? "در حال کار" : "خاموش", 9f,
+                smsOn ? COL_SUCCESS : COL_TEXT_MUTED, true);
+        pill.setPadding(dp(9), dp(4), dp(9), dp(4));
+        pill.setBackground(roundedShape(smsOn ? COL_SUCCESS_SOFT : COL_IVORY_BG, dp(9),
+                smsOn ? SURF_SUCCESS_LINE : COL_BORDER, dp(1)));
+        head.addView(pill);
+        card.addView(head);
+
+        card.addView(space(10));
+        card.addView(resultDarkLine("اعضای باشگاه", PersianFormatter.toPersianDigits(
+                String.valueOf(db.getAccountsCount()))));
+        card.addView(resultDarkLine("پیامک در صف", PersianFormatter.toPersianDigits(
+                String.valueOf(db.countSmsPending()))));
+        card.addView(resultDarkLine("ارسال‌شده امروز", PersianFormatter.toPersianDigits(
+                String.valueOf(db.countSmsSentToday()))));
+        card.addView(resultDarkLine("سفارش امروز", PersianFormatter.toPersianDigits(
+                String.valueOf(db.getTodayOrdersCount()))));
+
+        card.addView(space(10));
+        card.addView(text(smsOn
+                        ? "یادآور سفارش مجدد، تبریک تولد، درخواست نظر و گزارش روزانه هر صبح خودکار اجرا می‌شوند."
+                        : "برای فعال‌سازی، در تنظیمات «مرکز پیامک» درگاه را تنظیم کنید.",
+                9.4f, COL_TEXT_MUTED, false));
+
+        card.addView(space(9));
+        card.addView(smallGoldAction("تنظیمات پیامک", Luxury3DIconView.ICON_SETTINGS, new Runnable() {
+            @Override public void run() {
+                aiStudioOpen = false;
+                adminTab = ADMIN_SETTINGS;
+                renderCurrentScreen();
+            }
+        }));
+        return card;
+    }
 
     /** The panel's "open" sign: it must be obvious the moment the owner signs in. */
     private View adminLiveStrip() {
@@ -2839,7 +3153,21 @@ public final class MainActivity extends Activity {
         contentContainer.addView(editorialDivider());
         contentContainer.addView(space(10));
 
+        // v6.8 · identity first: the maison greets a member, or invites a first-time visitor
+        if (!AccountStore.isSignedIn(this)) {
+            contentContainer.addView(welcomeCard());
+            contentContainer.addView(space(12));
+            contentContainer.addView(guestTrackingCard());
+            contentContainer.addView(space(12));
+            contentContainer.addView(accountBenefitsCard());
+            contentContainer.addView(space(10));
+            contentContainer.addView(footerNote());
+            return;
+        }
+
         contentContainer.addView(profileCard());
+        contentContainer.addView(space(12));
+        contentContainer.addView(smsPreferencesCard());
         contentContainer.addView(space(12));
 
         View alerts = notificationsCard();
@@ -2857,7 +3185,471 @@ public final class MainActivity extends Activity {
         contentContainer.addView(footerNote());
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.8 · IDENTITY — welcome, sign-up, sign-in, recovery
+    // ══════════════════════════════════════════════════════════════════════
+
+    private View welcomeCard() {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(roundedShape(COL_OBSIDIAN, dp(24), 0x45C8A46B, dp(1)));
+        card.setPadding(dp(18), dp(20), dp(18), dp(18));
+        card.setGravity(Gravity.CENTER_HORIZONTAL);
+
+        FrameLayout crest = new FrameLayout(this);
+        crest.setLayoutParams(new LinearLayout.LayoutParams(dp(84), dp(84)));
+        crest.setBackground(roundedShape(0xFF100F14, dp(26), 0x66C8A46B, dp(1)));
+        crest.setClipToOutline(true);
+        ImageView mark = new ImageView(this);
+        mark.setImageResource(R.drawable.img_brand_emblem);
+        mark.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        crest.addView(mark, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        card.addView(crest);
+        card.addView(space(14));
+
+        TextView t = text("به خانهٔ زیبایی اسیه خوش آمدید", 16.5f, 0xFFF6EFE3, true);
+        t.setGravity(Gravity.CENTER);
+        card.addView(t);
+        card.addView(space(7));
+
+        TextView sub = text("با یک حساب، سفارش‌ها، گواهی اصالت، دفترچهٔ نشانی و مشاورهٔ اختصاصی شما یک‌جا می‌مانَد — دیگر لازم نیست چیزی را دستی پیگیری کنید.",
+                10.6f, 0xFFBEB6AA, false);
+        sub.setGravity(Gravity.CENTER);
+        sub.setLineSpacing(dp(4), 1f);
+        card.addView(sub);
+        card.addView(space(16));
+
+        card.addView(primaryButton("ساخت حساب در یک دقیقه", Luxury3DIconView.ICON_USERS, new Runnable() {
+            @Override public void run() { startSignup(); }
+        }));
+        card.addView(space(8));
+        card.addView(ghostButton("قبلاً حساب دارم — ورود", new Runnable() {
+            @Override public void run() { showLoginDialog(); }
+        }));
+        card.addView(space(10));
+
+        TextView note = text("ورود با کد پیامکی انجام می‌شود؛ رمز شما هرگز روی سرور نگه‌داری نمی‌شود.",
+                9f, 0xFF8B8275, false);
+        note.setGravity(Gravity.CENTER);
+        card.addView(note);
+        return card;
+    }
+
+    private View accountBenefitsCard() {
+        LinearLayout card = whiteCard();
+        card.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_CROWN, "با حساب اسیه چه چیزی به دست می‌آورید؟"));
+        card.addView(space(9));
+        String[][] rows = {
+                {"پیگیری خودکار سفارش", "از ثبت تا تحویل، پیامک وضعیت برای شما ارسال می‌شود."},
+                {"دفترچهٔ نشانی", "نشانی‌ها یک‌بار ثبت می‌شوند و در تسویه خودکار پر می‌شوند."},
+                {"گواهی اصالت دیجیتال", "برای هر خرید، گواهی با سریال TTAC در حساب شما می‌ماند."},
+                {"یادآور سفارش مجدد", "پیش از تمام‌شدن محصول، یادآوری هوشمند دریافت می‌کنید."},
+                {"هدیهٔ تولد", "در روز تولد، کوپن اختصاصی برای شما فعال می‌شود."}
+        };
+        for (String[] r : rows) {
+            LinearLayout line = row(Gravity.TOP);
+            line.setPadding(0, dp(7), 0, dp(7));
+            TextView dot = text("◆", 7f, COL_GOLD_DEEP, false);
+            dot.setPadding(0, dp(3), dp(9), 0);
+            line.addView(dot);
+            LinearLayout texts = new LinearLayout(this);
+            texts.setOrientation(LinearLayout.VERTICAL);
+            texts.addView(text(r[0], 10.8f, COL_TEXT_MAIN, true));
+            TextView d = text(r[1], 9.6f, COL_TEXT_MUTED, false);
+            d.setLineSpacing(dp(3), 1f);
+            d.setPadding(0, dp(2), 0, 0);
+            texts.addView(d);
+            line.addView(texts, weight(1f));
+            card.addView(line);
+        }
+        return card;
+    }
+
+    private View guestTrackingCard() {
+        LinearLayout card = whiteCard();
+        card.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_TRUCK, "پیگیری سفارش بدون حساب"));
+        card.addView(space(6));
+        TextView hint = text("شمارهٔ سفارش خود را وارد کنید؛ وضعیت و کد رهگیری را نشان می‌دهیم.",
+                9.8f, COL_TEXT_MUTED, false);
+        hint.setLineSpacing(dp(3), 1f);
+        card.addView(hint);
+        card.addView(space(10));
+
+        final EditText input = makeInput("مثلاً AS-1405-0142", InputType.TYPE_CLASS_TEXT, false);
+        card.addView(input);
+        card.addView(space(10));
+
+        final LinearLayout result = new LinearLayout(this);
+        result.setOrientation(LinearLayout.VERTICAL);
+        card.addView(result);
+
+        card.addView(primaryButton("نمایش وضعیت سفارش", Luxury3DIconView.ICON_SEARCH, new Runnable() {
+            @Override public void run() {
+                result.removeAllViews();
+                String q = input.getText().toString().trim();
+                Models.OrderRecord o = q.isEmpty() ? null : db.getOrderByNumber(q);
+                if (o == null) {
+                    result.addView(text("سفارشی با این شماره پیدا نشد.", 10f, COL_DANGER, false));
+                    return;
+                }
+                result.addView(space(6));
+                result.addView(resultDarkLine("وضعیت", PersianFormatter.statusLabelFa(o.status)));
+                result.addView(resultDarkLine("مبلغ", PersianFormatter.formatToman(o.totalAmount)));
+                if (o.trackingCode != null && !o.trackingCode.isEmpty()) {
+                    result.addView(resultDarkLine("کد رهگیری", ltr(o.trackingCode)));
+                }
+            }
+        }));
+        return card;
+    }
+
+    private void startSignup() {
+        final EditText mobile = makeInput("شماره موبایل ۱۱ رقمی", InputType.TYPE_CLASS_PHONE, true);
+        mobile.setText(profileMobile);
+
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("ساخت حساب اسیه", "گام ۱ از ۲ — تأیید شمارهٔ موبایل"));
+        box.addView(mobile);
+        box.addView(space(10));
+        TextView hint = text("کد تأیید ۵ رقمی برای شما پیامک می‌شود.", 9.6f, COL_TEXT_MUTED, false);
+        box.addView(hint);
+        box.addView(space(14));
+
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ارسال کد تأیید", Luxury3DIconView.ICON_SMS, new Runnable() {
+            @Override public void run() {
+                String m = mobile.getText().toString().trim();
+                if (!SmsGateway.isValidMobile(m)) {
+                    toast("شمارهٔ موبایل معتبر نیست.");
+                    return;
+                }
+                if (db.accountExists(m)) {
+                    dialog.dismiss();
+                    showLoginDialog();
+                    toast("این شماره قبلاً ثبت‌نام کرده است؛ وارد شوید.");
+                    return;
+                }
+                dialog.dismiss();
+                askOtpThen("signup", m, new OtpCallback() {
+                    @Override public void onVerified(String verifiedMobile) {
+                        showSignupDetails(verifiedMobile);
+                    }
+                });
+            }
+        }));
+        box.addView(space(8));
+        box.addView(ghostButton("انصراف", new Runnable() {
+            @Override public void run() { dialog.dismiss(); }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    private void showSignupDetails(final String mobile) {
+        final EditText name = makeInput("نام و نام خانوادگی", InputType.TYPE_CLASS_TEXT, false);
+        final EditText pin = makeInput("رمز ۵ رقمی برای ورود", InputType.TYPE_CLASS_NUMBER, true);
+        final EditText birthday = makeInput("تاریخ تولد (اختیاری) مثلاً ۱۳۷۰/۰۵/۱۲", InputType.TYPE_CLASS_TEXT, false);
+
+        final String[] skins = {"نامشخص", "خشک", "چرب", "مختلط", "حساس"};
+        final int[] chosen = {0};
+        LinearLayout skinRow = row(Gravity.CENTER_VERTICAL);
+        skinRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        final TextView[] chips = new TextView[skins.length];
+        for (int i = 0; i < skins.length; i++) {
+            final int idx = i;
+            final TextView chip = text(skins[i], 9.4f, i == 0 ? COL_OBSIDIAN : COL_TEXT_MUTED, i == 0);
+            chip.setPadding(dp(9), dp(5), dp(9), dp(5));
+            chip.setBackground(i == 0 ? roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0)
+                    : roundedShape(COL_IVORY_BG, dp(11), COL_BORDER, dp(1)));
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            clp.setMarginEnd(dp(5));
+            chip.setLayoutParams(clp);
+            chip.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    chosen[0] = idx;
+                    for (int k = 0; k < chips.length; k++) {
+                        boolean on = k == idx;
+                        chips[k].setTextColor(on ? COL_OBSIDIAN : COL_TEXT_MUTED);
+                        chips[k].setTypeface(on ? Typeface.create(Typeface.DEFAULT, Typeface.BOLD) : Typeface.DEFAULT);
+                        chips[k].setBackground(on ? roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0)
+                                : roundedShape(COL_IVORY_BG, dp(11), COL_BORDER, dp(1)));
+                    }
+                }
+            });
+            chips[i] = chip;
+            skinRow.addView(chip);
+        }
+
+        final boolean[] optin = {true};
+
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("تکمیل پروفایل", "گام ۲ از ۲ — شماره تأیید شد: " + SmsGateway.maskedMobile(mobile)));
+        box.addView(name);
+        box.addView(space(9));
+        box.addView(pin);
+        box.addView(space(9));
+        box.addView(birthday);
+        box.addView(space(11));
+        box.addView(text("نوع پوست شما", 9.4f, COL_TEXT_MUTED, false));
+        box.addView(space(6));
+        android.widget.HorizontalScrollView skinScroll = new android.widget.HorizontalScrollView(this);
+        skinScroll.addView(skinRow);
+        box.addView(skinScroll);
+        box.addView(space(10));
+
+        final TextView optinChip = text("✓ دریافت پیامک‌های سفارش و یادآورها", 9.4f, COL_OBSIDIAN, true);
+        optinChip.setPadding(dp(10), dp(6), dp(10), dp(6));
+        optinChip.setBackground(roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0));
+        optinChip.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                optin[0] = !optin[0];
+                optinChip.setText(optin[0] ? "✓ دریافت پیامک‌های سفارش و یادآورها"
+                        : "دریافت پیامک غیرفعال — فقط اعلان درون‌برنامه‌ای");
+                optinChip.setTextColor(optin[0] ? COL_OBSIDIAN : COL_TEXT_MUTED);
+                optinChip.setBackground(optin[0] ? roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0)
+                        : roundedShape(COL_IVORY_BG, dp(11), COL_BORDER, dp(1)));
+            }
+        });
+        box.addView(optinChip);
+        box.addView(space(14));
+
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ساخت حساب", Luxury3DIconView.ICON_CHECK, new Runnable() {
+            @Override public void run() {
+                String error = AccountStore.register(MainActivity.this, db, mobile,
+                        name.getText().toString(), pin.getText().toString(),
+                        skins[chosen[0]], birthday.getText().toString().trim(), optin[0]);
+                if (error != null) {
+                    toast(error);
+                    return;
+                }
+                Models.AccountRecord acc = db.getAccount(mobile);
+                profileName = AccountStore.displayName(acc);
+                profileMobile = SmsGateway.normalizeMobile(mobile);
+                getSharedPreferences(PREF_THEME, MODE_PRIVATE).edit()
+                        .putString("profile_name", profileName)
+                        .putString("profile_mobile", profileMobile).apply();
+
+                if (optin[0]) {
+                    java.util.Map<String, String> v = new java.util.HashMap<>();
+                    v.put("name", profileName);
+                    v.put("store", "اسیه استور");
+                    v.put("owner", "خانم زنگنه");
+                    SmsGateway.notify(MainActivity.this, db, profileMobile, "welcome", v);
+                }
+
+                dialog.dismiss();
+                toast("حساب شما ساخته شد. خوش آمدید.");
+                renderCurrentScreen();
+            }
+        }));
+        box.addView(space(8));
+        box.addView(ghostButton("انصراف", new Runnable() {
+            @Override public void run() { dialog.dismiss(); }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    private void showLoginDialog() {
+        final EditText mobile = makeInput("شماره موبایل ثبت‌شده", InputType.TYPE_CLASS_PHONE, true);
+        mobile.setText(profileMobile);
+        final EditText pin = makeInput("رمز ۵ رقمی", InputType.TYPE_CLASS_NUMBER, true);
+
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("ورود به حساب", "با شمارهٔ موبایل و رمز خود وارد شوید"));
+        box.addView(mobile);
+        box.addView(space(9));
+        box.addView(pin);
+        box.addView(space(12));
+
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ورود به حساب", Luxury3DIconView.ICON_LOCK, new Runnable() {
+            @Override public void run() {
+                String error = AccountStore.login(MainActivity.this, db,
+                        mobile.getText().toString(), pin.getText().toString());
+                if (error != null) {
+                    toast(error);
+                    return;
+                }
+                syncProfileFromAccount();
+                dialog.dismiss();
+                toast("خوش آمدید.");
+                renderCurrentScreen();
+            }
+        }));
+        box.addView(space(8));
+        box.addView(ghostButton("رمز را فراموش کرده‌ام", new Runnable() {
+            @Override public void run() {
+                String m = mobile.getText().toString().trim();
+                if (!db.accountExists(m)) {
+                    toast("ابتدا شماره را وارد کنید.");
+                    return;
+                }
+                dialog.dismiss();
+                askOtpThen("reset", m, new OtpCallback() {
+                    @Override public void onVerified(String verifiedMobile) { showPinReset(verifiedMobile); }
+                });
+            }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    private void showPinReset(final String mobile) {
+        final EditText pin = makeInput("رمز تازه (۵ تا ۸ رقم)", InputType.TYPE_CLASS_NUMBER, true);
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("تعیین رمز تازه", "شماره " + SmsGateway.maskedMobile(mobile) + " تأیید شد"));
+        box.addView(pin);
+        box.addView(space(12));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ذخیرهٔ رمز", Luxury3DIconView.ICON_CHECK, new Runnable() {
+            @Override public void run() {
+                String error = AccountStore.resetPin(db, mobile, pin.getText().toString());
+                if (error != null) {
+                    toast(error);
+                    return;
+                }
+                AccountStore.signIn(MainActivity.this, mobile);
+                syncProfileFromAccount();
+                dialog.dismiss();
+                toast("رمز تازه ثبت شد؛ وارد شدید.");
+                renderCurrentScreen();
+            }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    public interface OtpCallback {
+        void onVerified(String mobile);
+    }
+
+    /** Sends a code (through the real gateway when configured) and asks for it. */
+    private void askOtpThen(final String purpose, final String mobile, final OtpCallback callback) {
+        final String code = db.issueOtp(mobile, purpose);
+
+        java.util.Map<String, String> v = new java.util.HashMap<>();
+        v.put("code", PersianFormatter.toPersianDigits(code));
+        SmsGateway.notify(this, db, mobile, "otp", v);
+
+        final EditText input = makeInput("کد ۵ رقمی پیامک‌شده", InputType.TYPE_CLASS_NUMBER, true);
+
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("تأیید شماره", "کد برای " + SmsGateway.maskedMobile(mobile) + " ارسال شد"));
+        box.addView(text("اگر درگاه پیامک تنظیم نشده باشد، کد در همین صفحه نمایش داده می‌شود تا ثبت‌نام متوقف نشود.",
+                9.2f, COL_TEXT_FAINT, false));
+        box.addView(space(8));
+        box.addView(input);
+
+        boolean sandbox = SmsGateway.PROVIDER_SANDBOX.equals(db.getSetting("sms_provider", "sandbox"));
+        if (sandbox) {
+            box.addView(space(8));
+            TextView peek = text("کد آزمایشی: " + PersianFormatter.toPersianDigits(code), 10f, COL_GOLD_DEEP, true);
+            peek.setPadding(dp(10), dp(7), dp(10), dp(7));
+            peek.setBackground(roundedShape(COL_IVORY_BG, dp(10), COL_BORDER, dp(1)));
+            box.addView(peek);
+        }
+        box.addView(space(12));
+
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+
+        final Runnable verify = new Runnable() {
+            @Override public void run() {
+                String error = db.verifyOtp(mobile, purpose, input.getText().toString());
+                if (error != null) {
+                    toast(error);
+                    return;
+                }
+                dialog.dismiss();
+                callback.onVerified(SmsGateway.normalizeMobile(mobile));
+            }
+        };
+
+        box.addView(primaryButton("تأیید کد", Luxury3DIconView.ICON_SHIELD, verify));
+        box.addView(space(8));
+        box.addView(ghostButton("ارسال دوبارهٔ کد", new Runnable() {
+            @Override public void run() {
+                dialog.dismiss();
+                askOtpThen(purpose, mobile, callback);
+            }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    private LinearLayout dialogBox() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(22), dp(22), dp(22), dp(18));
+        box.setBackgroundColor(COL_WHITE);
+        return box;
+    }
+
+    private LinearLayout dialogTitle(String title, String subtitle) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(0, 0, 0, dp(14));
+        box.addView(text(title, 15f, COL_TEXT_MAIN, true));
+        box.addView(space(3));
+        TextView s = text(subtitle, 9.8f, COL_TEXT_MUTED, false);
+        s.setLineSpacing(dp(3), 1f);
+        box.addView(s);
+        return box;
+    }
+
+    private void syncProfileFromAccount() {
+        Models.AccountRecord acc = db.getAccount(AccountStore.sessionMobile(this));
+        if (acc == null) return;
+        profileName = AccountStore.displayName(acc);
+        profileMobile = acc.mobile;
+        getSharedPreferences(PREF_THEME, MODE_PRIVATE).edit()
+                .putString("profile_name", profileName)
+                .putString("profile_mobile", profileMobile).apply();
+    }
+
+    /** Per-channel consent, editable any time — real transactional messaging needs it. */
+    private View smsPreferencesCard() {
+        final Models.AccountRecord acc = db.getAccount(AccountStore.sessionMobile(this));
+        if (acc == null) return whiteCard();
+
+        LinearLayout card = whiteCard();
+        card.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_BELL, "ترجیح پیامک و اعلان‌ها"));
+        card.addView(space(7));
+        TextView hint = text("فقط پیام‌های مربوط به سفارش و یادآورهای انتخابی شما ارسال می‌شود.",
+                9.6f, COL_TEXT_MUTED, false);
+        hint.setLineSpacing(dp(3), 1f);
+        card.addView(hint);
+        card.addView(space(11));
+
+        final boolean[] on = {acc.smsOptin};
+        final TextView toggle = text(on[0] ? "✓ پیامک فعال است" : "پیامک خاموش است",
+                10f, on[0] ? COL_SUCCESS : COL_TEXT_MUTED, true);
+        toggle.setPadding(dp(12), dp(8), dp(12), dp(8));
+        toggle.setGravity(Gravity.CENTER);
+        toggle.setBackground(roundedShape(on[0] ? COL_SUCCESS_SOFT : COL_IVORY_BG, dp(11),
+                on[0] ? SURF_SUCCESS_LINE : COL_BORDER, dp(1)));
+        toggle.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                on[0] = !on[0];
+                db.updateAccountProfile(acc.mobile, acc.name, acc.email, acc.skinType, acc.birthday, on[0]);
+                toggle.setText(on[0] ? "✓ پیامک فعال است" : "پیامک خاموش است");
+                toggle.setTextColor(on[0] ? COL_SUCCESS : COL_TEXT_MUTED);
+                toggle.setBackground(roundedShape(on[0] ? COL_SUCCESS_SOFT : COL_IVORY_BG, dp(11),
+                        on[0] ? SURF_SUCCESS_LINE : COL_BORDER, dp(1)));
+                toast(on[0] ? "از این پس پیامک‌های سفارش را دریافت می‌کنید."
+                        : "پیامک‌ها خاموش شد؛ اعلان‌ها در حساب شما می‌ماند.");
+            }
+        });
+        card.addView(toggle);
+        card.addView(space(10));
+        card.addView(resultDarkLine("شمارهٔ دریافت", ltr(SmsGateway.maskedMobile(acc.mobile))));
+        card.addView(resultDarkLine("نوع پوست ثبت‌شده", acc.skinType));
+        return card;
+    }
+
     private View profileCard() {
+        final Models.AccountRecord acc = db.getAccountWithStats(AccountStore.sessionMobile(this));
+        final String name = AccountStore.displayName(acc);
+        final String mobile = acc == null ? profileMobile : acc.mobile;
+
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setBackground(roundedShape(COL_OBSIDIAN, dp(22), 0x45C8A46B, dp(1)));
@@ -2869,9 +3661,8 @@ public final class MainActivity extends Activity {
         LinearLayout texts = new LinearLayout(this);
         texts.setOrientation(LinearLayout.VERTICAL);
         texts.setPadding(dp(11), 0, dp(11), 0);
-        texts.addView(text(profileName.isEmpty() ? "مشتری گرامی اسیه" : profileName, 13f, 0xFFF6EFE3, true));
-        texts.addView(text(profileMobile.isEmpty() ? "برای ثبت سفارش، نام و شماره را کامل کنید" : ltr(profileMobile),
-                9.6f, 0xFFBEB6AA, false));
+        texts.addView(text(name, 13f, 0xFFF6EFE3, true));
+        texts.addView(text(SmsGateway.maskedMobile(mobile), 9.6f, 0xFFBEB6AA, false));
         head.addView(texts, weight(1f));
 
         TextView edit = text("ویرایش", 9.4f, COL_OBSIDIAN, true);
@@ -2883,13 +3674,41 @@ public final class MainActivity extends Activity {
         head.addView(edit);
         card.addView(head);
 
-        long spend = db.getLifetimeSpend();
         card.addView(space(11));
         LinearLayout stats = row(Gravity.CENTER_VERTICAL);
-        stats.addView(briefStat("مجموع خرید", PersianFormatter.formatToman(spend)), weight(1f));
-        stats.addView(briefStat("سفارش‌ها", PersianFormatter.toPersianDigits(String.valueOf(db.getOrders("all").size())) + " مورد"), weight(1f));
+        stats.addView(briefStat("مجموع خرید", PersianFormatter.formatToman(acc == null ? 0 : acc.totalSpent)), weight(1f));
+        stats.addView(briefStat("سفارش‌ها", PersianFormatter.toPersianDigits(
+                String.valueOf(acc == null ? 0 : acc.ordersCount)) + " مورد"), weight(1f));
         card.addView(stats);
+
+        // tier + exit row
+        card.addView(space(11));
+        LinearLayout foot = row(Gravity.CENTER_VERTICAL);
+        String tier = acc == null ? "عضو تازه" : vipTierLabel(acc.totalSpent);
+        TextView tierChip = text(tier, 9f, COL_GOLD_LIGHT, true);
+        tierChip.setPadding(dp(10), dp(5), dp(10), dp(5));
+        tierChip.setBackground(roundedShape(0x22C8A46B, dp(10), 0x55C8A46B, dp(1)));
+        foot.addView(tierChip, weight(1f));
+
+        TextView out = text("خروج از حساب", 9f, 0xFFB3A99B, false);
+        out.setPadding(dp(10), dp(5), dp(10), dp(5));
+        out.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                AccountStore.signOut(MainActivity.this);
+                toast("از حساب خارج شدید.");
+                renderCurrentScreen();
+            }
+        });
+        foot.addView(out);
+        card.addView(foot);
         return card;
+    }
+
+    private String vipTierLabel(long spend) {
+        if (spend >= 15_000_000L) return "عضو الماس اسیه";
+        if (spend >= 5_000_000L) return "عضو طلایی اسیه";
+        if (spend > 0) return "عضو نقره‌ای اسیه";
+        return "عضو تازه";
     }
 
     private void showProfileDialog() {
@@ -2915,10 +3734,15 @@ public final class MainActivity extends Activity {
         box.addView(primaryButton("ذخیرهٔ مشخصات", Luxury3DIconView.ICON_CHECK, new Runnable() {
             @Override public void run() {
                 profileName = name.getText().toString().trim();
-                profileMobile = mobile.getText().toString().trim();
+                profileMobile = PersianFormatter.toAsciiDigits(mobile.getText().toString()).trim();
                 getSharedPreferences(PREF_THEME, MODE_PRIVATE).edit()
                         .putString("profile_name", profileName)
                         .putString("profile_mobile", profileMobile).apply();
+                Models.AccountRecord existing = db.getAccount(AccountStore.sessionMobile(MainActivity.this));
+                if (existing != null) {
+                    db.updateAccountProfile(existing.mobile, profileName, existing.email,
+                            existing.skinType, existing.birthday, existing.smsOptin);
+                }
                 dialog.dismiss();
                 toast("مشخصات شما ذخیره شد.");
                 renderCurrentScreen();
@@ -2954,7 +3778,14 @@ public final class MainActivity extends Activity {
     }
 
     private View ordersCard() {
-        List<Models.OrderRecord> orders = db.getOrders("all");
+        // v6.8 · a member sees her own ledger, never the whole shop's
+        Models.AccountRecord me = db.getAccount(AccountStore.sessionMobile(this));
+        List<Models.OrderRecord> all = db.getOrders("all");
+        String mine = SmsGateway.normalizeMobile(me == null ? profileMobile : me.mobile);
+        List<Models.OrderRecord> orders = new ArrayList<>();
+        for (Models.OrderRecord o : all) {
+            if (mine.isEmpty() || SmsGateway.normalizeMobile(o.customerMobile).equals(mine)) orders.add(o);
+        }
         LinearLayout card = whiteCard();
         LinearLayout head = row(Gravity.CENTER_VERTICAL);
         head.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_DOC, "دفترچهٔ سفارش‌ها"), weight(1f));
@@ -3781,9 +4612,17 @@ public final class MainActivity extends Activity {
         LinearLayout infoCard = whiteCard();
         infoCard.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_USERS, "اطلاعات تحویل‌گیرنده"));
         infoCard.addView(space(8));
-        String savedName = db.getSetting("customer_name", "");
-        String savedMobile = db.getSetting("customer_mobile", "");
+        // v6.8 · a signed-in member never re-types what the maison already knows
+        Models.AccountRecord me = db.getAccount(AccountStore.sessionMobile(this));
+        String savedName = me != null && !me.name.trim().isEmpty()
+                ? me.name : db.getSetting("customer_name", "");
+        String savedMobile = me != null && !me.mobile.trim().isEmpty()
+                ? me.mobile : db.getSetting("customer_mobile", "");
         String savedAddress = db.getSetting("customer_address", "");
+        if (savedAddress.trim().isEmpty()) {
+            Models.AddressRecord def = db.getDefaultAddress();
+            if (def != null) savedAddress = def.address;
+        }
         if (bagNameInput.getText().toString().trim().isEmpty() && !savedName.isEmpty()) {
             bagNameInput.setText(savedName);
         }
@@ -4112,6 +4951,7 @@ public final class MainActivity extends Activity {
                 renderCurrentScreen();
                 showGatewayPaymentSheet(order, plan);
             } else {
+                notifyOrderPlaced(order);
                 showOrderSuccessDialog(order);
                 renderCurrentScreen();
             }
@@ -4189,6 +5029,29 @@ public final class MainActivity extends Activity {
             @Override public void run() { dialog.dismiss(); }
         }));
         showRoundedDialog(dialog);
+    }
+
+    /** v6.8 · the two messages every order earns: the customer's receipt and the owner's alert. */
+    private void notifyOrderPlaced(final Models.OrderRecord order) {
+        if (order == null) return;
+        try {
+            java.util.Map<String, String> vars = new java.util.HashMap<>();
+            vars.put("name", order.customerName == null || order.customerName.trim().isEmpty()
+                    ? "مشتری گرامی" : order.customerName);
+            vars.put("order", order.orderNumber);
+            vars.put("total", PersianFormatter.formatToman(order.totalAmount));
+            vars.put("store", "اسیه استور");
+            vars.put("owner", "خانم زنگنه");
+
+            Models.AccountRecord acc = db.getAccount(order.customerMobile);
+            if (acc == null || acc.smsOptin) {
+                SmsGateway.notify(this, db, order.customerMobile, "order_placed", vars);
+            }
+            if (db.getSettingBool("auto_owner_alert", true)) {
+                String owner = db.getSetting("owner_mobile", "09044200993");
+                SmsGateway.notify(this, db, owner, "owner_alert", vars);
+            }
+        } catch (Throwable ignored) { }
     }
 
     private void showOrderSuccessDialog(final Models.OrderRecord order) {
@@ -4763,6 +5626,9 @@ public final class MainActivity extends Activity {
         contentContainer.addView(topCard);
         contentContainer.addView(space(14));
 
+        contentContainer.addView(automationStatusCard());
+        contentContainer.addView(space(14));
+
         // Coupons
         LinearLayout couponCard = whiteCard();
         LinearLayout couponHead = row(Gravity.CENTER_VERTICAL);
@@ -5263,7 +6129,16 @@ public final class MainActivity extends Activity {
                 }
                 db.updateOrderStatus(o.id, "shipped", code);
                 dialog.dismiss();
-                toast("کد رهگیری ثبت و وضعیت به «ارسال‌شده» تغییر یافت.");
+
+                java.util.Map<String, String> vars = new java.util.HashMap<>();
+                vars.put("name", o.customerName == null ? "مشتری گرامی" : o.customerName);
+                vars.put("order", o.orderNumber);
+                vars.put("tracking", code);
+                vars.put("store", "اسیه استور");
+                vars.put("owner", "خانم زنگنه");
+                SmsGateway.notify(MainActivity.this, db, o.customerMobile, "order_shipped", vars);
+
+                toast("کد رهگیری ثبت شد و پیامک ارسال برای مشتری در صف قرار گرفت.");
                 renderCurrentScreen();
             }
         }));
@@ -6286,6 +7161,10 @@ public final class MainActivity extends Activity {
 
         contentContainer.addView(look);
         contentContainer.addView(space(14));
+        // ── SMS AUTOPILOT (v6.8) ─────────────────────────────────────────
+        contentContainer.addView(smsCenterCard());
+        contentContainer.addView(space(14));
+
         // ── SHIPPING (v6.6) ──────────────────────────────────────────────
         LinearLayout ship = whiteCard();
         LinearLayout shipHead = row(Gravity.CENTER_VERTICAL);

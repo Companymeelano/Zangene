@@ -195,6 +195,50 @@ public final class Models {
         public String body;
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.8 · ACCOUNTS · OTP · SMS OUTBOX
+    // ══════════════════════════════════════════════════════════════════════
+    public static final class AccountRecord {
+        public long id;
+        public String mobile = "";
+        public String name = "";
+        public String email = "";
+        public String skinType = "نامشخص";
+        public String birthday = "";
+        public boolean smsOptin = true;
+        public long createdAtMs;
+        public long lastLoginMs;
+        public int ordersCount;
+        public long totalSpent;
+    }
+
+    public static final class SmsMessage {
+        public long id;
+        public String mobile = "";
+        public String templateKey = "";
+        public String body = "";
+        public String status = "pending";
+        public int attempts;
+        public long createdAtMs;
+        public long sentAtMs;
+        public String error = "";
+    }
+
+    public static final class SmsTemplateRecord {
+        public String key = "";
+        public String title = "";
+        public String body = "";
+        public boolean enabled = true;
+    }
+
+    public static final class ReorderDue {
+        public String mobile = "";
+        public String name = "";
+        public String productName = "";
+        public String lastLabel = "";
+        public int days;
+    }
+
     public static final class TopProductRecord {
         public String productName;
         public int unitsSold;

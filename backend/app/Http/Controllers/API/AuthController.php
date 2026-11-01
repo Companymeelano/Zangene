@@ -72,7 +72,8 @@ class AuthController extends Controller
         ]);
 
         // In production: dispatch async job to Kavenegar / SMS.ir adapter:
-        // SendOtpSmsJob::dispatch($mobile, $otpPlain);
+        // v6.8 · the code now leaves through the configured gateway
+        \App\Services\Sms\SmsService::send('otp', $mobile, ['code' => $otpPlain], true);
 
         return response()->json([
             'message' => 'کد تایید ۶ رقمی به شماره موبایل شما ارسال شد.',

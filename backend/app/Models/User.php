@@ -20,6 +20,9 @@ class User extends Authenticatable
         'role_id',
         'is_active',
         'mobile_verified_at',
+        'skin_type',
+        'birthday',
+        'sms_optin',
     ];
 
     protected $hidden = [
@@ -31,6 +34,7 @@ class User extends Authenticatable
         'is_active' => 'boolean',
         'mobile_verified_at' => 'datetime',
         'password' => 'hashed',
+        'sms_optin' => 'boolean',
     ];
 
     public function role()

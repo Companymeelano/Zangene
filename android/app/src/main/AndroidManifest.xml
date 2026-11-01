@@ -29,6 +29,15 @@
         <receiver
             android:name=".DailyBriefReceiver"
             android:exported="false" />
+
+        <!-- v6.8 · SMS autopilot: daily routine, queue flush and follow-ups -->
+        <receiver
+            android:name=".AutomationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.asiyestore.admin.ROUTINE" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

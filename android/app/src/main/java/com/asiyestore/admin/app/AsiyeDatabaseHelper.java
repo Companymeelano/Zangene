@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -19,7 +20,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public static final long STANDARD_SHIPPING_COST  = 65_000L;
 
     private static final String DB_NAME = "asiye_royal_v5.db";
-    private static final int DB_VERSION = 6;
+    private static final int DB_VERSION = 7;
 
     public AsiyeDatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -126,8 +127,518 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         createReviewsTable(db);
         createRecentViewsTable(db);
         createAddressesTable(db);
+        createAccountsTable(db);
+        createSmsTables(db);
         seedSignatureCatalog(db);
         seedSignatureReviews(db);
+    }
+
+    /** v6.8 · the maison's own customer accounts — mobile is the identity. */
+    private void createAccountsTable(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS accounts (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "mobile TEXT UNIQUE NOT NULL," +
+                "name TEXT NOT NULL DEFAULT ''," +
+                "email TEXT," +
+                "pin_hash TEXT NOT NULL," +
+                "pin_salt TEXT NOT NULL," +
+                "skin_type TEXT NOT NULL DEFAULT 'نامشخص'," +
+                "birthday TEXT," +
+                "sms_optin INTEGER NOT NULL DEFAULT 1," +
+                "verified INTEGER NOT NULL DEFAULT 1," +
+                "created_at_ms INTEGER NOT NULL DEFAULT 0," +
+                "last_login_ms INTEGER NOT NULL DEFAULT 0" +
+                ")");
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS otp_codes (" +
+                "mobile TEXT NOT NULL," +
+                "purpose TEXT NOT NULL," +
+                "code TEXT NOT NULL," +
+                "expires_at_ms INTEGER NOT NULL," +
+                "attempts INTEGER NOT NULL DEFAULT 0," +
+                "PRIMARY KEY (mobile, purpose)" +
+                ")");
+    }
+
+    /** v6.8 · the SMS outbox and the merchant's editable template library. */
+    private void createSmsTables(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS sms_outbox (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "mobile TEXT NOT NULL," +
+                "template_key TEXT NOT NULL DEFAULT ''," +
+                "body TEXT NOT NULL," +
+                "status TEXT NOT NULL DEFAULT 'pending'," +
+                "attempts INTEGER NOT NULL DEFAULT 0," +
+                "created_at_ms INTEGER NOT NULL DEFAULT 0," +
+                "sent_at_ms INTEGER NOT NULL DEFAULT 0," +
+                "error TEXT" +
+                ")");
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS sms_templates (" +
+                "template_key TEXT PRIMARY KEY," +
+                "title TEXT NOT NULL," +
+                "body TEXT NOT NULL," +
+                "enabled INTEGER NOT NULL DEFAULT 1" +
+                ")");
+        seedSmsTemplates(db);
+        seedSmsSettings(db);
+    }
+
+    private void seedSmsTemplates(SQLiteDatabase db) {
+        String[] keys = SmsGateway.allKeys();
+        for (String key : keys) {
+            boolean exists = false;
+            try (Cursor c = db.rawQuery("SELECT template_key FROM sms_templates WHERE template_key = ?",
+                    new String[]{ key })) {
+                exists = c.moveToFirst();
+            }
+            if (exists) continue;
+            ContentValues cv = new ContentValues();
+            cv.put("template_key", key);
+            cv.put("title", SmsGateway.defaultTitle(key));
+            cv.put("body", SmsGateway.defaultTemplate(key));
+            cv.put("enabled", 1);
+            try { db.insert("sms_templates", null, cv); } catch (Exception ignored) { }
+        }
+    }
+
+    private void seedSmsSettings(SQLiteDatabase db) {
+        insertSettingIfMissing(db, "sms_enabled", "1");
+        insertSettingIfMissing(db, "sms_provider", SmsGateway.PROVIDER_SANDBOX);
+        insertSettingIfMissing(db, "sms_api_key", "");
+        insertSettingIfMissing(db, "sms_sender", "");
+        insertSettingIfMissing(db, "sms_username", "");
+        insertSettingIfMissing(db, "sms_password", "");
+        insertSettingIfMissing(db, "sms_quiet_from", "23");
+        insertSettingIfMissing(db, "sms_quiet_to", "8");
+        insertSettingIfMissing(db, "sms_daily_cap", "80");
+        insertSettingIfMissing(db, "sms_test_mobile", "");
+        insertSettingIfMissing(db, "auto_reorder", "1");
+        insertSettingIfMissing(db, "auto_birthday", "1");
+        insertSettingIfMissing(db, "auto_review_request", "1");
+        insertSettingIfMissing(db, "auto_owner_alert", "1");
+        insertSettingIfMissing(db, "owner_mobile", "09044200993");
+    }
+
+    private void insertSettingIfMissing(SQLiteDatabase db, String key, String value) {
+        boolean exists = false;
+        try (Cursor c = db.rawQuery("SELECT key FROM settings WHERE key = ?", new String[]{ key })) {
+            exists = c.moveToFirst();
+        }
+        if (exists) return;
+        ContentValues cv = new ContentValues();
+        cv.put("key", key);
+        cv.put("value", value);
+        try { db.insert("settings", null, cv); } catch (Exception ignored) { }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.8 · ACCOUNTS
+    // ══════════════════════════════════════════════════════════════════════
+
+    public Models.AccountRecord getAccount(String mobile) {
+        String m = SmsGateway.normalizeMobile(mobile);
+        if (m.isEmpty()) return null;
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT * FROM accounts WHERE mobile = ?", new String[]{ m })) {
+            if (!c.moveToFirst()) return null;
+            return readAccount(c);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public boolean accountExists(String mobile) {
+        return getAccount(mobile) != null;
+    }
+
+    public long createAccount(String mobile, String name, String pinHash, String salt,
+                              String skinType, String birthday, boolean smsOptin) {
+        ContentValues cv = new ContentValues();
+        cv.put("mobile", SmsGateway.normalizeMobile(mobile));
+        cv.put("name", name == null ? "" : name.trim());
+        cv.put("pin_hash", pinHash);
+        cv.put("pin_salt", salt);
+        cv.put("skin_type", skinType == null ? "نامشخص" : skinType);
+        cv.put("birthday", birthday == null ? "" : birthday);
+        cv.put("sms_optin", smsOptin ? 1 : 0);
+        cv.put("verified", 1);
+        cv.put("created_at_ms", System.currentTimeMillis());
+        cv.put("last_login_ms", System.currentTimeMillis());
+        return getWritableDatabase().insertWithOnConflict(
+                "accounts", null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+    }
+
+    public void updateAccountProfile(String mobile, String name, String email,
+                                     String skinType, String birthday, boolean smsOptin) {
+        ContentValues cv = new ContentValues();
+        cv.put("name", name == null ? "" : name.trim());
+        cv.put("email", email == null ? "" : email.trim());
+        cv.put("skin_type", skinType == null ? "نامشخص" : skinType);
+        cv.put("birthday", birthday == null ? "" : birthday);
+        cv.put("sms_optin", smsOptin ? 1 : 0);
+        getWritableDatabase().update("accounts", cv, "mobile = ?",
+                new String[]{ SmsGateway.normalizeMobile(mobile) });
+    }
+
+    public void updateAccountSecrets(String mobile, String pinHash, String salt) {
+        ContentValues cv = new ContentValues();
+        cv.put("pin_hash", pinHash);
+        cv.put("pin_salt", salt);
+        getWritableDatabase().update("accounts", cv, "mobile = ?",
+                new String[]{ SmsGateway.normalizeMobile(mobile) });
+    }
+
+    public void touchAccount(String mobile) {
+        ContentValues cv = new ContentValues();
+        cv.put("last_login_ms", System.currentTimeMillis());
+        getWritableDatabase().update("accounts", cv, "mobile = ?",
+                new String[]{ SmsGateway.normalizeMobile(mobile) });
+    }
+
+    public int getAccountsCount() {
+        try (Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM accounts", null)) {
+            return c.moveToFirst() ? c.getInt(0) : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /** Live stats joined from the real order book, so the account card is never decorative. */
+    public Models.AccountRecord getAccountWithStats(String mobile) {
+        Models.AccountRecord a = getAccount(mobile);
+        if (a == null) return null;
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COUNT(*), COALESCE(SUM(total_amount),0) FROM orders WHERE customer_mobile = ?",
+                new String[]{ a.mobile })) {
+            if (c.moveToFirst()) {
+                a.ordersCount = c.getInt(0);
+                a.totalSpent = c.getLong(1);
+            }
+        } catch (Exception ignored) { }
+        return a;
+    }
+
+    private Models.AccountRecord readAccount(Cursor c) {
+        Models.AccountRecord a = new Models.AccountRecord();
+        a.id = c.getLong(c.getColumnIndexOrThrow("id"));
+        a.mobile = c.getString(c.getColumnIndexOrThrow("mobile"));
+        a.name = c.getString(c.getColumnIndexOrThrow("name"));
+        a.email = c.getString(c.getColumnIndexOrThrow("email"));
+        a.skinType = c.getString(c.getColumnIndexOrThrow("skin_type"));
+        a.birthday = c.getString(c.getColumnIndexOrThrow("birthday"));
+        a.smsOptin = c.getInt(c.getColumnIndexOrThrow("sms_optin")) == 1;
+        a.createdAtMs = c.getLong(c.getColumnIndexOrThrow("created_at_ms"));
+        a.lastLoginMs = c.getLong(c.getColumnIndexOrThrow("last_login_ms"));
+        return a;
+    }
+
+    public String getAccountSalt(String mobile) {
+        return secretColumn(mobile, "pin_salt");
+    }
+
+    public String getAccountHash(String mobile) {
+        return secretColumn(mobile, "pin_hash");
+    }
+
+    private String secretColumn(String mobile, String column) {
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT " + column + " FROM accounts WHERE mobile = ?",
+                new String[]{ SmsGateway.normalizeMobile(mobile) })) {
+            return c.moveToFirst() ? c.getString(0) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.8 · ONE-TIME CODES
+    // ══════════════════════════════════════════════════════════════════════
+
+    /** Issues a 5-digit code valid for two minutes, replacing any previous one. */
+    public String issueOtp(String mobile, String purpose) {
+        String m = SmsGateway.normalizeMobile(mobile);
+        String code = String.format(Locale.US, "%05d", new Random().nextInt(100000));
+        ContentValues cv = new ContentValues();
+        cv.put("mobile", m);
+        cv.put("purpose", purpose);
+        cv.put("code", code);
+        cv.put("expires_at_ms", System.currentTimeMillis() + 2 * 60 * 1000L);
+        cv.put("attempts", 0);
+        getWritableDatabase().insertWithOnConflict("otp_codes", null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+        return code;
+    }
+
+    /** @return null when the code is correct, otherwise a Persian reason. */
+    public String verifyOtp(String mobile, String purpose, String code) {
+        String m = SmsGateway.normalizeMobile(mobile);
+        String typed = PersianFormatter.toAsciiDigits(code == null ? "" : code).trim();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT code, expires_at_ms, attempts FROM otp_codes WHERE mobile = ? AND purpose = ?",
+                new String[]{ m, purpose })) {
+            if (!c.moveToFirst()) return "کدی برای این شماره ثبت نشده است. دوباره درخواست کنید.";
+            String stored = c.getString(0);
+            long expires = c.getLong(1);
+            int attempts = c.getInt(2);
+            if (attempts >= 5) return "تعداد تلاش بیش از حد مجاز است. کد تازه بگیرید.";
+            if (System.currentTimeMillis() > expires) return "کد منقضی شده است. کد تازه بگیرید.";
+            if (!stored.equals(typed)) {
+                getWritableDatabase().execSQL("UPDATE otp_codes SET attempts = attempts + 1 WHERE mobile = ? AND purpose = ?",
+                        new Object[]{ m, purpose });
+                return "کد وارد شده درست نیست.";
+            }
+            getWritableDatabase().delete("otp_codes", "mobile = ? AND purpose = ?", new String[]{ m, purpose });
+            return null;
+        } catch (Exception e) {
+            return "بررسی کد ممکن نشد.";
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.8 · SMS OUTBOX & TEMPLATES
+    // ══════════════════════════════════════════════════════════════════════
+
+    public long enqueueSms(String mobile, String templateKey, String body) {
+        if (mobile == null || mobile.trim().isEmpty() || body == null || body.trim().isEmpty()) return -1;
+        ContentValues cv = new ContentValues();
+        cv.put("mobile", SmsGateway.normalizeMobile(mobile));
+        cv.put("template_key", templateKey == null ? "" : templateKey);
+        cv.put("body", body);
+        cv.put("status", "pending");
+        cv.put("attempts", 0);
+        cv.put("created_at_ms", System.currentTimeMillis());
+        cv.put("sent_at_ms", 0);
+        cv.put("error", "");
+        return getWritableDatabase().insert("sms_outbox", null, cv);
+    }
+
+    public List<Models.SmsMessage> pendingSms(int limit) {
+        List<Models.SmsMessage> list = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT * FROM sms_outbox WHERE status = 'pending' AND attempts < 4 ORDER BY id ASC LIMIT ?",
+                new String[]{ String.valueOf(limit) })) {
+            while (c.moveToNext()) {
+                Models.SmsMessage m = new Models.SmsMessage();
+                m.id = c.getLong(c.getColumnIndexOrThrow("id"));
+                m.mobile = c.getString(c.getColumnIndexOrThrow("mobile"));
+                m.templateKey = c.getString(c.getColumnIndexOrThrow("template_key"));
+                m.body = c.getString(c.getColumnIndexOrThrow("body"));
+                m.status = c.getString(c.getColumnIndexOrThrow("status"));
+                m.attempts = c.getInt(c.getColumnIndexOrThrow("attempts"));
+                m.createdAtMs = c.getLong(c.getColumnIndexOrThrow("created_at_ms"));
+                list.add(m);
+            }
+        } catch (Exception ignored) { }
+        return list;
+    }
+
+    public void markSmsSent(long id) {
+        ContentValues cv = new ContentValues();
+        cv.put("status", "sent");
+        cv.put("sent_at_ms", System.currentTimeMillis());
+        cv.put("error", "");
+        getWritableDatabase().update("sms_outbox", cv, "id = ?", new String[]{ String.valueOf(id) });
+    }
+
+    public void markSmsFailed(long id, String error) {
+        ContentValues cv = new ContentValues();
+        cv.put("attempts", smsAttempts(id) + 1);
+        cv.put("error", error == null ? "" : error);
+        getWritableDatabase().update("sms_outbox", cv, "id = ?", new String[]{ String.valueOf(id) });
+    }
+
+    private int smsAttempts(long id) {
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT attempts FROM sms_outbox WHERE id = ?", new String[]{ String.valueOf(id) })) {
+            return c.moveToFirst() ? c.getInt(0) : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /** Anti-spam guard used by the automation: same template, same number, inside a window. */
+    public boolean wasSmsSentWithin(String templateKey, String mobile, long windowMs) {
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COUNT(*) FROM sms_outbox WHERE template_key = ? AND mobile = ? AND sent_at_ms >= ?",
+                new String[]{ templateKey, SmsGateway.normalizeMobile(mobile),
+                        String.valueOf(System.currentTimeMillis() - windowMs) })) {
+            return c.moveToFirst() && c.getInt(0) > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public int countSmsSentToday() {
+        long start = startOfTodayMs();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COUNT(*) FROM sms_outbox WHERE status = 'sent' AND sent_at_ms >= ?",
+                new String[]{ String.valueOf(start) })) {
+            return c.moveToFirst() ? c.getInt(0) : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public int countSmsPending() {
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COUNT(*) FROM sms_outbox WHERE status = 'pending'", null)) {
+            return c.moveToFirst() ? c.getInt(0) : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public int countSmsFailed() {
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COUNT(*) FROM sms_outbox WHERE attempts >= 4", null)) {
+            return c.moveToFirst() ? c.getInt(0) : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public List<Models.SmsMessage> recentSms(int limit) {
+        List<Models.SmsMessage> list = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT * FROM sms_outbox ORDER BY id DESC LIMIT ?",
+                new String[]{ String.valueOf(limit) })) {
+            while (c.moveToNext()) {
+                Models.SmsMessage m = new Models.SmsMessage();
+                m.id = c.getLong(c.getColumnIndexOrThrow("id"));
+                m.mobile = c.getString(c.getColumnIndexOrThrow("mobile"));
+                m.body = c.getString(c.getColumnIndexOrThrow("body"));
+                m.status = c.getString(c.getColumnIndexOrThrow("status"));
+                m.attempts = c.getInt(c.getColumnIndexOrThrow("attempts"));
+                m.createdAtMs = c.getLong(c.getColumnIndexOrThrow("created_at_ms"));
+                m.sentAtMs = c.getLong(c.getColumnIndexOrThrow("sent_at_ms"));
+                m.error = c.getString(c.getColumnIndexOrThrow("error"));
+                list.add(m);
+            }
+        } catch (Exception ignored) { }
+        return list;
+    }
+
+    public String getTemplateBody(String key) {
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT body FROM sms_templates WHERE template_key = ?", new String[]{ key })) {
+            return c.moveToFirst() ? c.getString(0) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public boolean isTemplateEnabled(String key) {
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT enabled FROM sms_templates WHERE template_key = ?", new String[]{ key })) {
+            return !c.moveToFirst() || c.getInt(0) == 1;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    public void setTemplate(String key, String body, boolean enabled) {
+        ContentValues cv = new ContentValues();
+        cv.put("template_key", key);
+        cv.put("title", SmsGateway.defaultTitle(key));
+        cv.put("body", body == null ? "" : body);
+        cv.put("enabled", enabled ? 1 : 0);
+        getWritableDatabase().insertWithOnConflict("sms_templates", null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+    }
+
+    public List<Models.SmsTemplateRecord> getTemplates() {
+        List<Models.SmsTemplateRecord> list = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT * FROM sms_templates ORDER BY rowid ASC", null)) {
+            while (c.moveToNext()) {
+                Models.SmsTemplateRecord t = new Models.SmsTemplateRecord();
+                t.key = c.getString(c.getColumnIndexOrThrow("template_key"));
+                t.title = c.getString(c.getColumnIndexOrThrow("title"));
+                t.body = c.getString(c.getColumnIndexOrThrow("body"));
+                t.enabled = c.getInt(c.getColumnIndexOrThrow("enabled")) == 1;
+                list.add(t);
+            }
+        } catch (Exception ignored) { }
+        return list;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.8 · AUTOMATION QUERIES — what the daily routine needs to know
+    // ══════════════════════════════════════════════════════════════════════
+
+    /** Orders older than the product's replenish cycle, grouped by customer. */
+    public List<Models.ReorderDue> getReorderDue(int limit) {
+        List<Models.ReorderDue> list = new ArrayList<>();
+        String sql = "SELECT o.customer_mobile AS mobile, o.customer_name AS name, p.name_fa AS product, " +
+                "o.created_at_label AS last_label, o.created_at_ms AS last_ms, p.replenish_days AS days " +
+                "FROM order_items i JOIN orders o ON o.id = i.order_id JOIN products p ON p.id = i.product_id " +
+                "WHERE o.created_at_ms > 0 AND p.replenish_days > 0 " +
+                "AND (strftime('%s','now') * 1000 - o.created_at_ms) > (p.replenish_days * 86400000) " +
+                "GROUP BY o.customer_mobile, p.id ORDER BY last_ms DESC LIMIT ?";
+        try (Cursor c = getReadableDatabase().rawQuery(sql, new String[]{ String.valueOf(limit) })) {
+            while (c.moveToNext()) {
+                Models.ReorderDue r = new Models.ReorderDue();
+                r.mobile = c.getString(0);
+                r.name = c.getString(1);
+                r.productName = c.getString(2);
+                r.lastLabel = c.getString(3);
+                long last = c.getLong(4);
+                r.days = (int) ((System.currentTimeMillis() - last) / 86400000L);
+                list.add(r);
+            }
+        } catch (Exception ignored) { }
+        return list;
+    }
+
+    /** Accounts whose birthday is today (stored as MM-DD). */
+    public List<Models.AccountRecord> getBirthdaysToday() {
+        List<Models.AccountRecord> list = new ArrayList<>();
+        String today = new SimpleDateFormat("MM-dd", Locale.US).format(new Date());
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT * FROM accounts WHERE birthday LIKE ?", new String[]{ "%" + today })) {
+            while (c.moveToNext()) list.add(readAccount(c));
+        } catch (Exception ignored) { }
+        return list;
+    }
+
+    /** Delivered orders that never received a review invitation. */
+    public List<Models.OrderRecord> getDeliveredAwaitingReview(int limit) {
+        List<Models.OrderRecord> out = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT * FROM orders WHERE status = 'delivered' ORDER BY id DESC LIMIT ?",
+                new String[]{ String.valueOf(limit) })) {
+            while (c.moveToNext()) out.add(readOrder(c));
+        } catch (Exception ignored) { }
+        return out;
+    }
+
+    public int getTodayOrdersCount() {
+        long start = startOfTodayMs();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COUNT(*) FROM orders WHERE created_at_ms >= ?",
+                new String[]{ String.valueOf(start) })) {
+            return c.moveToFirst() ? c.getInt(0) : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public List<Models.Product> getLowStockProducts(int limit) {
+        List<Models.Product> out = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT * FROM products WHERE stock <= low_stock_threshold AND published = 1 ORDER BY stock ASC LIMIT ?",
+                new String[]{ String.valueOf(limit) })) {
+            while (c.moveToNext()) out.add(readProduct(c));
+        } catch (Exception ignored) { }
+        return out;
+    }
+
+    private long startOfTodayMs() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTimeInMillis();
     }
 
     /** v6.5 · the customer's saved delivery addresses. */
@@ -219,6 +730,8 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         createReviewsTable(db);
         createRecentViewsTable(db);
         createAddressesTable(db);
+        createAccountsTable(db);
+        createSmsTables(db);
         try {
             db.execSQL("UPDATE orders SET created_at_ms = 0 WHERE created_at_ms IS NULL");
         } catch (Exception ignored) { }
