@@ -62,6 +62,8 @@ public final class Luxury3DIconView extends View {
     public static final int ICON_GLOBE     = 40;
     public static final int ICON_DOC       = 41;
     public static final int ICON_IMAGE     = 42;
+    public static final int ICON_MOON      = 43;
+    public static final int ICON_SUN       = 44;
 
     public static final int PEDESTAL_OBSIDIAN = 0;
     public static final int PEDESTAL_GOLD     = 1;
@@ -752,6 +754,28 @@ public final class Luxury3DIconView extends View {
                 glyphPath.lineTo(gx(42f, w), gy(34f, h));
                 glyphPath.lineTo(gx(45.5f, w), gy(42f, h));
                 c.drawPath(glyphPath, glyphStroke);
+                break;
+            }
+            case ICON_MOON: {
+                Path crescent = new Path();
+                crescent.addArc(new RectF(gx(18f, w), gy(18f, h), gx(46f, w), gy(46f, h)), 60f, 240f);
+                Path bite = new Path();
+                bite.addCircle(gx(38.5f, w), gy(30f, h), s * 0.145f, Path.Direction.CW);
+                crescent.op(bite, Path.Op.DIFFERENCE);
+                c.drawPath(crescent, glyphStroke);
+                c.drawCircle(gx(22.5f, w), gy(24f, h), s * 0.022f, glyphFill);
+                break;
+            }
+            case ICON_SUN: {
+                c.drawCircle(gx(32f, w), gy(32f, h), s * 0.085f, glyphStroke);
+                for (int i = 0; i < 8; i++) {
+                    double ang = Math.PI / 4.0 * i;
+                    float x1 = (float) (32 + Math.cos(ang) * 14.5);
+                    float y1 = (float) (32 + Math.sin(ang) * 14.5);
+                    float x2 = (float) (32 + Math.cos(ang) * 19.5);
+                    float y2 = (float) (32 + Math.sin(ang) * 19.5);
+                    c.drawLine(gx(x1, w), gy(y1, h), gx(x2, w), gy(y2, h), glyphStroke);
+                }
                 break;
             }
             case ICON_BOUTIQUE:

@@ -70,25 +70,43 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.3 · ATELIER ICONS";
+    private static final String APP_VERSION         = "V6.4 · DUAL MOOD";
 
-    // ── Palette ────────────────────────────────────────────────────────────
+    // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static final int COL_OBSIDIAN      = 0xFF0B0B0E;
     private static final int COL_OBSIDIAN_SOFT = 0xFF141319;
     private static final int COL_GOLD          = 0xFFC8A46B;
     private static final int COL_GOLD_LIGHT    = 0xFFEBD6B0;
-    private static final int COL_GOLD_DEEP     = 0xFF8E6C3A;
-    private static final int COL_IVORY_BG      = 0xFFFAF8F3;
-    private static final int COL_SILK_CREAM    = 0xFFF4EEE3;
-    private static final int COL_WHITE         = 0xFFFFFFFF;
-    private static final int COL_TEXT_MAIN     = 0xFF1B1A18;
-    private static final int COL_TEXT_MUTED    = 0xFF5C554A;
-    private static final int COL_TEXT_FAINT    = 0xFF857C6E;
-    private static final int COL_BORDER        = 0xFFE6DDCC;
-    private static final int COL_SUCCESS       = 0xFF1E6B4B;
-    private static final int COL_SUCCESS_SOFT  = 0xFFEAF4EE;
-    private static final int COL_DANGER        = 0xFF9E3A33;
-    private static final int COL_WARN          = 0xFF9A6B2F;
+
+    private static int COL_GOLD_DEEP     = 0xFF8E6C3A;
+    private static int COL_IVORY_BG      = 0xFFFAF8F3;
+    private static int COL_SILK_CREAM    = 0xFFF4EEE3;
+    private static int COL_WHITE         = 0xFFFFFFFF;
+    private static int COL_TEXT_MAIN     = 0xFF1B1A18;
+    private static int COL_TEXT_MUTED    = 0xFF5C554A;
+    private static int COL_TEXT_FAINT    = 0xFF857C6E;
+    private static int COL_BORDER        = 0xFFE6DDCC;
+    private static int COL_SUCCESS       = 0xFF1E6B4B;
+    private static int COL_SUCCESS_SOFT  = 0xFFEAF4EE;
+    private static int COL_DANGER        = 0xFF9E3A33;
+    private static int COL_WARN          = 0xFF9A6B2F;
+
+    // Secondary surfaces that must also follow the theme.
+    private static int SURF_CHIP         = 0xFFFBF4E7;
+    private static int SURF_STRIP        = 0xFFFFFDF9;
+    private static int SURF_SOFT         = 0xFFFFFBF2;
+    private static int SURF_CHIP_LINE    = 0xFFEAD9B8;
+    private static int SURF_SUCCESS_LINE = 0xFFBFDCCB;
+    private static int SURF_GOLD_LINE    = 0xFFE8D6B4;
+    private static int SURF_STAR_OFF     = 0xFFDFD7C8;
+    private static int SURF_INACTIVE     = 0xFF9C9284;
+    private static int SURF_DIVIDER      = 0x1A000000;
+    private static int TEXT_BODY         = 0xFF4E4840;
+    private static int TEXT_BODY_2       = 0xFF5A5244;
+
+    /** v6.4 · obsidian night mode for the whole app. */
+    private static boolean darkMode = false;
+    private static final String PREF_THEME = "asiye_prefs";
 
     private static final int TAB_BOUTIQUE  = 0;
     private static final int TAB_ADVISOR   = 1;
@@ -102,6 +120,7 @@ public final class MainActivity extends Activity {
     private static final int ADMIN_SETTINGS  = 4;
 
     private static final int REQ_PICK_PHOTO = 4401;
+    private static final int REQ_NOTIF      = 4402;
 
     private static final String PAY_INSTALLMENT = "installment";
     private static final String PAY_ONLINE      = "online";
@@ -121,6 +140,8 @@ public final class MainActivity extends Activity {
     private Models.Product verifiedProduct = null;
     private boolean advisorAnswered = false;
     private String giftOccasion = "";
+    private int bundleIdx = 0;
+    private boolean briefReminderOn = false;
     private int giftBudget = -1;
     private long giftSuggestionId = -1L;
 
@@ -185,6 +206,12 @@ public final class MainActivity extends Activity {
         }
 
         db = new AsiyeDatabaseHelper(this);
+        loadTheme();
+        briefReminderOn = getSharedPreferences(PREF_THEME, MODE_PRIVATE)
+                .getBoolean("brief_reminder", false);
+        if (briefReminderOn) {
+            try { DailyBriefReceiver.schedule(this); } catch (Throwable ignored) { }
+        }
         verifiedProduct = db.verifyAuthenticitySerial(lastCheckedSerial);
 
         bagNameInput = makeInput("نام و نام خانوادگی تحویل‌گیرنده", InputType.TYPE_CLASS_TEXT, false);
@@ -206,6 +233,125 @@ public final class MainActivity extends Activity {
 
         setContentView(buildRootShell());
         renderCurrentScreen();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.4 · DUAL PALETTE — ivory day, obsidian night
+    // ══════════════════════════════════════════════════════════════════════
+    private void loadTheme() {
+        darkMode = getSharedPreferences(PREF_THEME, MODE_PRIVATE).getBoolean("dark_mode", false);
+        applyPalette();
+    }
+
+    private void applyPalette() {
+        if (darkMode) {
+            COL_GOLD_DEEP     = 0xFFD9B478;
+            COL_IVORY_BG      = 0xFF0B0B0E;
+            COL_SILK_CREAM    = 0xFF1F1D25;
+            COL_WHITE         = 0xFF14131A;
+            COL_TEXT_MAIN     = 0xFFF6EFE3;
+            COL_TEXT_MUTED    = 0xFFB9AF9F;
+            COL_TEXT_FAINT    = 0xFF978E7E;
+            COL_BORDER        = 0xFF322C36;
+            COL_SUCCESS       = 0xFF63C49B;
+            COL_SUCCESS_SOFT  = 0xFF15302A;
+            COL_DANGER        = 0xFFE58B80;
+            COL_WARN          = 0xFFE0B36A;
+            SURF_CHIP         = 0xFF241F27;
+            SURF_STRIP        = 0xFF17161D;
+            SURF_SOFT         = 0xFF1A1821;
+            SURF_CHIP_LINE    = 0xFF4A3F2C;
+            SURF_SUCCESS_LINE = 0xFF2C5A49;
+            SURF_GOLD_LINE    = 0xFF4A3C28;
+            SURF_STAR_OFF     = 0xFF3A343F;
+            SURF_INACTIVE     = 0xFF6F6773;
+            SURF_DIVIDER      = 0x33C8A46B;
+            TEXT_BODY         = 0xFFD6CCBC;
+            TEXT_BODY_2       = 0xFFC9BFAF;
+        } else {
+            COL_GOLD_DEEP     = 0xFF8E6C3A;
+            COL_IVORY_BG      = 0xFFFAF8F3;
+            COL_SILK_CREAM    = 0xFFF4EEE3;
+            COL_WHITE         = 0xFFFFFFFF;
+            COL_TEXT_MAIN     = 0xFF1B1A18;
+            COL_TEXT_MUTED    = 0xFF5C554A;
+            COL_TEXT_FAINT    = 0xFF857C6E;
+            COL_BORDER        = 0xFFE6DDCC;
+            COL_SUCCESS       = 0xFF1E6B4B;
+            COL_SUCCESS_SOFT  = 0xFFEAF4EE;
+            COL_DANGER        = 0xFF9E3A33;
+            COL_WARN          = 0xFF9A6B2F;
+            SURF_CHIP         = 0xFFFBF4E7;
+            SURF_STRIP        = 0xFFFFFDF9;
+            SURF_SOFT         = 0xFFFFFBF2;
+            SURF_CHIP_LINE    = 0xFFEAD9B8;
+            SURF_SUCCESS_LINE = 0xFFBFDCCB;
+            SURF_GOLD_LINE    = 0xFFE8D6B4;
+            SURF_STAR_OFF     = 0xFFDFD7C8;
+            SURF_INACTIVE     = 0xFF9C9284;
+            SURF_DIVIDER      = 0x1A000000;
+            TEXT_BODY         = 0xFF4E4840;
+            TEXT_BODY_2       = 0xFF5A5244;
+        }
+        Window window = getWindow();
+        if (window != null) {
+            window.setStatusBarColor(COL_OBSIDIAN);
+            window.setNavigationBarColor(COL_OBSIDIAN);
+        }
+    }
+
+    /** Turns the 09:00 briefing on or off, asking for the notification grant once. */
+    private void toggleDailyBrief() {
+        briefReminderOn = !briefReminderOn;
+        getSharedPreferences(PREF_THEME, MODE_PRIVATE).edit()
+                .putBoolean("brief_reminder", briefReminderOn).apply();
+        if (briefReminderOn) {
+            if (android.os.Build.VERSION.SDK_INT >= 33
+                    && checkSelfPermission("android.permission.POST_NOTIFICATIONS")
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, REQ_NOTIF);
+            }
+            try { DailyBriefReceiver.schedule(this); } catch (Throwable ignored) { }
+            toast("یادآور روزانه ۹ صبح فعال شد.");
+        } else {
+            try { DailyBriefReceiver.cancel(this); } catch (Throwable ignored) { }
+            toast("یادآور روزانه خاموش شد.");
+        }
+        renderCurrentScreen();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_NOTIF) {
+            boolean granted = grantResults.length > 0
+                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED;
+            toast(granted ? "یادآور صبحگاهی فعال است." : "برای یادآور صبحگاهی، اجازهٔ اعلان لازم است.");
+        }
+    }
+
+    /** Flips the whole app between the ivory day palette and the obsidian night one. */
+    private void toggleTheme() {
+        darkMode = !darkMode;
+        getSharedPreferences(PREF_THEME, MODE_PRIVATE).edit().putBoolean("dark_mode", darkMode).apply();
+        applyPalette();
+        restyleInputs();
+        setContentView(buildRootShell());
+        renderCurrentScreen();
+        toast(darkMode ? "حالت شب ابسیدین فعال شد." : "حالت روز عاجی فعال شد.");
+    }
+
+    /** The few inputs that survive a re-render keep their own colours, so they are repainted. */
+    private void restyleInputs() {
+        EditText[] inputs = {bagNameInput, bagMobileInput, bagAddressInput, bagGiftInput,
+                bagCouponInput, authSerialInput, trackingInput};
+        for (EditText input : inputs) {
+            if (input == null) continue;
+            input.setTextColor(COL_TEXT_MAIN);
+            input.setTextColor(COL_TEXT_MAIN);
+            input.setHintTextColor(COL_TEXT_FAINT);
+            input.setBackground(roundedShape(COL_IVORY_BG, dp(13), COL_BORDER, dp(1)));
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -294,7 +440,12 @@ public final class MainActivity extends Activity {
         titleCol.addView(headerSubtitle);
         header.addView(titleCol);
 
-        // Quiet actions: search + admin gate (WhatsApp/search clutter removed)
+        // Quiet actions: night mode + search + admin gate
+        header.addView(headerActionButton(darkMode ? Luxury3DIconView.ICON_SUN : Luxury3DIconView.ICON_MOON,
+                new Runnable() {
+            @Override public void run() { toggleTheme(); }
+        }), actionLp(8));
+
         header.addView(headerActionButton(Luxury3DIconView.ICON_SEARCH, new Runnable() {
             @Override public void run() { openSmartSearchDialog(); }
         }), actionLp(8));
@@ -609,10 +760,23 @@ public final class MainActivity extends Activity {
             contentContainer.addView(emptyCard(Luxury3DIconView.ICON_HEART, "هنوز کالایی در منتخب‌های شما نیست",
                     "قلب بالای هر کالا را لمس کنید تا در ویترین اختصاصی شما ذخیره شود."));
         } else {
+            int idx = 0;
             for (Models.Product p : products) {
-                contentContainer.addView(buildProductCard(p));
+                View card = buildProductCard(p);
+                reveal(card, idx++);
+                contentContainer.addView(card);
                 contentContainer.addView(space(16));
             }
+        }
+
+        contentContainer.addView(space(2));
+        contentContainer.addView(bundleCard());
+        contentContainer.addView(space(18));
+
+        View recent = recentlyViewedStrip();
+        if (recent != null) {
+            contentContainer.addView(recent);
+            contentContainer.addView(space(16));
         }
 
         contentContainer.addView(space(4));
@@ -727,7 +891,7 @@ public final class MainActivity extends Activity {
         panel.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         panel.setGravity(Gravity.CENTER_VERTICAL);
         panel.setPadding(dp(6), dp(10), dp(6), dp(10));
-        panel.setBackground(roundedShape(0xFFFFFDF9, dp(16), 0xFFEFE6D6, dp(1)));
+        panel.setBackground(roundedShape(SURF_STRIP, dp(16), 0xFFEFE6D6, dp(1)));
 
         int[] icons = {Luxury3DIconView.ICON_SHIELD, Luxury3DIconView.ICON_TRUCK, Luxury3DIconView.ICON_INSTALLMENT};
         String[] labels = {"ضمانت اصالت", "ارسال سریع VIP", "پرداخت ۴ قسط"};
@@ -737,7 +901,7 @@ public final class MainActivity extends Activity {
             cell.setGravity(Gravity.CENTER);
             cell.setPadding(dp(2), 0, dp(2), 0);
             cell.addView(iconMedallion(icons[i], 34, Luxury3DIconView.PEDESTAL_OBSIDIAN));
-            TextView label = text(labels[i], 8.8f, 0xFF5A5244, true);
+            TextView label = text(labels[i], 8.8f, TEXT_BODY_2, true);
             label.setGravity(Gravity.CENTER);
             label.setSingleLine(true);
             label.setPadding(0, dp(4), 0, 0);
@@ -853,6 +1017,7 @@ public final class MainActivity extends Activity {
         heartLp.setMargins(0, dp(12), dp(12), 0);
         heart.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
+                tap();
                 wish[0] = !wish[0];
                 db.toggleWishlist(p.id, wish[0]);
                 heart.setText(wish[0] ? "♥" : "♡");
@@ -942,7 +1107,7 @@ public final class MainActivity extends Activity {
             TextView star = new TextView(this);
             star.setText("★");
             star.setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp);
-            star.setTextColor(i < full ? COL_GOLD_DEEP : 0xFFDFD7C8);
+            star.setTextColor(i < full ? COL_GOLD_DEEP : SURF_STAR_OFF);
             star.setIncludeFontPadding(false);
             if (i > 0) star.setPadding(dp(1), 0, 0, 0);
             row.addView(star);
@@ -1007,7 +1172,7 @@ public final class MainActivity extends Activity {
         for (Models.ReviewRecord r : db.getProductReviews(p.id, 2)) {
             card.addView(space(9));
             View divider = new View(this);
-            divider.setBackgroundColor(0x22000000);
+            divider.setBackgroundColor(SURF_DIVIDER);
             card.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
             card.addView(space(8));
 
@@ -1017,7 +1182,7 @@ public final class MainActivity extends Activity {
             metaRow.addView(starRow(r.rating, 9f));
             card.addView(metaRow);
 
-            TextView body = text(r.body, 10.4f, 0xFF4E4840, false);
+            TextView body = text(r.body, 10.4f, TEXT_BODY, false);
             body.setLineSpacing(dp(3), 1f);
             body.setPadding(0, dp(5), 0, 0);
             card.addView(body);
@@ -1058,7 +1223,7 @@ public final class MainActivity extends Activity {
                 @Override public void onClick(View v) {
                     chosen[0] = idx + 1;
                     for (int j = 0; j < 5; j++) {
-                        stars[j].setTextColor(j <= idx ? COL_GOLD_DEEP : 0xFFDFD7C8);
+                        stars[j].setTextColor(j <= idx ? COL_GOLD_DEEP : SURF_STAR_OFF);
                     }
                 }
             });
@@ -1092,6 +1257,7 @@ public final class MainActivity extends Activity {
                     toast("متن نظر را کامل‌تر بنویسید.");
                     return;
                 }
+                tap();
                 long id = db.addReview(p.id, name, chosen[0], body);
                 if (id > 0) {
                     toast("نظر شما ثبت شد و پس از تأیید نمایش داده می‌شود.");
@@ -1154,13 +1320,13 @@ public final class MainActivity extends Activity {
             dot.setBackground(roundedShape(done ? COL_GOLD : COL_WHITE, dp(11),
                     done ? COL_GOLD : 0xFFD9D0C0, dp(1)));
             TextView num = text(done ? "✓" : PersianFormatter.toPersianDigits(String.valueOf(i + 1)),
-                    9.5f, done ? COL_OBSIDIAN : 0xFF9C9284, true);
+                    9.5f, done ? COL_OBSIDIAN : SURF_INACTIVE, true);
             num.setGravity(Gravity.CENTER);
             dot.addView(num, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             step.addView(dot);
 
-            TextView label = text(steps[i], 8.6f, done ? COL_TEXT_MAIN : 0xFF9C9284, done);
+            TextView label = text(steps[i], 8.6f, done ? COL_TEXT_MAIN : SURF_INACTIVE, done);
             label.setGravity(Gravity.CENTER);
             label.setPadding(0, dp(5), 0, 0);
             step.addView(label);
@@ -1285,7 +1451,7 @@ public final class MainActivity extends Activity {
             chip.setTextColor(COL_GOLD_DEEP);
             chip.setGravity(Gravity.CENTER);
             chip.setPadding(dp(7), dp(2), dp(7), dp(2));
-            chip.setBackground(roundedShape(0xFFFBF4E7, dp(9), 0xFFEAD9B8, dp(1)));
+            chip.setBackground(roundedShape(SURF_CHIP, dp(9), SURF_CHIP_LINE, dp(1)));
             LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             clp.setMarginStart(dp(8));
@@ -1339,6 +1505,7 @@ public final class MainActivity extends Activity {
     }
 
     private void showEditorialProductDialog(final Models.Product p) {
+        db.markProductViewed(p.id);
         ScrollView scroll = new ScrollView(this);
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -1402,7 +1569,7 @@ public final class MainActivity extends Activity {
         if (!dialogPlans.isEmpty()) {
             Models.InstallmentPlan zeroPlan = dialogPlans.get(0);
             LinearLayout inst = row(Gravity.CENTER_VERTICAL);
-            inst.setBackground(roundedShape(0xFFFBF4E7, dp(13), 0xFFEFE2C8, dp(1)));
+            inst.setBackground(roundedShape(SURF_CHIP, dp(13), SURF_CHIP_LINE, dp(1)));
             inst.setPadding(dp(11), dp(9), dp(11), dp(9));
             FrameLayout iIcon = new FrameLayout(this);
             iIcon.setLayoutParams(new LinearLayout.LayoutParams(dp(22), dp(22)));
@@ -1692,7 +1859,13 @@ public final class MainActivity extends Activity {
         contentContainer.addView(authCard);
         contentContainer.addView(space(14));
         contentContainer.addView(giftFinderCard());
-        contentContainer.addView(space(16));
+        contentContainer.addView(space(14));
+        View cabinet = cabinetCard();
+        if (cabinet != null) {
+            contentContainer.addView(cabinet);
+            contentContainer.addView(space(14));
+        }
+        contentContainer.addView(space(2));
     }
 
     /**
@@ -1797,7 +1970,7 @@ public final class MainActivity extends Activity {
                 result.setOrientation(LinearLayout.HORIZONTAL);
                 result.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
                 result.setGravity(Gravity.CENTER_VERTICAL);
-                result.setBackground(roundedShape(0xFFFBF4E7, dp(14), 0xFFEFE2C8, dp(1)));
+                result.setBackground(roundedShape(SURF_CHIP, dp(14), SURF_CHIP_LINE, dp(1)));
                 result.setPadding(dp(10), dp(10), dp(10), dp(10));
 
                 FrameLayout thumb = new FrameLayout(this);
@@ -1873,6 +2046,331 @@ public final class MainActivity extends Activity {
             }
         }
         return best;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.4 · ROUTINE BUNDLE · RECENTLY VIEWED · BEAUTY CABINET · MORNING BRIEF
+    // ══════════════════════════════════════════════════════════════════════
+
+    private static final String[][] ROUTINE_BUNDLES = {
+            {"AS-GAT-150", "AS-GAT-050", "روتین ضدلک و لیفتینگ گاتیو"},
+            {"AS-ORD-240", "AS-MRG-500", "روتین پاک‌سازی و تقویت مو"}
+    };
+
+    /** One calm card that sells a two-step routine at 8% off — the quiet upsell. */
+    private View bundleCard() {
+        final String[] skus = ROUTINE_BUNDLES[bundleIdx];
+        Models.Product a = findProductBySku(skus[0]);
+        Models.Product b = findProductBySku(skus[1]);
+        if (a == null || b == null) return new View(this);
+
+        long full = a.salePrice + b.salePrice;
+        long bundlePrice = Math.round(full * 0.92);
+
+        LinearLayout card = whiteCard();
+        card.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_BOX, "بستهٔ روتین امضایی"));
+
+        LinearLayout chips = row(Gravity.CENTER_VERTICAL);
+        for (int i = 0; i < ROUTINE_BUNDLES.length; i++) {
+            final int idx = i;
+            boolean active = bundleIdx == i;
+            TextView chip = text(ROUTINE_BUNDLES[i][2], 9.4f, active ? COL_OBSIDIAN : COL_TEXT_MUTED, active);
+            chip.setGravity(Gravity.CENTER);
+            chip.setSingleLine(true);
+            chip.setPadding(dp(6), dp(9), dp(6), dp(9));
+            chip.setBackground(active
+                    ? roundedShape(COL_GOLD_LIGHT, dp(13), COL_GOLD_LIGHT, dp(1))
+                    : roundedShape(COL_IVORY_BG, dp(13), COL_BORDER, dp(1)));
+            chip.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    bundleIdx = idx;
+                    renderCurrentScreen();
+                }
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            lp.setMargins(dp(3), 0, dp(3), 0);
+            chips.addView(chip, lp);
+        }
+        card.addView(space(10));
+        card.addView(chips);
+        card.addView(space(11));
+
+        card.addView(bundleLine(a));
+        card.addView(space(6));
+        card.addView(bundleLine(b));
+        card.addView(space(11));
+
+        LinearLayout priceRow = row(Gravity.CENTER_VERTICAL);
+        LinearLayout prices = new LinearLayout(this);
+        prices.setOrientation(LinearLayout.VERTICAL);
+        TextView now = text(PersianFormatter.formatToman(bundlePrice), 13.5f, COL_TEXT_MAIN, true);
+        TextView before = text(PersianFormatter.formatToman(full), 9.6f, COL_TEXT_FAINT, false);
+        before.setPaintFlags(before.getPaintFlags() | android.graphics.Paint.STRIKE_THRU_TEXT_FLAG);
+        prices.addView(now);
+        prices.addView(before);
+        priceRow.addView(prices, weight(1f));
+
+        TextView save = text("صرفه‌جویی " + PersianFormatter.formatToman(full - bundlePrice), 9.2f, COL_SUCCESS, true);
+        save.setPadding(dp(9), dp(5), dp(9), dp(5));
+        save.setBackground(roundedShape(COL_SUCCESS_SOFT, dp(9), SURF_SUCCESS_LINE, dp(1)));
+        priceRow.addView(save);
+        card.addView(priceRow);
+
+        card.addView(space(11));
+        card.addView(primaryButton("افزودن بسته به سبد", Luxury3DIconView.ICON_BAG, new Runnable() {
+            @Override public void run() {
+                Models.Product first = findProductBySku(skus[0]);
+                Models.Product second = findProductBySku(skus[1]);
+                if (first == null || second == null) return;
+                addToCart(first);
+                addToCart(second);
+                long discount = db.evaluateCouponDiscount("BUNDLE8", calculateCartSubtotal());
+                if (discount > 0) {
+                    appliedCouponCode = "BUNDLE8";
+                    appliedCouponValue = discount;
+                    toast("بسته به سبد اضافه شد و ۸٪ تخفیف بسته اعمال گردید.");
+                } else {
+                    toast("بسته به سبد اضافه شد.");
+                }
+                customerTab = TAB_BAG;
+                renderCurrentScreen();
+            }
+        }));
+        return card;
+    }
+
+    private View bundleLine(Models.Product p) {
+        LinearLayout line = row(Gravity.CENTER_VERTICAL);
+        line.setPadding(0, dp(3), 0, dp(3));
+        TextView dot = text("◆", 7f, COL_GOLD_DEEP, false);
+        dot.setPadding(0, 0, dp(7), 0);
+        line.addView(dot);
+        TextView name = text(p.nameFa, 10.6f, TEXT_BODY, false);
+        name.setMaxLines(1);
+        name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        line.addView(name, weight(1f));
+        line.addView(text(PersianFormatter.formatToman(p.salePrice), 9.8f, COL_TEXT_MUTED, false));
+        return line;
+    }
+
+    /** A quiet shelf of the last few products the customer opened. */
+    private View recentlyViewedStrip() {
+        List<Models.Product> recent = db.getRecentlyViewed(5, -1L);
+        if (recent.isEmpty()) return null;
+
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setOrientation(LinearLayout.VERTICAL);
+        wrap.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_SEARCH, "اخیراً دیده‌اید"));
+        wrap.addView(space(9));
+
+        android.widget.HorizontalScrollView scroll = new android.widget.HorizontalScrollView(this);
+        scroll.setHorizontalScrollBarEnabled(false);
+        scroll.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        LinearLayout shelf = new LinearLayout(this);
+        shelf.setOrientation(LinearLayout.HORIZONTAL);
+        shelf.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        for (final Models.Product p : recent) {
+            LinearLayout tile = new LinearLayout(this);
+            tile.setOrientation(LinearLayout.VERTICAL);
+            tile.setPadding(dp(7), dp(7), dp(7), dp(9));
+            tile.setBackground(roundedShape(COL_WHITE, dp(15), COL_BORDER, dp(1)));
+            tile.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    tap();
+                    showEditorialProductDialog(p);
+                }
+            });
+
+            FrameLayout thumb = new FrameLayout(this);
+            thumb.setLayoutParams(new LinearLayout.LayoutParams(dp(80), dp(96)));
+            thumb.setClipToOutline(true);
+            thumb.setBackground(roundedShape(COL_SILK_CREAM, dp(11), 0, 0));
+            ImageView img = new ImageView(this);
+            Bitmap bmp = loadProductBitmap(p);
+            if (bmp != null) img.setImageBitmap(bmp); else img.setImageResource(resolveProductImage(p.imageKey));
+            img.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            thumb.addView(img, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            tile.addView(thumb);
+
+            TextView name = text(p.nameFa, 8.6f, COL_TEXT_MUTED, false);
+            name.setMaxLines(2);
+            name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            name.setPadding(0, dp(6), 0, 0);
+            name.setWidth(dp(80));
+            tile.addView(name);
+
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.setMargins(0, 0, dp(9), 0);
+            shelf.addView(tile, lp);
+        }
+        scroll.addView(shelf);
+        wrap.addView(scroll);
+        return wrap;
+    }
+
+    /** How long a product realistically lasts, by SKU — the basis of the reorder nudge. */
+    private int supplyDays(Models.Product p) {
+        String sku = p.sku == null ? "" : p.sku;
+        if ("AS-GAT-150".equals(sku)) return 75;
+        if ("AS-GAT-050".equals(sku)) return 45;
+        if ("AS-LC-104".equals(sku)) return 120;
+        if ("AS-HF-300".equals(sku)) return 90;
+        if ("AS-ORD-240".equals(sku)) return 70;
+        if ("AS-MRG-500".equals(sku)) return 40;
+        return 60;
+    }
+
+    /** The customer's own cabinet: what they own, how far along it is, when to reorder. */
+    private View cabinetCard() {
+        List<Long> ids = db.getPurchasedProductIds();
+        if (ids.isEmpty()) return null;
+
+        LinearLayout card = whiteCard();
+        card.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_LEAF, "کابین زیبایی من"));
+        card.addView(space(4));
+        card.addView(text("بر پایهٔ خریدهای شما، زمان تقریبی اتمام هر کالا محاسبه می‌شود.",
+                9.4f, COL_TEXT_MUTED, false));
+
+        int shown = 0;
+        for (long id : ids) {
+            if (shown >= 3) break;
+            Models.Product p = db.getProductById(id);
+            if (p == null) continue;
+            long lastMs = db.getLastPurchaseMs(id);
+            if (lastMs <= 0L) continue;
+
+            int days = supplyDays(p);
+            long usedDays = Math.max(0L, (System.currentTimeMillis() - lastMs) / 86_400_000L);
+            int left = (int) Math.max(0L, days - usedDays);
+            float ratio = Math.min(1f, usedDays / (float) days);
+
+            card.addView(space(11));
+            View divider = new View(this);
+            divider.setBackgroundColor(SURF_DIVIDER);
+            card.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+            card.addView(space(10));
+
+            LinearLayout head = row(Gravity.CENTER_VERTICAL);
+            FrameLayout thumb = new FrameLayout(this);
+            thumb.setLayoutParams(new LinearLayout.LayoutParams(dp(38), dp(46)));
+            thumb.setClipToOutline(true);
+            thumb.setBackground(roundedShape(COL_SILK_CREAM, dp(9), 0, 0));
+            ImageView img = new ImageView(this);
+            Bitmap bmp = loadProductBitmap(p);
+            if (bmp != null) img.setImageBitmap(bmp); else img.setImageResource(resolveProductImage(p.imageKey));
+            img.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            thumb.addView(img, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            head.addView(thumb);
+
+            LinearLayout info = new LinearLayout(this);
+            info.setOrientation(LinearLayout.VERTICAL);
+            info.setPadding(dp(9), 0, dp(9), 0);
+            TextView name = text(p.nameFa, 10.6f, COL_TEXT_MAIN, true);
+            name.setMaxLines(1);
+            name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            info.addView(name);
+            TextView status = text(left <= 0 ? "به پایان رسیده — زمان سفارش مجدد"
+                            : (left <= 10 ? "حدود " + PersianFormatter.toPersianDigits(String.valueOf(left)) + " روز تا اتمام"
+                            : "حدود " + PersianFormatter.toPersianDigits(String.valueOf(left)) + " روز دیگر کافی است"),
+                    9.2f, left <= 10 ? COL_GOLD_DEEP : COL_TEXT_FAINT, left <= 10);
+            status.setPadding(0, dp(3), 0, dp(4));
+            info.addView(status);
+
+            LinearLayout track = new LinearLayout(this);
+            track.setOrientation(LinearLayout.HORIZONTAL);
+            track.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            track.setBackground(roundedShape(0x22C8A46B, dp(3), 0, 0));
+            View fill = new View(this);
+            fill.setBackground(roundedShape(left <= 10 ? COL_GOLD : 0xFF8FA98F, dp(3), 0, 0));
+            track.addView(fill, new LinearLayout.LayoutParams(0, dp(5), Math.max(0.02f, ratio)));
+            View rest = new View(this);
+            track.addView(rest, new LinearLayout.LayoutParams(0, dp(5), Math.max(0.0001f, 1f - ratio)));
+            info.addView(track);
+            head.addView(info, weight(1f));
+
+            if (left <= 20) {
+                TextView again = text("سفارش مجدد", 9f, COL_OBSIDIAN, true);
+                again.setGravity(Gravity.CENTER);
+                again.setPadding(dp(10), dp(7), dp(10), dp(7));
+                again.setBackground(roundedShape(COL_GOLD_LIGHT, dp(10), 0, 0));
+                final Models.Product target = p;
+                again.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        tap();
+                        addToCart(target);
+                    }
+                });
+                head.addView(again);
+            }
+            card.addView(head);
+            shown++;
+        }
+        return shown == 0 ? null : card;
+    }
+
+    /** Executive morning card: yesterday's money, the review queue and the stock alarm. */
+    private View morningBriefCard() {
+        long now = System.currentTimeMillis();
+        long yRevenue = db.getRevenueBetween(now - 86_400_000L, now);
+        int yOrders = db.getOrderCountBetween(now - 86_400_000L, now);
+        int pending = db.getPendingReviewsCount();
+        int lowStock = db.getDashboardSnapshot().lowStockCount;
+
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(roundedShape(COL_OBSIDIAN, dp(22), 0x45C8A46B, dp(1)));
+        card.setPadding(dp(17), dp(15), dp(17), dp(16));
+
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        FrameLayout medal = iconMedallion(Luxury3DIconView.ICON_SUN, 34, Luxury3DIconView.PEDESTAL_GOLD);
+        head.addView(medal);
+        LinearLayout titles = new LinearLayout(this);
+        titles.setOrientation(LinearLayout.VERTICAL);
+        titles.setPadding(dp(10), 0, dp(10), 0);
+        titles.addView(text("خلاصهٔ صبح مجموعه", 12.5f, 0xFFF6EFE3, true));
+        titles.addView(text("۲۴ ساعت گذشته در یک نگاه", 9.2f, 0xFFBEB6AA, false));
+        head.addView(titles, weight(1f));
+        card.addView(head);
+
+        card.addView(space(12));
+        LinearLayout stats = row(Gravity.CENTER_VERTICAL);
+        stats.addView(briefStat("فروش امروز", PersianFormatter.formatToman(yRevenue)), weight(1f));
+        stats.addView(briefStat("سفارش‌ها", PersianFormatter.toPersianDigits(String.valueOf(yOrders)) + " مورد"), weight(1f));
+        card.addView(stats);
+        card.addView(space(9));
+        LinearLayout stats2 = row(Gravity.CENTER_VERTICAL);
+        stats2.addView(briefStat("نظرات در انتظار", PersianFormatter.toPersianDigits(String.valueOf(pending)) + " نظر"), weight(1f));
+        stats2.addView(briefStat("کالای کم‌موجود", PersianFormatter.toPersianDigits(String.valueOf(lowStock)) + " کالا"), weight(1f));
+        card.addView(stats2);
+
+        card.addView(space(12));
+        TextView hint = text(briefReminderOn
+                        ? "یادآور روزانه ۹ صبح فعال است."
+                        : "برای دریافت یادآور روزانه ۹ صبح، این دکمه را لمس کنید.",
+                9.2f, 0xFFA79E90, false);
+        card.addView(hint);
+        card.addView(space(8));
+        card.addView(ghostGoldButton(briefReminderOn ? "خاموش کردن یادآور روزانه" : "فعال‌سازی یادآور ۹ صبح",
+                new Runnable() {
+            @Override public void run() { toggleDailyBrief(); }
+        }));
+        return card;
+    }
+
+    private View briefStat(String label, String value) {
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setPadding(0, dp(2), 0, dp(2));
+        col.addView(text(label, 8.8f, 0xFFA79E90, false));
+        TextView v = text(value, 12f, COL_GOLD_LIGHT, true);
+        v.setSingleLine(true);
+        v.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        col.addView(v);
+        return col;
     }
 
     private View buildRecommendationCard() {
@@ -1955,7 +2453,7 @@ public final class MainActivity extends Activity {
         line.setPadding(0, dp(3), 0, dp(3));
         TextView l = text(label, 10.5f, 0xFF8E877C, false);
         l.setSingleLine(true);
-        TextView v = text(value == null ? "—" : value, 11.5f, 0xFFF0E7D8, false);
+        TextView v = text(value == null ? "—" : value, 11.5f, SURF_SOFT, false);
         v.setGravity(Gravity.END);
         v.setSingleLine(true);
         v.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -2201,7 +2699,7 @@ public final class MainActivity extends Activity {
             summary.addView(space(6));
             summary.addView(text("با خرید " + PersianFormatter.formatToman(
                     AsiyeDatabaseHelper.FREE_SHIPPING_THRESHOLD - subtotal) + " بیشتر، ارسال رایگان می‌شود.",
-                    9.5f, 0xFF9A9186, false));
+                    9.5f, SURF_INACTIVE, false));
         }
         contentContainer.addView(summary);
         contentContainer.addView(space(14));
@@ -2319,7 +2817,7 @@ public final class MainActivity extends Activity {
         LinearLayout line = row(Gravity.CENTER_VERTICAL);
         line.setPadding(0, dp(4), 0, dp(4));
         TextView l = text(label, 11f, 0xFFA9A196, false);
-        TextView v = text(value, 11.5f, highlight ? 0xFFA9D9BB : 0xFFF0E7D8, highlight);
+        TextView v = text(value, 11.5f, highlight ? 0xFFA9D9BB : SURF_SOFT, highlight);
         line.addView(l, weight(1f));
         line.addView(v);
         return line;
@@ -2799,7 +3297,7 @@ public final class MainActivity extends Activity {
                 TextView invoice = text("اشتراک‌گذاری فاکتور", 9.6f, COL_GOLD_DEEP, true);
                 invoice.setGravity(Gravity.CENTER);
                 invoice.setPadding(dp(12), dp(7), dp(12), dp(7));
-                invoice.setBackground(roundedShape(0xFFFBF4E7, dp(10), 0xFFEAD9B8, dp(1)));
+                invoice.setBackground(roundedShape(SURF_CHIP, dp(10), SURF_CHIP_LINE, dp(1)));
                 invoice.setOnClickListener(new View.OnClickListener() {
                     @Override public void onClick(View v) { shareInvoice(o); }
                 });
@@ -2959,6 +3457,8 @@ public final class MainActivity extends Activity {
 
         contentContainer.addView(crestTitle(Luxury3DIconView.ICON_CHART, "گزارش عملکرد مجموعه",
                 "مدیریت سرکار خانم زنگنه • آمار زنده فروش و سفارش‌ها"));
+        contentContainer.addView(space(12));
+        contentContainer.addView(morningBriefCard());
         contentContainer.addView(space(14));
 
         LinearLayout kpiRow1 = row(Gravity.CENTER_VERTICAL);
@@ -3059,7 +3559,7 @@ public final class MainActivity extends Activity {
                     c.active ? COL_SUCCESS : COL_TEXT_FAINT, true);
             toggle.setPadding(dp(9), dp(4), dp(9), dp(4));
             toggle.setBackground(roundedShape(c.active ? COL_SUCCESS_SOFT : COL_IVORY_BG, dp(10),
-                    c.active ? 0xFFBFDCCB : COL_BORDER, dp(1)));
+                    c.active ? SURF_SUCCESS_LINE : COL_BORDER, dp(1)));
             final boolean target = !c.active;
             toggle.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
@@ -3208,8 +3708,8 @@ public final class MainActivity extends Activity {
         TextView count = text(PersianFormatter.toPersianDigits(String.valueOf(pending.size())), 9.5f,
                 pending.isEmpty() ? COL_SUCCESS : COL_GOLD_DEEP, true);
         count.setPadding(dp(9), dp(4), dp(9), dp(4));
-        count.setBackground(roundedShape(pending.isEmpty() ? 0xFFEAF4EE : 0xFFFBF4E7, dp(9),
-                pending.isEmpty() ? 0xFFBFDCCB : 0xFFEAD9B8, dp(1)));
+        count.setBackground(roundedShape(pending.isEmpty() ? COL_SUCCESS_SOFT : SURF_CHIP, dp(9),
+                pending.isEmpty() ? SURF_SUCCESS_LINE : SURF_CHIP_LINE, dp(1)));
         head.addView(count);
         card.addView(head);
 
@@ -3222,7 +3722,7 @@ public final class MainActivity extends Activity {
         for (final Models.ReviewRecord r : pending) {
             card.addView(space(10));
             View divider = new View(this);
-            divider.setBackgroundColor(0x1A000000);
+            divider.setBackgroundColor(SURF_DIVIDER);
             card.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
             card.addView(space(9));
 
@@ -3231,7 +3731,7 @@ public final class MainActivity extends Activity {
             metaRow.addView(starRow(r.rating, 9.5f));
             card.addView(metaRow);
 
-            TextView body = text(r.body, 10.2f, 0xFF4E4840, false);
+            TextView body = text(r.body, 10.2f, TEXT_BODY, false);
             body.setLineSpacing(dp(2), 1f);
             body.setPadding(0, dp(4), 0, dp(7));
             card.addView(body);
@@ -3243,6 +3743,7 @@ public final class MainActivity extends Activity {
             approve.setBackground(roundedShape(COL_GOLD_LIGHT, dp(10), 0, 0));
             approve.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
+                    tap();
                     db.setReviewApproved(r.id, true);
                     toast("نظر تأیید و در صفحهٔ کالا منتشر شد.");
                     renderCurrentScreen();
@@ -3350,7 +3851,7 @@ public final class MainActivity extends Activity {
         t.setGravity(Gravity.CENTER);
         t.setSingleLine(true);
         t.setPadding(dp(8), dp(4), dp(8), dp(4));
-        t.setBackground(roundedShape(bgColor, dp(10), 0x22000000, dp(1)));
+        t.setBackground(roundedShape(bgColor, dp(10), SURF_DIVIDER, dp(1)));
         return t;
     }
 
@@ -3669,7 +4170,7 @@ public final class MainActivity extends Activity {
         TextView charge = text("+۵ سریع", 9.5f, COL_GOLD_DEEP, true);
         charge.setGravity(Gravity.CENTER);
         charge.setPadding(dp(10), dp(8), dp(10), dp(8));
-        charge.setBackground(roundedShape(0xFFFBF4E7, dp(11), 0xFFE8D6B4, dp(1)));
+        charge.setBackground(roundedShape(SURF_CHIP, dp(11), SURF_GOLD_LINE, dp(1)));
         charge.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 db.adjustInventory(p.id, "in", 5, "شارژ سریع ۵ عددی مدیریت");
@@ -4100,6 +4601,7 @@ public final class MainActivity extends Activity {
     //  CART
     // ══════════════════════════════════════════════════════════════════════
     private void addToCart(Models.Product p) {
+        tap();
         if (p.stock <= 0) {
             toast("این کالا فعلاً موجود نیست؛ با مدیریت تماس بگیرید.");
             return;
@@ -4158,7 +4660,7 @@ public final class MainActivity extends Activity {
         head.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_CARD, "روش پرداخت و تسویه"), weight(1f));
         TextView official = text("۳ روش رسمی", 8.8f, COL_GOLD_DEEP, true);
         official.setPadding(dp(9), dp(4), dp(9), dp(4));
-        official.setBackground(roundedShape(0xFFFBF4E7, dp(9), 0xFFEAD9B8, dp(1)));
+        official.setBackground(roundedShape(SURF_CHIP, dp(9), SURF_CHIP_LINE, dp(1)));
         head.addView(official);
         card.addView(head);
         card.addView(space(10));
@@ -4257,7 +4759,7 @@ public final class MainActivity extends Activity {
         box.setGravity(Gravity.CENTER_VERTICAL);
         box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         box.setPadding(dp(12), dp(11), dp(12), dp(11));
-        box.setBackground(roundedShape(selected ? 0xFFFFFBF2 : COL_WHITE, dp(15),
+        box.setBackground(roundedShape(selected ? SURF_SOFT : COL_WHITE, dp(15),
                 selected ? COL_GOLD : COL_BORDER, dp(selected ? 2 : 1)));
 
         FrameLayout iconWrap = new FrameLayout(this);
@@ -4294,7 +4796,7 @@ public final class MainActivity extends Activity {
     private View radioMark(boolean selected) {
         FrameLayout ring = new FrameLayout(this);
         ring.setLayoutParams(new LinearLayout.LayoutParams(dp(20), dp(20)));
-        ring.setBackground(roundedShape(selected ? 0xFFFFFBF2 : COL_WHITE, dp(10),
+        ring.setBackground(roundedShape(selected ? SURF_SOFT : COL_WHITE, dp(10),
                 selected ? COL_GOLD : 0xFFDCD3C2, dp(selected ? 2 : 1)));
         if (selected) {
             View dot = new View(this);
@@ -4313,7 +4815,7 @@ public final class MainActivity extends Activity {
         pill.setGravity(Gravity.CENTER);
         pill.setSingleLine(true);
         pill.setPadding(dp(10), dp(5), dp(10), dp(5));
-        pill.setBackground(roundedShape((color & 0x00FFFFFF) | 0x1A000000, dp(11), (color & 0x00FFFFFF) | 0x33000000, dp(1)));
+        pill.setBackground(roundedShape((color & 0x00FFFFFF) | SURF_DIVIDER, dp(11), (color & 0x00FFFFFF) | 0x33000000, dp(1)));
         return pill;
     }
 
@@ -4321,7 +4823,7 @@ public final class MainActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(13), dp(11), dp(13), dp(11));
-        box.setBackground(roundedShape(selected ? 0xFFFFFBF2 : COL_IVORY_BG, dp(13),
+        box.setBackground(roundedShape(selected ? SURF_SOFT : COL_IVORY_BG, dp(13),
                 selected ? COL_GOLD : COL_BORDER, dp(selected ? 2 : 1)));
 
         LinearLayout top = row(Gravity.CENTER_VERTICAL);
@@ -4333,7 +4835,7 @@ public final class MainActivity extends Activity {
                 plan.zeroInterest ? COL_SUCCESS : COL_TEXT_MUTED, true);
         chip.setPadding(dp(8), dp(3), dp(8), dp(3));
         chip.setBackground(roundedShape(plan.zeroInterest ? COL_SUCCESS_SOFT : COL_WHITE, dp(9),
-                plan.zeroInterest ? 0xFFBFDCCB : COL_BORDER, dp(1)));
+                plan.zeroInterest ? SURF_SUCCESS_LINE : COL_BORDER, dp(1)));
         top.addView(chip);
         box.addView(top);
 
@@ -4398,7 +4900,7 @@ public final class MainActivity extends Activity {
             boolean selected = code.equals(selectedGateway);
             LinearLayout line = row(Gravity.CENTER_VERTICAL);
             line.setPadding(dp(11), dp(10), dp(11), dp(10));
-            line.setBackground(roundedShape(selected ? 0xFFFFFBF2 : COL_IVORY_BG, dp(12),
+            line.setBackground(roundedShape(selected ? SURF_SOFT : COL_IVORY_BG, dp(12),
                     selected ? COL_GOLD : COL_BORDER, dp(selected ? 2 : 1)));
 
             TextView radio = text(selected ? "●" : "○", 12f, selected ? COL_GOLD_DEEP : COL_TEXT_FAINT, true);
@@ -4457,6 +4959,59 @@ public final class MainActivity extends Activity {
 
         contentContainer.addView(crestTitle(Luxury3DIconView.ICON_SETTINGS, "تنظیمات فروشگاه",
                 "پرداخت آنلاین، فروش اقساطی و استودیوی هوش مصنوعی — همه در یک صفحه"));
+        contentContainer.addView(space(14));
+
+        // ── APPEARANCE (v6.4) ────────────────────────────────────────────
+        LinearLayout look = whiteCard();
+        look.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_SUN, "ظاهر و تجربهٔ برنامه"));
+        look.addView(space(9));
+
+        LinearLayout lookRow = row(Gravity.CENTER_VERTICAL);
+        LinearLayout lookText = new LinearLayout(this);
+        lookText.setOrientation(LinearLayout.VERTICAL);
+        lookText.addView(text("حالت شب ابسیدین", 11.5f, COL_TEXT_MAIN, true));
+        lookText.addView(text(darkMode
+                        ? "پس‌زمینهٔ مشکی مخملی با طلای ۲۴ عیار — مناسب شب"
+                        : "پس‌زمینهٔ عاجی روشن — حالت پیش‌فرض روز",
+                9.4f, COL_TEXT_MUTED, false));
+        lookRow.addView(lookText, weight(1f));
+
+        TextView lookBtn = text(darkMode ? "روشن" : "تیره", 10f, COL_OBSIDIAN, true);
+        lookBtn.setGravity(Gravity.CENTER);
+        lookBtn.setPadding(dp(16), dp(9), dp(16), dp(9));
+        lookBtn.setBackground(roundedShape(COL_GOLD_LIGHT, dp(12), 0, 0));
+        lookBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                tap();
+                toggleTheme();
+            }
+        });
+        lookRow.addView(lookBtn);
+        look.addView(lookRow);
+
+        look.addView(space(11));
+        LinearLayout lookRow2 = row(Gravity.CENTER_VERTICAL);
+        LinearLayout lookText2 = new LinearLayout(this);
+        lookText2.setOrientation(LinearLayout.VERTICAL);
+        lookText2.addView(text("یادآور صبحگاهی مدیریت", 11.5f, COL_TEXT_MAIN, true));
+        lookText2.addView(text("هر روز ۹ صبح: فروش، نظرات در انتظار و کالاهای کم‌موجود", 9.4f, COL_TEXT_MUTED, false));
+        lookRow2.addView(lookText2, weight(1f));
+        TextView lookBtn2 = text(briefReminderOn ? "خاموش" : "فعال", 10f,
+                briefReminderOn ? COL_DANGER : COL_OBSIDIAN, true);
+        lookBtn2.setGravity(Gravity.CENTER);
+        lookBtn2.setPadding(dp(16), dp(9), dp(16), dp(9));
+        lookBtn2.setBackground(roundedShape(briefReminderOn ? COL_IVORY_BG : COL_GOLD_LIGHT, dp(12),
+                briefReminderOn ? COL_BORDER : 0, dp(1)));
+        lookBtn2.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                tap();
+                toggleDailyBrief();
+            }
+        });
+        lookRow2.addView(lookBtn2);
+        look.addView(lookRow2);
+
+        contentContainer.addView(look);
         contentContainer.addView(space(14));
 
         // ── ONLINE PAYMENT ───────────────────────────────────────────────
@@ -4982,7 +5537,7 @@ public final class MainActivity extends Activity {
         card.addView(why);
         if (aiAnalysis.photoInsightFa != null && !aiAnalysis.photoInsightFa.isEmpty()) {
             card.addView(space(10));
-            card.addView(text(aiAnalysis.photoInsightFa, 9.4f, 0xFF9A9186, false));
+            card.addView(text(aiAnalysis.photoInsightFa, 9.4f, SURF_INACTIVE, false));
         }
         contentContainer.addView(card);
         contentContainer.addView(space(12));
@@ -5236,7 +5791,7 @@ public final class MainActivity extends Activity {
         head.addView(text(title, 10.5f, highlight ? COL_GOLD_DEEP : COL_TEXT_MUTED, true), weight(1f));
         TextView copy = text("کپی", 9f, COL_GOLD_DEEP, true);
         copy.setPadding(dp(8), dp(3), dp(8), dp(3));
-        copy.setBackground(roundedShape(0xFFFBF4E7, dp(9), 0xFFE8D6B4, dp(1)));
+        copy.setBackground(roundedShape(SURF_CHIP, dp(9), SURF_GOLD_LINE, dp(1)));
         copy.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 copyToClipboard(body);
@@ -5402,6 +5957,28 @@ public final class MainActivity extends Activity {
     // ══════════════════════════════════════════════════════════════════════
     private static String ltr(String value) {
         return "\u2066" + value + "\u2069";
+    }
+
+    /** v6.4 · a barely-there tactile tick on every decisive touch. */
+    private void tap() {
+        try {
+            getWindow().getDecorView().performHapticFeedback(
+                    android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+        } catch (Throwable ignored) { }
+    }
+
+    /** v6.4 · staggered editorial entrance: cards arrive, they never blink into place. */
+    private void reveal(View view, int index) {
+        if (view == null) return;
+        view.setAlpha(0f);
+        view.setTranslationY(dp(16));
+        view.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(430)
+                .setStartDelay(Math.min(index, 7) * 60L)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator(1.6f))
+                .start();
     }
 
     /** A standalone 3D medallion, sized in dp — used as a crest beside section titles. */
@@ -5663,7 +6240,7 @@ public final class MainActivity extends Activity {
         TextView t = text(label, 10.5f, COL_GOLD_DEEP, true);
         t.setGravity(Gravity.CENTER);
         t.setPadding(dp(12), dp(10), dp(12), dp(10));
-        t.setBackground(roundedShape(0xFFFBF4E7, dp(12), 0xFFE8D6B4, dp(1)));
+        t.setBackground(roundedShape(SURF_CHIP, dp(12), SURF_GOLD_LINE, dp(1)));
         t.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { action.run(); }
         });

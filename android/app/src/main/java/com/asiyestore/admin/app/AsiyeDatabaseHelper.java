@@ -19,7 +19,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public static final long STANDARD_SHIPPING_COST  = 65_000L;
 
     private static final String DB_NAME = "asiye_royal_v5.db";
-    private static final int DB_VERSION = 3;
+    private static final int DB_VERSION = 4;
 
     public AsiyeDatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -123,8 +123,17 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 ")");
 
         createReviewsTable(db);
+        createRecentViewsTable(db);
         seedSignatureCatalog(db);
         seedSignatureReviews(db);
+    }
+
+    /** v6.4 · a tiny, self-trimming trail so the boutique can greet returning customers. */
+    private void createRecentViewsTable(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS recent_views (" +
+                "product_id INTEGER PRIMARY KEY," +
+                "viewed_at INTEGER NOT NULL" +
+                ")");
     }
 
     private void createReviewsTable(SQLiteDatabase db) {
@@ -160,6 +169,16 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 3) {
             createReviewsTable(db);
             seedSignatureReviews(db);
+        }
+
+        // v6.2 → v6.4 : recently-viewed trail + a real epoch on orders for the beauty cabinet.
+        if (oldVersion < 4) {
+            createRecentViewsTable(db);
+            alterAdd(db, "orders", "created_at_ms", "INTEGER");
+            try {
+                db.execSQL("UPDATE orders SET created_at_ms = ? WHERE created_at_ms IS NULL",
+                        new Object[]{System.currentTimeMillis()});
+            } catch (Exception ignored) { }
         }
     }
 
@@ -291,6 +310,8 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         // VIP Coupons
         insertSeedCoupon(db, "ASIYE20", 20, 0, 500_000L, 600_000L);
         insertSeedCoupon(db, "VIPGOLD", 0, 250_000L, 1_500_000L, 250_000L);
+        // v6.4 · applied automatically when a signature routine bundle is added to the bag.
+        insertSeedCoupon(db, "BUNDLE8", 8, 0, 1_000_000L, 400_000L);
 
         // Order 1 (Shipped with postal tracking)
         ContentValues o1 = new ContentValues();
@@ -421,6 +442,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         cv.put("reason", reason);
         cv.put("actor", actor);
         cv.put("created_at_label", nowTimeLabel());
+        cv.put("created_at_ms", System.currentTimeMillis());
         db.insert("stock_movements", null, cv);
     }
 
@@ -904,6 +926,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             ord.put("status", "paid");
             ord.put("tracking_code", "");
             ord.put("created_at_label", nowTimeLabel());
+            ord.put("created_at_ms", System.currentTimeMillis());
 
             long orderId = db.insertOrThrow("orders", null, ord);
             for (Models.CartItem item : cart) {
@@ -985,6 +1008,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             ord.put("status", initialStatus == null ? "paid" : initialStatus);
             ord.put("tracking_code", "");
             ord.put("created_at_label", nowTimeLabel());
+            ord.put("created_at_ms", System.currentTimeMillis());
 
             long orderId = db.insertOrThrow("orders", null, ord);
             for (Models.CartItem item : cart) {
@@ -1294,6 +1318,85 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             if (c.moveToFirst()) return c.getLong(0);
         }
         return 0L;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.4 · RECENTLY VIEWED + BEAUTY CABINET
+    // ══════════════════════════════════════════════════════════════════════
+
+    /** Records a card opening; keeps the shelf to the latest 12 products. */
+    public void markProductViewed(long productId) {
+        if (productId <= 0) return;
+        try {
+            ContentValues cv = new ContentValues();
+            cv.put("product_id", productId);
+            cv.put("viewed_at", System.currentTimeMillis());
+            getWritableDatabase().insertWithOnConflict("recent_views", null, cv,
+                    SQLiteDatabase.CONFLICT_REPLACE);
+            getWritableDatabase().execSQL(
+                    "DELETE FROM recent_views WHERE product_id NOT IN " +
+                            "(SELECT product_id FROM recent_views ORDER BY viewed_at DESC LIMIT 12)");
+        } catch (Exception ignored) { }
+    }
+
+    /** Most recently opened products, newest first, excluding an optional one. */
+    public List<Models.Product> getRecentlyViewed(int limit, long excludeId) {
+        List<Models.Product> list = new ArrayList<>();
+        String sql = "SELECT p.* FROM recent_views r JOIN products p ON p.id = r.product_id " +
+                "WHERE p.published = 1 AND p.id <> ? ORDER BY r.viewed_at DESC LIMIT ?";
+        try (Cursor c = getReadableDatabase().rawQuery(sql,
+                new String[]{String.valueOf(excludeId), String.valueOf(limit)})) {
+            while (c.moveToNext()) list.add(readProduct(c));
+        }
+        return list;
+    }
+
+    /** Epoch of the latest delivered/paid order that contained this product (0 if never). */
+    public long getLastPurchaseMs(long productId) {
+        long ms = 0L;
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT MAX(COALESCE(o.created_at_ms, 0)) FROM order_items i " +
+                        "JOIN orders o ON o.id = i.order_id " +
+                        "WHERE i.product_id = ? AND o.status NOT IN ('cancelled','returned')",
+                new String[]{String.valueOf(productId)})) {
+            if (c.moveToFirst()) ms = c.getLong(0);
+        }
+        return ms;
+    }
+
+    /** Every product this customer has ever bought, newest purchase first. */
+    public List<Long> getPurchasedProductIds() {
+        List<Long> ids = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT i.product_id, MAX(COALESCE(o.created_at_ms,0)) AS last_ms FROM order_items i " +
+                        "JOIN orders o ON o.id = i.order_id " +
+                        "WHERE o.status NOT IN ('cancelled','returned') " +
+                        "GROUP BY i.product_id ORDER BY last_ms DESC LIMIT 8", null)) {
+            while (c.moveToNext()) ids.add(c.getLong(0));
+        }
+        return ids;
+    }
+
+    /** Revenue of a closed window — used by the executive morning brief. */
+    public long getRevenueBetween(long fromMs, long toMs) {
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COALESCE(SUM(total_amount),0) FROM orders " +
+                        "WHERE created_at_ms >= ? AND created_at_ms < ? " +
+                        "AND status NOT IN ('cancelled','returned')",
+                new String[]{String.valueOf(fromMs), String.valueOf(toMs)})) {
+            if (c.moveToFirst()) return c.getLong(0);
+        }
+        return 0L;
+    }
+
+    /** Count of orders created inside a closed window. */
+    public int getOrderCountBetween(long fromMs, long toMs) {
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COUNT(*) FROM orders WHERE created_at_ms >= ? AND created_at_ms < ?",
+                new String[]{String.valueOf(fromMs), String.valueOf(toMs)})) {
+            if (c.moveToFirst()) return c.getInt(0);
+        }
+        return 0;
     }
 
     public Models.DashboardSnapshot getDashboardSnapshot() {
