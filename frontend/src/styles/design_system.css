@@ -1701,48 +1701,46 @@ a:hover .lux-3d-svg {
     .account-grid { max-width: none; }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   v6.9 · PEARL ROSE — the maison's second daylight mood.
-   Same 24K thread, a warmer porcelain ground and a rose-bronze accent.
-   Applied to <html data-theme="pearl">.
-   ═══════════════════════════════════════════════════════════════════════ */
-html[data-theme="pearl"] {
-    --obsidian: #2A1A1B;
-    --obsidian-elevated: #35211F;
-    --obsidian-soft: #40282A;
-    --gold-24k: #C08A6A;
-    --gold-light: #EBC7B4;
-    --gold-deep: #9A6148;
-    --ivory-bg: #FDF6F2;
-    --ivory-card: #FFFDFC;
-    --silk-cream: #F7E7E0;
-    --text-primary: #2C1E1C;
-    --text-muted: #6B534E;
-    --border-hairline: rgba(192, 138, 106, 0.30);
-    --shadow-whisper: 0 14px 38px rgba(58, 26, 24, 0.07);
-    --shadow-luxe: 0 22px 56px rgba(58, 26, 24, 0.14);
+/* v6.9.1 · ROYAL COBALT — the maison's sapphire daylight.
+   Porcelain-blue ground, sapphire ink, platinum metalwork.
+   Applied to <html data-theme="cobalt">. */
+html[data-theme="cobalt"] {
+    --obsidian: #0A1836;
+    --obsidian-elevated: #14264F;
+    --obsidian-soft: #1B3060;
+    --gold-24k: #4A72C8;
+    --gold-light: #DCE7F8;
+    --gold-deep: #17356E;
+    --ivory-bg: #F2F6FD;
+    --ivory-card: #FFFFFF;
+    --silk-cream: #E3EAF7;
+    --text-primary: #0F1B32;
+    --text-muted: #47587A;
+    --border-hairline: rgba(58, 99, 184, 0.26);
+    --shadow-whisper: 0 14px 38px rgba(11, 24, 54, 0.07);
+    --shadow-luxe: 0 22px 56px rgba(11, 24, 54, 0.16);
 }
 
-html[data-theme="pearl"] body {
+html[data-theme="cobalt"] body {
     background-image:
-        radial-gradient(1200px 620px at 90% -10%, rgba(235, 199, 180, 0.35), transparent 62%),
-        radial-gradient(900px 500px at 5% 5%, rgba(192, 138, 106, 0.14), transparent 58%);
+        radial-gradient(1200px 620px at 88% -10%, rgba(169, 194, 228, 0.42), transparent 62%),
+        radial-gradient(900px 520px at 4% 6%, rgba(58, 99, 184, 0.12), transparent 58%);
 }
 
-html[data-theme="pearl"] .account-hub,
-html[data-theme="pearl"] .vip-card {
-    background: linear-gradient(160deg, #FFFCFA 0%, #F9EDE7 100%);
+html[data-theme="cobalt"] .account-hub,
+html[data-theme="cobalt"] .vip-card {
+    background: linear-gradient(160deg, #FFFFFF 0%, #ECF2FC 100%);
 }
 
-html[data-theme="pearl"] .brand-story {
-    background: linear-gradient(150deg, #35211F 0%, #21131A 100%);
+html[data-theme="cobalt"] .brand-story {
+    background: linear-gradient(150deg, #14264F 0%, #0A1836 100%);
 }
 
-html[data-theme="pearl"] .foil-divider span {
+html[data-theme="cobalt"] .foil-divider span {
     color: var(--gold-deep);
 }
 
-/* the theme switch — three small pearls beside the logo */
+/* the theme switch — three pearls beside the logo */
 .theme-switch {
     display: inline-flex;
     align-items: center;
@@ -1761,7 +1759,7 @@ html[data-theme="pearl"] .foil-divider span {
 }
 
 .theme-dot[data-mode="ivory"] { background: linear-gradient(140deg, #FAF8F4, #E7CC9B); }
-.theme-dot[data-mode="pearl"] { background: linear-gradient(140deg, #FDF6F2, #C08A6A); }
+.theme-dot[data-mode="cobalt"] { background: linear-gradient(140deg, #F2F6FD, #17356E); }
 .theme-dot[data-mode="night"] { background: linear-gradient(140deg, #2A1A1B, #0B0B0E); }
 
 .theme-dot:hover { transform: translateY(-1px) scale(1.06); }

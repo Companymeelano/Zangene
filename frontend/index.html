@@ -31,7 +31,7 @@
             <img src="../images/app_icon_dark.png" alt="ASIYE STORE" class="logo-img">
             <div class="theme-switch" role="group" aria-label="انتخاب پوسته">
                 <button class="theme-dot" data-mode="ivory" aria-label="روز عاجی" aria-pressed="true"></button>
-                <button class="theme-dot" data-mode="pearl" aria-label="مروارید رزین" aria-pressed="false"></button>
+                <button class="theme-dot" data-mode="cobalt" aria-label="لاجورد سلطنتی" aria-pressed="false"></button>
                 <button class="theme-dot" data-mode="night" aria-label="شب ابسیدین" aria-pressed="false"></button>
             </div>
             <div class="logo-text">
@@ -528,7 +528,7 @@
             <div style="font-size:0.8rem; color:#C4BBAE;">
                 طراحی رابط کاربری لوکس و معماری اکوسیستم وب و اپلیکیشن اختصاصی
             </div>
-            <div class="designer-version">V6.9 — PEARL HOUR EDITION</div>
+            <div class="designer-version">V6.9.1 — ROYAL COBALT EDITION</div>
         </div>
     </footer>
 
@@ -1172,7 +1172,8 @@
         // v6.9 · three daylight moods for the maison
         (function initThemeSwitch() {
             const root = document.documentElement;
-            const saved = localStorage.getItem('asiye_theme') || 'ivory';
+            let saved = localStorage.getItem('asiye_theme') || 'ivory';
+            if (saved === 'pearl') { saved = 'cobalt'; localStorage.setItem('asiye_theme', saved); }
             root.setAttribute('data-theme', saved);
 
             const paint = (mode) => {
