@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.9.3 · GILDED EMERALD";
+    private static final String APP_VERSION         = "V6.9.4 · ATELIER TYPE";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -100,7 +100,7 @@ public final class MainActivity extends Activity {
     private static int COL_WHITE         = 0xFFFFFFFF;
     private static int COL_TEXT_MAIN     = 0xFF1B1A18;
     private static int COL_TEXT_MUTED    = 0xFF5C554A;
-    private static int COL_TEXT_FAINT    = 0xFF857C6E;
+    private static int COL_TEXT_FAINT    = 0xFF786F61;
     private static int COL_BORDER        = 0xFFE6DDCC;
     private static int COL_SUCCESS       = 0xFF1E6B4B;
     private static int COL_SUCCESS_SOFT  = 0xFFEAF4EE;
@@ -312,7 +312,7 @@ public final class MainActivity extends Activity {
         word.setTextColor(COL_GOLD_LIGHT);
         word.setTextSize(TypedValue.COMPLEX_UNIT_SP, 21f);
         word.setTypeface(Typeface.SERIF, Typeface.BOLD);
-        word.setLetterSpacing(0.26f);
+        tracking(word, 0.26f);
         word.setGravity(Gravity.CENTER);
         column.addView(word);
 
@@ -323,7 +323,7 @@ public final class MainActivity extends Activity {
         kicker.setTextColor(TEXT_ON_DARK_FAINT);
         kicker.setTextSize(TypedValue.COMPLEX_UNIT_SP, 8.4f);
         kicker.setTypeface(Typeface.SERIF, Typeface.NORMAL);
-        kicker.setLetterSpacing(0.3f);
+        tracking(kicker, 0.3f);
         kicker.setGravity(Gravity.CENTER);
         column.addView(kicker);
 
@@ -406,7 +406,7 @@ public final class MainActivity extends Activity {
             COL_WHITE         = 0xFFFFFFFF;
             COL_TEXT_MAIN     = 0xFF10241B;
             COL_TEXT_MUTED    = 0xFF435C4D;
-            COL_TEXT_FAINT    = 0xFF7B8F82;
+            COL_TEXT_FAINT    = 0xFF6C8176;
             COL_BORDER        = 0xFFD7E5DA;
             COL_SUCCESS       = 0xFF14704E;
             COL_SUCCESS_SOFT  = 0xFFE7F5EE;
@@ -476,7 +476,7 @@ public final class MainActivity extends Activity {
             COL_WHITE         = 0xFFFFFFFF;
             COL_TEXT_MAIN     = 0xFF1B1A18;
             COL_TEXT_MUTED    = 0xFF5C554A;
-            COL_TEXT_FAINT    = 0xFF857C6E;
+            COL_TEXT_FAINT    = 0xFF786F61;
             COL_BORDER        = 0xFFE6DDCC;
             COL_SUCCESS       = 0xFF1E6B4B;
             COL_SUCCESS_SOFT  = 0xFFEAF4EE;
@@ -663,16 +663,21 @@ public final class MainActivity extends Activity {
         brand.setText("ASIYE STORE");
         brand.setTextColor(COL_GOLD_LIGHT);
         brand.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f);
-        brand.setTypeface(Typeface.SERIF, Typeface.BOLD);
-        brand.setLetterSpacing(0.14f);
+        brand.setTypeface(Typeface.SERIF, Typeface.BOLD);   // Latin wordmark: serif, never Vazirmatn
+        tracking(brand, 0.16f);
+        brand.setSingleLine(true);
+        brand.setEllipsize(TextUtils.TruncateAt.END);
         brand.setIncludeFontPadding(false);
 
         headerSubtitle = new TextView(this);
         headerSubtitle.setText("مدیریت مجموعه: سرکار خانم زنگنه");
+        headerSubtitle.setTypeface(houseTypeface(false));
         headerSubtitle.setTextColor(TEXT_ON_DARK_MUTED);
-        headerSubtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f);
+        headerSubtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.8f);
         headerSubtitle.setIncludeFontPadding(false);
-        headerSubtitle.setPadding(0, dp(3), 0, 0);
+        headerSubtitle.setSingleLine(true);
+        headerSubtitle.setEllipsize(TextUtils.TruncateAt.END);
+        headerSubtitle.setPadding(0, dp(4), 0, dp(2));
 
         titleCol.addView(brand);
         titleCol.addView(headerSubtitle);
@@ -930,8 +935,8 @@ public final class MainActivity extends Activity {
         tab.setPadding(0, dp(2), 0, 0);
         tab.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         tab.setBackground(selected
-                ? roundedShape(lineGold(0x14), dp(16), 0x00FFFFFF, 0)
-                : roundedShape(0x00000000, dp(16), 0x00FFFFFF, 0));
+                ? roundedShape(lineGold(0x1F), dp(16), lineGold(0x3D), dp(1))
+                : roundedShape(0x00000000, dp(16), 0x00000000, 0));
         tab.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { action.run(); }
         });
@@ -947,7 +952,7 @@ public final class MainActivity extends Activity {
             badgeView.setText(PersianFormatter.toPersianDigits(String.valueOf(badge)));
             badgeView.setTextColor(COL_OBSIDIAN);
             badgeView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9f);
-            badgeView.setTypeface(Typeface.DEFAULT_BOLD);
+            badgeView.setTypeface(houseTypeface(true));
             badgeView.setGravity(Gravity.CENTER);
             badgeView.setBackground(roundedShape(COL_GOLD_LIGHT, dp(20), COL_OBSIDIAN, dp(1)));
             FrameLayout.LayoutParams blp = new FrameLayout.LayoutParams(dp(16), dp(16));
@@ -958,13 +963,14 @@ public final class MainActivity extends Activity {
 
         TextView caption = new TextView(this);
         caption.setText(label);
-        caption.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9.2f);
+        caption.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9.8f);
         caption.setSingleLine(true);
         caption.setEllipsize(TextUtils.TruncateAt.END);
         caption.setGravity(Gravity.CENTER);
-        caption.setTextColor(selected ? COL_GOLD_LIGHT : TEXT_ON_DARK_FAINT);
-        caption.setPadding(0, dp(3), 0, 0);
-        if (selected) caption.setTypeface(Typeface.DEFAULT_BOLD);
+        caption.setTypeface(houseTypeface(selected));
+        caption.setTextColor(selected ? COL_GOLD_LIGHT : TEXT_ON_DARK_MUTED);
+        caption.setPadding(0, dp(4), 0, 0);
+        if (selected) caption.setTypeface(houseTypeface(true));
 
         TextView indicator = new TextView(this);
         indicator.setText(" ");
@@ -1065,7 +1071,7 @@ public final class MainActivity extends Activity {
         heroTag.setText("SIGNATURE COLLECTION");
         heroTag.setTextColor(COL_GOLD_LIGHT);
         heroTag.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9f);
-        heroTag.setLetterSpacing(0.22f);
+        tracking(heroTag, 0.22f);
         heroTag.setTypeface(Typeface.SERIF, Typeface.BOLD);
         heroTag.setPadding(dp(9), dp(4), dp(9), dp(4));
         heroTag.setBackground(roundedShape(scrim(0xB3), dp(9), lineGold(0x4D), dp(1)));
@@ -1093,7 +1099,7 @@ public final class MainActivity extends Activity {
         body.setPadding(dp(18), dp(16), dp(18), dp(18));
 
         TextView eyebrow = text("اصالت تضمین‌شده • کلکسیون تخصصی", 10.5f, ACCENT_ON_DARK, false);
-        eyebrow.setLetterSpacing(0.06f);
+        tracking(eyebrow, 0.06f);
 
         TextView title = text("زیبایی اصیل، با انتخاب‌های علمی و ماندگار", 17.5f, TEXT_ON_DARK, true);
         title.setLineSpacing(dp(4), 1f);
@@ -1197,7 +1203,7 @@ public final class MainActivity extends Activity {
             chip.setSingleLine(true);
             chip.setGravity(Gravity.CENTER);
             chip.setTextColor(active ? COL_GOLD_LIGHT : COL_TEXT_MUTED);
-            chip.setTypeface(active ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
+            chip.setTypeface(houseTypeface(active));
             chip.setPadding(dp(6), dp(9), dp(6), dp(9));
             chip.setBackground(active
                     ? deepCard(dp(18))
@@ -1301,7 +1307,7 @@ public final class MainActivity extends Activity {
         TextView badge = new TextView(this);
         badge.setText(PersianFormatter.toPersianDigits(String.valueOf(Math.max(0, p.discountPercent))) + "٪ تخفیف");
         badge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f);
-        badge.setTypeface(Typeface.DEFAULT_BOLD);
+        badge.setTypeface(houseTypeface(true));
         badge.setTextColor(COL_GOLD_LIGHT);
         badge.setGravity(Gravity.CENTER);
         badge.setPadding(dp(10), dp(5), dp(10), dp(5));
@@ -1342,7 +1348,7 @@ public final class MainActivity extends Activity {
         body.setPadding(dp(16), dp(14), dp(16), dp(16));
 
         TextView brandLine = text(p.nameEn, 9.5f, COL_GOLD_DEEP, false);
-        brandLine.setLetterSpacing(0.06f);
+        tracking(brandLine, 0.06f);
         brandLine.setSingleLine(true);
         brandLine.setEllipsize(android.text.TextUtils.TruncateAt.END);
 
@@ -1745,7 +1751,7 @@ public final class MainActivity extends Activity {
         TextView price = new TextView(this);
         price.setText(PersianFormatter.formatToman(p.salePrice));
         price.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f);
-        price.setTypeface(Typeface.DEFAULT_BOLD);
+        price.setTypeface(houseTypeface(true));
         price.setTextColor(COL_TEXT_MAIN);
         price.setSingleLine(true);
         price.setIncludeFontPadding(false);
@@ -1756,7 +1762,7 @@ public final class MainActivity extends Activity {
             TextView chip = new TextView(this);
             chip.setText(PersianFormatter.toPersianDigits(String.valueOf(p.discountPercent)) + "٪");
             chip.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9.5f);
-            chip.setTypeface(Typeface.DEFAULT_BOLD);
+            chip.setTypeface(houseTypeface(true));
             chip.setTextColor(COL_GOLD_DEEP);
             chip.setGravity(Gravity.CENTER);
             chip.setPadding(dp(7), dp(2), dp(7), dp(2));
@@ -1942,7 +1948,7 @@ public final class MainActivity extends Activity {
         wrap.setBackground(roundedShape(COL_IVORY_BG, dp(14), COL_BORDER, dp(1)));
         wrap.setPadding(dp(13), dp(11), dp(13), dp(11));
         TextView l = text(label, 9.5f, COL_GOLD_DEEP, false);
-        l.setLetterSpacing(0.05f);
+        tracking(l, 0.05f);
         TextView v = text(value == null ? "—" : value, 11.5f, COL_TEXT_MAIN, false);
         v.setLineSpacing(dp(3), 1f);
         v.setPadding(0, dp(4), 0, 0);
@@ -1988,7 +1994,7 @@ public final class MainActivity extends Activity {
 
         TextView line = text("ASIYE STORE  ·  طراحی: میلاد یعقوبی  ·  " + APP_VERSION, 8.8f, COL_TEXT_FAINT, false);
         line.setGravity(Gravity.CENTER);
-        line.setLetterSpacing(0.06f);
+        tracking(line, 0.06f);
         foot.addView(line);
         return foot;
     }
@@ -2035,7 +2041,7 @@ public final class MainActivity extends Activity {
             chip.setGravity(Gravity.CENTER);
             chip.setPadding(dp(4), dp(10), dp(4), dp(10));
             chip.setTextColor(active ? COL_OBSIDIAN : COL_GOLD_LIGHT);
-            chip.setTypeface(active ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
+            chip.setTypeface(houseTypeface(active));
             chip.setBackground(active
                     ? roundedShape(COL_GOLD_LIGHT, dp(14), COL_GOLD_LIGHT, dp(1))
                     : roundedShape(lineGold(0x1A), dp(14), lineGold(0x55), dp(1)));
@@ -2149,7 +2155,7 @@ public final class MainActivity extends Activity {
             TextView tick = new TextView(this);
             tick.setText("✓");
             tick.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-            tick.setTypeface(Typeface.DEFAULT_BOLD);
+            tick.setTypeface(houseTypeface(true));
             tick.setGravity(Gravity.CENTER);
             tick.setTextColor(COL_OBSIDIAN);
             tick.setBackground(roundedShape(0xFF7FD3A6, dp(20), 0, 0));
@@ -2655,9 +2661,9 @@ public final class MainActivity extends Activity {
         card.addView(actions);
 
         card.addView(space(11));
-        card.addView(resultDarkLine("در صف ارسال", PersianFormatter.toPersianDigits(String.valueOf(db.countSmsPending()))));
-        card.addView(resultDarkLine("ارسال‌شده امروز", PersianFormatter.toPersianDigits(String.valueOf(db.countSmsSentToday()))));
-        card.addView(resultDarkLine("ناموفق (نیازمند بررسی)", PersianFormatter.toPersianDigits(String.valueOf(db.countSmsFailed()))));
+        card.addView(resultLine("در صف ارسال", PersianFormatter.toPersianDigits(String.valueOf(db.countSmsPending()))));
+        card.addView(resultLine("ارسال‌شده امروز", PersianFormatter.toPersianDigits(String.valueOf(db.countSmsSentToday()))));
+        card.addView(resultLine("ناموفق (نیازمند بررسی)", PersianFormatter.toPersianDigits(String.valueOf(db.countSmsFailed()))));
 
         card.addView(space(11));
         card.addView(foilDivider(false));
@@ -2890,13 +2896,13 @@ public final class MainActivity extends Activity {
         card.addView(head);
 
         card.addView(space(10));
-        card.addView(resultDarkLine("اعضای باشگاه", PersianFormatter.toPersianDigits(
+        card.addView(resultLine("اعضای باشگاه", PersianFormatter.toPersianDigits(
                 String.valueOf(db.getAccountsCount()))));
-        card.addView(resultDarkLine("پیامک در صف", PersianFormatter.toPersianDigits(
+        card.addView(resultLine("پیامک در صف", PersianFormatter.toPersianDigits(
                 String.valueOf(db.countSmsPending()))));
-        card.addView(resultDarkLine("ارسال‌شده امروز", PersianFormatter.toPersianDigits(
+        card.addView(resultLine("ارسال‌شده امروز", PersianFormatter.toPersianDigits(
                 String.valueOf(db.countSmsSentToday()))));
-        card.addView(resultDarkLine("سفارش امروز", PersianFormatter.toPersianDigits(
+        card.addView(resultLine("سفارش امروز", PersianFormatter.toPersianDigits(
                 String.valueOf(db.getTodayOrdersCount()))));
 
         card.addView(space(10));
@@ -3199,8 +3205,12 @@ public final class MainActivity extends Activity {
         for (int i = 0; i < types.length; i++) {
             final String type = types[i];
             boolean active = skinFilter.equals(type);
-            TextView chip = luxeChip(type, active, 9.4f);
-            chip.setPadding(dp(2), dp(7), dp(2), dp(7));
+            TextView chip = text(type, 9.8f, active ? COL_GOLD_LIGHT : COL_TEXT_MUTED, active);
+            chip.setGravity(Gravity.CENTER);
+            chip.setSingleLine(true);
+            chip.setPadding(dp(2), dp(8), dp(2), dp(8));
+            chip.setBackground(active ? deepCard(dp(13)) : roundedShape(COL_WHITE, dp(13), COL_BORDER, dp(1)));
+            if (active) chip.setElevation(dp(1.4f));
             chip.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
                     if (!skinFilter.equals(type)) {
@@ -3510,14 +3520,14 @@ public final class MainActivity extends Activity {
             card.addView(space(7));
 
             LinearLayout methods = row(Gravity.CENTER_VERTICAL);
-            methods.addView(deliveryChip("پست پیشتاز VIP", !courierSelected, new Runnable() {
+            methods.addView(deliveryChip("پست پیشتاز VIP", "۲ تا ۴ روز کاری", !courierSelected, new Runnable() {
                 @Override public void run() {
                     courierSelected = false;
                     renderCurrentScreen();
                 }
             }), weight(1f));
             methods.addView(spaceH(7));
-            methods.addView(deliveryChip("پیک شهری · " + db.getSetting("courier_eta", "۲ تا ۴ ساعت"),
+            methods.addView(deliveryChip("پیک شهری", db.getSetting("courier_eta", "۲ تا ۴ ساعت"),
                     courierSelected, new Runnable() {
                 @Override public void run() {
                     courierSelected = true;
@@ -3570,7 +3580,7 @@ public final class MainActivity extends Activity {
         return "تحویل ۲ تا ۴ روز کاری";
     }
 
-    private View deliveryChip(String label, boolean selected, final Runnable action) {
+    private View deliveryChip(String label, String promise, boolean selected, final Runnable action) {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setGravity(Gravity.CENTER);
@@ -3585,9 +3595,20 @@ public final class MainActivity extends Activity {
         box.addView(icon);
         box.addView(space(5));
 
-        TextView t = text(label, 9.2f, selected ? COL_TEXT_MAIN : COL_TEXT_MUTED, selected);
+        TextView t = text(label, 10f, selected ? COL_TEXT_MAIN : COL_TEXT_MUTED, selected);
         t.setGravity(Gravity.CENTER);
+        t.setSingleLine(true);
+        t.setEllipsize(TextUtils.TruncateAt.END);
         box.addView(t);
+
+        if (promise != null && !promise.isEmpty()) {
+            TextView p = text(promise, 8.8f, selected ? COL_GOLD_DEEP : COL_TEXT_FAINT, false);
+            p.setGravity(Gravity.CENTER);
+            p.setSingleLine(true);
+            p.setEllipsize(TextUtils.TruncateAt.END);
+            p.setPadding(0, dp(2), 0, 0);
+            box.addView(p);
+        }
 
         box.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { action.run(); }
@@ -3800,10 +3821,10 @@ public final class MainActivity extends Activity {
                     return;
                 }
                 result.addView(space(6));
-                result.addView(resultDarkLine("وضعیت", PersianFormatter.statusLabelFa(o.status)));
-                result.addView(resultDarkLine("مبلغ", PersianFormatter.formatToman(o.totalAmount)));
+                result.addView(resultLine("وضعیت", PersianFormatter.statusLabelFa(o.status)));
+                result.addView(resultLine("مبلغ", PersianFormatter.formatToman(o.totalAmount)));
                 if (o.trackingCode != null && !o.trackingCode.isEmpty()) {
-                    result.addView(resultDarkLine("کد رهگیری", ltr(o.trackingCode)));
+                    result.addView(resultLine("کد رهگیری", ltr(o.trackingCode)));
                 }
             }
         }));
@@ -3877,7 +3898,7 @@ public final class MainActivity extends Activity {
                     for (int k = 0; k < chips.length; k++) {
                         boolean on = k == idx;
                         chips[k].setTextColor(on ? COL_OBSIDIAN : COL_TEXT_MUTED);
-                        chips[k].setTypeface(on ? Typeface.create(Typeface.DEFAULT, Typeface.BOLD) : Typeface.DEFAULT);
+                        chips[k].setTypeface(houseTypeface(on));
                         chips[k].setBackground(on ? roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0)
                                 : roundedShape(COL_IVORY_BG, dp(11), COL_BORDER, dp(1)));
                     }
@@ -4146,8 +4167,8 @@ public final class MainActivity extends Activity {
         });
         card.addView(toggle);
         card.addView(space(10));
-        card.addView(resultDarkLine("شمارهٔ دریافت", ltr(SmsGateway.maskedMobile(acc.mobile))));
-        card.addView(resultDarkLine("نوع پوست ثبت‌شده", acc.skinType));
+        card.addView(resultLine("شمارهٔ دریافت", ltr(SmsGateway.maskedMobile(acc.mobile))));
+        card.addView(resultLine("نوع پوست ثبت‌شده", acc.skinType));
         return card;
     }
 
@@ -4515,13 +4536,13 @@ public final class MainActivity extends Activity {
 
         frame.addView(iconMedallion(Luxury3DIconView.ICON_SHIELD, 52, Luxury3DIconView.PEDESTAL_GOLD));
         TextView k = text("CERTIFICATE OF AUTHENTICITY", 8.4f, ACCENT_ON_DARK, false);
-        k.setLetterSpacing(0.22f);
+        tracking(k, 0.22f);
         k.setPadding(0, dp(10), 0, dp(4));
         frame.addView(k);
 
         TextView brand = text("ASIYE STORE", 17f, TEXT_ON_DARK, true);
         brand.setTypeface(Typeface.SERIF, Typeface.BOLD);
-        brand.setLetterSpacing(0.12f);
+        tracking(brand, 0.12f);
         frame.addView(brand);
 
         TextView name = text(p.nameFa, 12.4f, COL_GOLD_LIGHT, true);
@@ -4958,7 +4979,7 @@ public final class MainActivity extends Activity {
         LinearLayout card = whiteCard();
 
         TextView eyebrow = text("پیشنهاد اختصاصی مدیریت", 9.5f, COL_GOLD_DEEP, false);
-        eyebrow.setLetterSpacing(0.08f);
+        tracking(eyebrow, 0.08f);
         card.addView(eyebrow);
         card.addView(space(8));
 
@@ -5010,7 +5031,7 @@ public final class MainActivity extends Activity {
         line.setPadding(0, dp(3), 0, dp(3));
         TextView l = text(label, 10.5f, COL_TEXT_MUTED, false);
         l.setSingleLine(true);
-        TextView v = text(value == null ? "—" : value, 11.5f, SURF_SOFT, false);
+        TextView v = text(value == null ? "—" : value, 11.5f, COL_TEXT_MAIN, true);
         v.setGravity(Gravity.END);
         v.setSingleLine(true);
         v.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -5080,7 +5101,7 @@ public final class MainActivity extends Activity {
         TextView applyBtn = new TextView(this);
         applyBtn.setText(appliedCouponValue > 0 ? "حذف" : "اعمال");
         applyBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
-        applyBtn.setTypeface(Typeface.DEFAULT_BOLD);
+        applyBtn.setTypeface(houseTypeface(true));
         applyBtn.setGravity(Gravity.CENTER);
         applyBtn.setTextColor(COL_OBSIDIAN);
         applyBtn.setPadding(dp(18), dp(13), dp(18), dp(13));
@@ -5210,7 +5231,7 @@ public final class MainActivity extends Activity {
         summary.setPadding(dp(18), dp(18), dp(18), dp(18));
 
         TextView summaryTitle = text("صورتحساب اختصاصی", 10f, ACCENT_ON_DARK, false);
-        summaryTitle.setLetterSpacing(0.14f);
+        tracking(summaryTitle, 0.14f);
         summary.addView(summaryTitle);
         summary.addView(space(10));
         summary.addView(summaryLine("جمع کالاها", PersianFormatter.formatToman(subtotal), false));
@@ -5356,7 +5377,7 @@ public final class MainActivity extends Activity {
             }
         }));
         TextView qty = text(PersianFormatter.toPersianDigits(String.valueOf(item.quantity)),
-                13f, COL_TEXT_MAIN, true);
+                13.5f, COL_TEXT_MAIN, true);
         qty.setGravity(Gravity.CENTER);
         qty.setMinWidth(dp(34));
         stepper.addView(qty);
@@ -5556,10 +5577,10 @@ public final class MainActivity extends Activity {
         receipt.setOrientation(LinearLayout.VERTICAL);
         receipt.setBackground(roundedShape(COL_IVORY_BG, dp(14), COL_BORDER, dp(1)));
         receipt.setPadding(dp(14), dp(12), dp(14), dp(12));
-        receipt.addView(resultDarkLine("شماره سفارش", ltr(order.orderNumber)));
-        receipt.addView(resultDarkLine("مبلغ قابل پرداخت", PersianFormatter.formatToman(order.totalAmount)));
-        receipt.addView(resultDarkLine("پذیرنده", merchant));
-        receipt.addView(resultDarkLine("درگاه", gatewayName));
+        receipt.addView(resultLine("شماره سفارش", ltr(order.orderNumber)));
+        receipt.addView(resultLine("مبلغ قابل پرداخت", PersianFormatter.formatToman(order.totalAmount)));
+        receipt.addView(resultLine("پذیرنده", merchant));
+        receipt.addView(resultLine("درگاه", gatewayName));
         box.addView(receipt);
         box.addView(space(6));
         TextView note = text("پس از تأیید، فاکتور رسمی و کد رهگیری برای شما و مدیریت مجموعه ارسال می‌شود.",
@@ -5640,10 +5661,10 @@ public final class MainActivity extends Activity {
         receipt.setOrientation(LinearLayout.VERTICAL);
         receipt.setBackground(roundedShape(COL_IVORY_BG, dp(16), COL_BORDER, dp(1)));
         receipt.setPadding(dp(14), dp(12), dp(14), dp(12));
-        receipt.addView(resultDarkLine("شماره سفارش", ltr(order.orderNumber)));
-        receipt.addView(resultDarkLine("مبلغ نهایی", PersianFormatter.formatToman(order.totalAmount)));
-        receipt.addView(resultDarkLine("گواهی اصالت", ltr(order.certificateCode)));
-        receipt.addView(resultDarkLine("روش پرداخت", PersianFormatter.paymentMethodLabelFa(order.paymentMethod)));
+        receipt.addView(resultLine("شماره سفارش", ltr(order.orderNumber)));
+        receipt.addView(resultLine("مبلغ نهایی", PersianFormatter.formatToman(order.totalAmount)));
+        receipt.addView(resultLine("گواهی اصالت", ltr(order.certificateCode)));
+        receipt.addView(resultLine("روش پرداخت", PersianFormatter.paymentMethodLabelFa(order.paymentMethod)));
         box.addView(receipt, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         box.addView(space(16));
@@ -5688,16 +5709,6 @@ public final class MainActivity extends Activity {
         return t;
     }
 
-    private View resultDarkLine(String label, String value) {
-        LinearLayout line = row(Gravity.CENTER_VERTICAL);
-        line.setPadding(0, dp(4), 0, dp(4));
-        TextView l = text(label, 10.5f, COL_TEXT_MUTED, false);
-        TextView v = text(value, 11.5f, COL_TEXT_MAIN, true);
-        v.setGravity(Gravity.END);
-        line.addView(l, weight(1f));
-        line.addView(v);
-        return line;
-    }
 
     // ══════════════════════════════════════════════════════════════════════
     //  4 · CONCIERGE & DESIGNER (مدیریت و ارتباط)
@@ -5720,7 +5731,7 @@ public final class MainActivity extends Activity {
         crownWrap.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_CROWN, false),
                 new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         TextView eyebrow = text("EXECUTIVE MANAGEMENT & VIP CONCIERGE", 8.5f, ACCENT_ON_DARK, false);
-        eyebrow.setLetterSpacing(0.14f);
+        tracking(eyebrow, 0.14f);
         eyebrow.setTypeface(Typeface.SERIF, Typeface.BOLD);
         eyebrow.setPadding(dp(8), 0, 0, 0);
         eyebrowRow.addView(crownWrap);
@@ -5750,7 +5761,7 @@ public final class MainActivity extends Activity {
         pillPhone.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15.5f);
         pillPhone.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         pillPhone.setTextColor(COL_GOLD_LIGHT);
-        pillPhone.setLetterSpacing(0.04f);
+        tracking(pillPhone, 0.04f);
         pillPhone.setIncludeFontPadding(false);
         pillPhone.setPadding(0, dp(2), 0, 0);
         pillText.addView(pillLabel);
@@ -5930,13 +5941,13 @@ public final class MainActivity extends Activity {
                 res.addView(orderTimeline(order.status));
                 res.addView(space(8));
                 for (Models.OrderItemRecord it : order.items) {
-                    res.addView(resultDarkLine(it.productName + "  •  " + PersianFormatter.toPersianDigits(String.valueOf(it.quantity)) + " عدد",
+                    res.addView(resultLine(it.productName + "  •  " + PersianFormatter.toPersianDigits(String.valueOf(it.quantity)) + " عدد",
                             PersianFormatter.formatToman(it.unitPrice * it.quantity)));
                 }
                 res.addView(space(4));
-                res.addView(resultDarkLine("مبلغ نهایی", PersianFormatter.formatToman(order.totalAmount)));
+                res.addView(resultLine("مبلغ نهایی", PersianFormatter.formatToman(order.totalAmount)));
                 if (order.trackingCode != null && !order.trackingCode.isEmpty()) {
-                    res.addView(resultDarkLine("کد رهگیری پست", ltr(order.trackingCode)));
+                    res.addView(resultLine("کد رهگیری پست", ltr(order.trackingCode)));
                 }
                 track.addView(res);
             }
@@ -5961,9 +5972,9 @@ public final class MainActivity extends Activity {
                 top.addView(statusPill(o.status));
                 card.addView(top);
                 card.addView(space(6));
-                card.addView(text(o.customerName + " • " + o.createdAtLabel, 10.5f, COL_TEXT_FAINT, false));
+                card.addView(text(o.customerName + " • " + o.createdAtLabel, 10.5f, COL_TEXT_MUTED, false));
                 card.addView(space(8));
-                card.addView(resultDarkLine("مبلغ کل", PersianFormatter.formatToman(o.totalAmount)));
+                card.addView(resultLine("مبلغ کل", PersianFormatter.formatToman(o.totalAmount)));
                 card.addView(space(6));
                 LinearLayout orderActions = row(Gravity.CENTER_VERTICAL);
                 orderActions.setPadding(0, dp(8), 0, 0);
@@ -6001,7 +6012,7 @@ public final class MainActivity extends Activity {
         contentContainer.addView(space(10));
         TextView copyright = text("© ۱۴۰۵ ASIYE STORE  ·  تمام حقوق محفوظ است", 8.8f, TEXT_ON_DARK_FAINT, false);
         copyright.setGravity(Gravity.CENTER);
-        copyright.setLetterSpacing(0.05f);
+        tracking(copyright, 0.05f);
         contentContainer.addView(copyright);
         contentContainer.addView(space(12));
     }
@@ -6065,7 +6076,7 @@ public final class MainActivity extends Activity {
         plaque.addView(space(14));
 
         TextView eyebrow = text("DESIGNED & ARCHITECTED BY", 8.5f, ACCENT_ON_DARK, false);
-        eyebrow.setLetterSpacing(0.3f);
+        tracking(eyebrow, 0.3f);
         eyebrow.setTypeface(Typeface.SERIF, Typeface.BOLD);
         eyebrow.setGravity(Gravity.CENTER);
         plaque.addView(eyebrow);
@@ -6073,7 +6084,7 @@ public final class MainActivity extends Activity {
 
         TextView name = text("MILAD YAGHOOBI", 22f, COL_GOLD_LIGHT, true);
         name.setTypeface(Typeface.SERIF, Typeface.BOLD);
-        name.setLetterSpacing(0.16f);
+        tracking(name, 0.16f);
         name.setGravity(Gravity.CENTER);
         plaque.addView(name);
         plaque.addView(space(10));
@@ -6091,7 +6102,7 @@ public final class MainActivity extends Activity {
         plaque.addView(space(12));
 
         TextView version = text(APP_VERSION, 8.5f, TEXT_ON_DARK_FAINT, false);
-        version.setLetterSpacing(0.2f);
+        tracking(version, 0.2f);
         version.setGravity(Gravity.CENTER);
         plaque.addView(version);
         return plaque;
@@ -6598,7 +6609,7 @@ public final class MainActivity extends Activity {
             chip.setGravity(Gravity.CENTER);
             chip.setPadding(dp(2), dp(9), dp(2), dp(9));
             chip.setTextColor(active ? COL_GOLD_LIGHT : COL_TEXT_MUTED);
-            chip.setTypeface(active ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
+            chip.setTypeface(houseTypeface(active));
             chip.setBackground(active
                     ? roundedShape(COL_OBSIDIAN, dp(14), COL_OBSIDIAN, dp(1))
                     : roundedShape(COL_WHITE, dp(14), COL_BORDER, dp(1)));
@@ -6645,14 +6656,14 @@ public final class MainActivity extends Activity {
 
         card.addView(space(10));
         for (Models.OrderItemRecord it : o.items) {
-            card.addView(resultDarkLine(it.productName,
+            card.addView(resultLine(it.productName,
                     PersianFormatter.toPersianDigits(String.valueOf(it.quantity)) + " عدد"));
         }
         card.addView(space(6));
-        card.addView(resultDarkLine("مبلغ کل", PersianFormatter.formatToman(o.totalAmount)));
-        card.addView(resultDarkLine("تحویل", o.shippingMethod));
+        card.addView(resultLine("مبلغ کل", PersianFormatter.formatToman(o.totalAmount)));
+        card.addView(resultLine("تحویل", o.shippingMethod));
         if (o.trackingCode != null && !o.trackingCode.isEmpty()) {
-            card.addView(resultDarkLine("کد رهگیری", ltr(o.trackingCode)));
+            card.addView(resultLine("کد رهگیری", ltr(o.trackingCode)));
         }
         card.addView(space(10));
 
@@ -7553,11 +7564,13 @@ public final class MainActivity extends Activity {
     /** On-palette status pill: soft tinted bed + saturated label (no purple/blue). */
     private TextView statusPill(String status) {
         int color = PersianFormatter.statusColor(status);
-        TextView pill = text(PersianFormatter.statusLabelFa(status), 9.3f, color, true);
+        TextView pill = text(PersianFormatter.statusLabelFa(status), 9.6f, color, true);
         pill.setGravity(Gravity.CENTER);
         pill.setSingleLine(true);
-        pill.setPadding(dp(10), dp(5), dp(10), dp(5));
-        pill.setBackground(roundedShape((color & 0x00FFFFFF) | SURF_DIVIDER, dp(11), (color & 0x00FFFFFF) | 0x33000000, dp(1)));
+        pill.setEllipsize(TextUtils.TruncateAt.END);
+        pill.setPadding(dp(11), dp(5), dp(11), dp(5));
+        pill.setBackground(roundedShape((color & 0x00FFFFFF) | 0x14, dp(11),
+                (color & 0x00FFFFFF) | 0x3D, dp(1)));
         return pill;
     }
 
@@ -7679,7 +7692,7 @@ public final class MainActivity extends Activity {
         }
 
         card.addView(space(4));
-        card.addView(resultDarkLine("مبلغ قابل پرداخت", PersianFormatter.formatToman(payable)));
+        card.addView(resultLine("مبلغ قابل پرداخت", PersianFormatter.formatToman(payable)));
         if (db.getSettingBool("pay_card_to_card", true)) {
             card.addView(space(8));
             LinearLayout c2c = new LinearLayout(this);
@@ -7813,7 +7826,7 @@ public final class MainActivity extends Activity {
         courier.addView(space(9));
         courier.addView(settingsToggle("gift_cards_enabled", "فعال بودن کارت هدیه"));
         courier.addView(space(9));
-        courier.addView(resultDarkLine("اعتبار فعال کارت‌ها", PersianFormatter.formatToman(db.totalGiftLiability())));
+        courier.addView(resultLine("اعتبار فعال کارت‌ها", PersianFormatter.formatToman(db.totalGiftLiability())));
         courier.addView(space(8));
         courier.addView(smallGoldAction("فهرست کارت‌های هدیه", Luxury3DIconView.ICON_GIFT, new Runnable() {
             @Override public void run() { showGiftCardsList(); }
@@ -8537,7 +8550,7 @@ public final class MainActivity extends Activity {
         TextView nameEnView = text(d.nameEn, 9.5f, COL_GOLD_DEEP, false);
         nameEnView.setSingleLine(true);
         nameEnView.setEllipsize(TextUtils.TruncateAt.END);
-        nameEnView.setLetterSpacing(0.04f);
+        tracking(nameEnView, 0.04f);
         card.addView(nameEnView);
         card.addView(space(10));
         card.addView(outlineDarkButton(aiStudioPath.isEmpty() ? "ساخت تصویر استودیویی اختصاصی" : "بازسازی تصویر استودیویی",
@@ -8852,7 +8865,7 @@ public final class MainActivity extends Activity {
             k.setTextColor(COL_GOLD_DEEP);
             k.setTextSize(TypedValue.COMPLEX_UNIT_SP, 8.2f);
             k.setTypeface(Typeface.SERIF, Typeface.BOLD);
-            k.setLetterSpacing(0.24f);
+            tracking(k, 0.24f);
             k.setIncludeFontPadding(false);
             k.setPadding(0, 0, 0, dp(3));
             texts.addView(k);
@@ -8860,9 +8873,9 @@ public final class MainActivity extends Activity {
 
         TextView t = text(title, 18.5f, COL_TEXT_MAIN, true);
         t.setLineSpacing(dp(2), 1f);
-        TextView s = text(subtitle, 10.4f, COL_TEXT_MUTED, false);
+        TextView s = text(subtitle, 10.6f, COL_TEXT_MUTED, false);
         s.setLineSpacing(dp(3), 1f);
-        s.setPadding(0, dp(4), 0, 0);
+        s.setPadding(0, dp(5), 0, 0);
 
         texts.addView(t);
         texts.addView(s);
@@ -8929,19 +8942,68 @@ public final class MainActivity extends Activity {
 
     private TextView text(String value, float sizeSp, int color, boolean bold) {
         TextView t = new TextView(this);
-        t.setText(value == null ? "" : value);
+        String v = value == null ? "" : value;
+        t.setText(v);
+        // Persian needs a little more room than Latin at the same nominal size.
+        if (hasPersian(v) && sizeSp < 9.6f) sizeSp = 9.6f;
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp);
         t.setTextColor(color);
-        if (bold) t.setTypeface(Typeface.DEFAULT_BOLD);
+        t.setTypeface(houseTypeface(bold));
+        if (hasPersian(v)) t.setLineSpacing(dp(2), 1f);
         return t;
+    }
+
+    // ── v6.9.4 · the house typeface. Vazirmatn is bundled in assets/fonts, so the
+    // Persian text renders identically on every Android version, with real joins.
+    private static Typeface TF_BODY;
+    private static Typeface TF_BOLD;
+    private static Typeface TF_MEDIUM;
+
+    private void initTypefaces() {
+        if (TF_BODY != null) return;
+        try {
+            TF_BODY   = Typeface.createFromAsset(getAssets(), "fonts/Vazirmatn-Regular.ttf");
+            TF_MEDIUM = Typeface.createFromAsset(getAssets(), "fonts/Vazirmatn-SemiBold.ttf");
+            TF_BOLD   = Typeface.createFromAsset(getAssets(), "fonts/Vazirmatn-Bold.ttf");
+        } catch (Throwable t) {
+            TF_BODY = Typeface.DEFAULT;
+            TF_MEDIUM = Typeface.DEFAULT_BOLD;
+            TF_BOLD = Typeface.DEFAULT_BOLD;
+        }
+    }
+
+    /** The Persian face, with the weight the label deserves. */
+    private Typeface houseTypeface(boolean bold) {
+        initTypefaces();
+        return bold ? TF_BOLD : TF_BODY;
+    }
+
+    /** True when the string carries Persian/Arabic letters — they never take tracking. */
+    private boolean hasPersian(String v) {
+        if (v == null) return false;
+        for (int i = 0; i < v.length(); i++) {
+            char c = v.charAt(i);
+            if ((c >= 0x0600 && c <= 0x06FF) || (c >= 0xFB50 && c <= 0xFEFF)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Latin wordmarks breathe with letter-spacing; Persian must never receive it —
+     * tracking breaks the joins and looks cheap. Applied to every label in the app.
+     */
+    private void tracking(TextView t, float value) {
+        CharSequence cs = t.getText();
+        if (hasPersian(cs == null ? "" : cs.toString())) return;
+        tracking(t, value);
     }
 
     private LinearLayout whiteCard() {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackground(porcelainCard(dp(20)));
-        card.setPadding(dp(16), dp(16), dp(16), dp(16));
-        card.setElevation(dp(1.6f));
+        card.setBackground(porcelainCard(dp(22)));
+        card.setPadding(dp(16), dp(17), dp(16), dp(17));
+        card.setElevation(dp(1.4f));
         return card;
     }
 
@@ -9173,6 +9235,7 @@ public final class MainActivity extends Activity {
         input.setLayoutParams(new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         input.setSingleLine(true);
+        input.setTypeface(houseTypeface(false));
         input.setGravity(Gravity.CENTER_VERTICAL | Gravity.RIGHT);
         if (ltrText) {
             input.setTextDirection(View.TEXT_DIRECTION_LTR);
