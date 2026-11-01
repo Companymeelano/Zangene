@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.9.4 · ATELIER TYPE";
+    private static final String APP_VERSION         = "V6.9.5 · STARTUP FIX";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -8993,9 +8993,12 @@ public final class MainActivity extends Activity {
      * tracking breaks the joins and looks cheap. Applied to every label in the app.
      */
     private void tracking(TextView t, float value) {
+        if (t == null) return;
         CharSequence cs = t.getText();
         if (hasPersian(cs == null ? "" : cs.toString())) return;
-        tracking(t, value);
+        // v6.9.5 · this was calling itself — a fatal StackOverflowError on the first
+        // Latin wordmark. It must apply the spacing, never recurse.
+        t.setLetterSpacing(value);
     }
 
     private LinearLayout whiteCard() {
