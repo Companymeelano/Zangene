@@ -93,6 +93,8 @@ public final class Luxury3DIconView extends View {
 
     /** v6.3 — a slow 24K light sweep that makes the crest feel like polished bullion. */
     private final Paint sweepPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint facetPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint keylinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private ValueAnimator sweepAnim;
     private float sweepPhase;
     private boolean sweepEnabled;
@@ -108,6 +110,7 @@ public final class Luxury3DIconView extends View {
         glyphStroke.setStrokeCap(Paint.Cap.ROUND);
         glyphStroke.setStrokeJoin(Paint.Join.ROUND);
         glyphFill.setStyle(Paint.Style.FILL);
+        keylinePaint.setStyle(Paint.Style.STROKE);
     }
 
     public Luxury3DIconView(Context context, int iconType, int pedestalStyle) {
@@ -121,6 +124,7 @@ public final class Luxury3DIconView extends View {
         glyphStroke.setStrokeCap(Paint.Cap.ROUND);
         glyphStroke.setStrokeJoin(Paint.Join.ROUND);
         glyphFill.setStyle(Paint.Style.FILL);
+        keylinePaint.setStyle(Paint.Style.STROKE);
     }
 
     public void setIconState(int iconType, boolean goldPedestal) {
@@ -298,6 +302,25 @@ public final class Luxury3DIconView extends View {
         glyphStroke.setStrokeWidth(Math.max(dp(1.6f), s * 0.046f));
 
         drawVectorGlyph(canvas, w, h, s);
+
+        // 6b. A cut-jewel facet on the lower edge — the small tell of a real polished stone.
+        if (pedestalStyle == PEDESTAL_GOLD) {
+            facetPaint.setShader(new LinearGradient(box.left, box.bottom - s * 0.34f,
+                    box.right, box.bottom,
+                    new int[]{0x00FFFFFF, 0x40FFF3D2, 0x00FFF6DF}, null, Shader.TileMode.CLAMP));
+            Path facet = new Path();
+            facet.moveTo(box.left + radius * 0.9f, box.bottom - s * 0.02f);
+            facet.lineTo(box.right - radius * 0.35f, box.bottom - s * 0.02f);
+            facet.lineTo(box.right - s * 0.06f, box.bottom - s * 0.17f);
+            facet.close();
+            canvas.drawPath(facet, facetPaint);
+        }
+
+        // 6c. A hairline keyline just outside the bezel keeps the mark crisp on porcelain.
+        keylinePaint.setColor(pedestalStyle == PEDESTAL_IVORY ? 0x12000000 : 0x22000000);
+        keylinePaint.setStrokeWidth(Math.max(dp(0.8f), s * 0.012f));
+        canvas.drawRoundRect(new RectF(box.left - dp(0.6f), box.top - dp(0.6f),
+                box.right + dp(0.6f), box.bottom + dp(0.6f)), radius + dp(0.6f), radius + dp(0.6f), keylinePaint);
 
         // 7. 24K travelling light sweep (opt-in, hero crests only)
         if (sweepEnabled) {

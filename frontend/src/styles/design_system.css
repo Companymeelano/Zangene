@@ -1707,15 +1707,15 @@ html[data-theme="emerald"] {
     --obsidian: #08251A;
     --obsidian-elevated: #10382A;
     --obsidian-soft: #14332A;
-    --gold-24k: #2E8A66;
-    --gold-light: #EAF4EE;
+    --gold-24k: #B08748;
+    --gold-light: #EFE3CB;
     --gold-deep: #0B4832;
     --ivory-bg: #F3F8F4;
     --ivory-card: #FFFFFF;
     --silk-cream: #E4EFE7;
     --text-primary: #10241B;
     --text-muted: #435C4D;
-    --border-hairline: rgba(30, 122, 87, 0.24);
+    --border-hairline: rgba(176, 135, 72, 0.26);
     --shadow-whisper: 0 14px 38px rgba(8, 37, 26, 0.06);
     --shadow-luxe: 0 22px 56px rgba(8, 37, 26, 0.14);
 }
