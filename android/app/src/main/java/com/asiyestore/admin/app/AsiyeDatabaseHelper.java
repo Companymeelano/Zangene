@@ -129,8 +129,32 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         createAddressesTable(db);
         createAccountsTable(db);
         createSmsTables(db);
+        createGiftCardsTable(db);
         seedSignatureCatalog(db);
         seedSignatureReviews(db);
+    }
+
+    /** v6.9 · gift cards — the maison's own currency of affection. */
+    private void createGiftCardsTable(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS gift_cards (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "code TEXT UNIQUE NOT NULL," +
+                "amount INTEGER NOT NULL," +
+                "remaining INTEGER NOT NULL," +
+                "buyer_name TEXT," +
+                "buyer_mobile TEXT," +
+                "recipient_name TEXT," +
+                "recipient_mobile TEXT," +
+                "message TEXT," +
+                "status TEXT NOT NULL DEFAULT 'active'," +
+                "created_at_ms INTEGER NOT NULL DEFAULT 0," +
+                "redeemed_at_ms INTEGER NOT NULL DEFAULT 0" +
+                ")");
+        insertSettingIfMissing(db, "courier_enabled", "1");
+        insertSettingIfMissing(db, "courier_fee", "95000");
+        insertSettingIfMissing(db, "courier_cities", "تهران، شیراز، اصفهان، مشهد، تبریز");
+        insertSettingIfMissing(db, "courier_eta", "۲ تا ۴ ساعت");
+        insertSettingIfMissing(db, "gift_cards_enabled", "1");
     }
 
     /** v6.8 · the maison's own customer accounts — mobile is the identity. */
@@ -349,6 +373,170 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.9 · GIFT CARDS · VIP TIERS · CITY COURIER
+    // ══════════════════════════════════════════════════════════════════════
+
+    public static final class GiftCard {
+        public long id;
+        public String code = "";
+        public long amount;
+        public long remaining;
+        public String buyerName = "";
+        public String recipientName = "";
+        public String message = "";
+        public String status = "active";
+        public long createdAtMs;
+    }
+
+    /** Creates a card with a readable AS-GIFT-XXXX code. */
+    public GiftCard createGiftCard(long amount, String buyerName, String buyerMobile,
+                                   String recipientName, String recipientMobile, String message) {
+        GiftCard card = new GiftCard();
+        card.code = "AS-GIFT-" + (1000 + new Random().nextInt(9000));
+        card.amount = Math.max(100_000L, amount);
+        card.remaining = card.amount;
+        card.buyerName = buyerName == null ? "" : buyerName;
+        card.recipientName = recipientName == null ? "" : recipientName;
+        card.message = message == null ? "" : message;
+
+        ContentValues cv = new ContentValues();
+        cv.put("code", card.code);
+        cv.put("amount", card.amount);
+        cv.put("remaining", card.remaining);
+        cv.put("buyer_name", card.buyerName);
+        cv.put("buyer_mobile", SmsGateway.normalizeMobile(buyerMobile));
+        cv.put("recipient_name", card.recipientName);
+        cv.put("recipient_mobile", SmsGateway.normalizeMobile(recipientMobile));
+        cv.put("message", card.message);
+        cv.put("status", "active");
+        cv.put("created_at_ms", System.currentTimeMillis());
+        cv.put("redeemed_at_ms", 0);
+        card.id = getWritableDatabase().insert("gift_cards", null, cv);
+        return card;
+    }
+
+    public GiftCard getGiftCard(String code) {
+        String clean = PersianFormatter.toAsciiDigits(code == null ? "" : code)
+                .replace(" ", "").toUpperCase(Locale.US);
+        if (clean.isEmpty()) return null;
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT * FROM gift_cards WHERE UPPER(code) = ?", new String[]{ clean })) {
+            if (!c.moveToFirst()) return null;
+            GiftCard g = new GiftCard();
+            g.id = c.getLong(c.getColumnIndexOrThrow("id"));
+            g.code = c.getString(c.getColumnIndexOrThrow("code"));
+            g.amount = c.getLong(c.getColumnIndexOrThrow("amount"));
+            g.remaining = c.getLong(c.getColumnIndexOrThrow("remaining"));
+            g.buyerName = c.getString(c.getColumnIndexOrThrow("buyer_name"));
+            g.recipientName = c.getString(c.getColumnIndexOrThrow("recipient_name"));
+            g.message = c.getString(c.getColumnIndexOrThrow("message"));
+            g.status = c.getString(c.getColumnIndexOrThrow("status"));
+            g.createdAtMs = c.getLong(c.getColumnIndexOrThrow("created_at_ms"));
+            return g;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Consumes up to `wanted` from the card and returns what was actually available. */
+    public long redeemGiftCard(String code, long wanted) {
+        GiftCard g = getGiftCard(code);
+        if (g == null || !"active".equals(g.status) || g.remaining <= 0 || wanted <= 0) return 0L;
+        long applied = Math.min(g.remaining, wanted);
+        ContentValues cv = new ContentValues();
+        cv.put("remaining", g.remaining - applied);
+        cv.put("status", g.remaining - applied <= 0 ? "used" : "active");
+        cv.put("redeemed_at_ms", System.currentTimeMillis());
+        getWritableDatabase().update("gift_cards", cv, "id = ?", new String[]{ String.valueOf(g.id) });
+        return applied;
+    }
+
+    public List<GiftCard> getGiftCards(int limit) {
+        List<GiftCard> out = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT * FROM gift_cards ORDER BY id DESC LIMIT ?",
+                new String[]{ String.valueOf(limit) })) {
+            while (c.moveToNext()) {
+                GiftCard g = new GiftCard();
+                g.id = c.getLong(c.getColumnIndexOrThrow("id"));
+                g.code = c.getString(c.getColumnIndexOrThrow("code"));
+                g.amount = c.getLong(c.getColumnIndexOrThrow("amount"));
+                g.remaining = c.getLong(c.getColumnIndexOrThrow("remaining"));
+                g.buyerName = c.getString(c.getColumnIndexOrThrow("buyer_name"));
+                g.recipientName = c.getString(c.getColumnIndexOrThrow("recipient_name"));
+                g.status = c.getString(c.getColumnIndexOrThrow("status"));
+                g.createdAtMs = c.getLong(c.getColumnIndexOrThrow("created_at_ms"));
+                out.add(g);
+            }
+        } catch (Exception ignored) { }
+        return out;
+    }
+
+    public long totalGiftLiability() {
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COALESCE(SUM(remaining),0) FROM gift_cards WHERE status = 'active'", null)) {
+            return c.moveToFirst() ? c.getLong(0) : 0L;
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    // ── VIP tiers ─────────────────────────────────────────────────────────
+    /** Lifetime spend of one mobile, computed from the real order book. */
+    public long getLifetimeSpendFor(String mobile) {
+        String m = SmsGateway.normalizeMobile(mobile);
+        if (m.isEmpty()) return 0L;
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT COALESCE(SUM(total_amount),0) FROM orders WHERE customer_mobile = ?",
+                new String[]{ m })) {
+            return c.moveToFirst() ? c.getLong(0) : 0L;
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    public int getTierPercent(String mobile) {
+        long spend = getLifetimeSpendFor(mobile);
+        if (spend >= 15_000_000L) return 8;
+        if (spend >= 5_000_000L) return 5;
+        if (spend > 0) return 3;
+        return 0;
+    }
+
+    public String getTierName(String mobile) {
+        long spend = getLifetimeSpendFor(mobile);
+        if (spend >= 15_000_000L) return "الماس";
+        if (spend >= 5_000_000L) return "طلایی";
+        if (spend > 0) return "نقره‌ای";
+        return "تازه";
+    }
+
+    // ── City courier ──────────────────────────────────────────────────────
+    public boolean isCourierEnabled() {
+        return getSettingBool("courier_enabled", true);
+    }
+
+    public long getCourierFee() {
+        try {
+            long v = Long.parseLong(getSetting("courier_fee", "").trim());
+            return v >= 0 ? v : 95_000L;
+        } catch (Exception e) {
+            return 95_000L;
+        }
+    }
+
+    public String[] getCourierCities() {
+        String raw = getSetting("courier_cities", "تهران، شیراز، اصفهان، مشهد");
+        String[] parts = raw.split("[،,]");
+        List<String> out = new ArrayList<>();
+        for (String p : parts) {
+            String city = p.trim();
+            if (!city.isEmpty()) out.add(city);
+        }
+        return out.toArray(new String[0]);
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -732,6 +920,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         createAddressesTable(db);
         createAccountsTable(db);
         createSmsTables(db);
+        createGiftCardsTable(db);
         try {
             db.execSQL("UPDATE orders SET created_at_ms = 0 WHERE created_at_ms IS NULL");
         } catch (Exception ignored) { }
@@ -1546,6 +1735,34 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                                                       String giftMessage,
                                                       long extraFinancingFee,
                                                       String initialStatus) throws IllegalStateException {
+        return executeCheckoutAdvanced(cart, customerName, customerMobile, addressSummary, paymentLabel,
+                installmentsCount, couponCode, vipGiftBox, giftMessage, extraFinancingFee, initialStatus,
+                0L, 0L, -1L, null);
+    }
+
+    /**
+     * v6.9 · the full economics: coupon + VIP tier + gift card, and a shipping tariff
+     * that the checkout can override for a same-day courier.
+     *
+     * @param tierAndGiftDiscount extra discount already earned by loyalty and gift cards
+     * @param shippingOverride    &gt;= 0 overrides the standard tariff; -1 keeps the house rule
+     * @param shippingLabel       what the customer will see on the invoice
+     */
+    public Models.OrderRecord executeCheckoutAdvanced(List<Models.CartItem> cart,
+                                                      String customerName,
+                                                      String customerMobile,
+                                                      String addressSummary,
+                                                      String paymentLabel,
+                                                      int installmentsCount,
+                                                      String couponCode,
+                                                      boolean vipGiftBox,
+                                                      String giftMessage,
+                                                      long extraFinancingFee,
+                                                      String initialStatus,
+                                                      long tierAndGiftDiscount,
+                                                      long giftCardAmount,
+                                                      long shippingOverride,
+                                                      String shippingLabel) throws IllegalStateException {
         if (cart == null || cart.isEmpty()) throw new IllegalStateException("سبد خرید خالی است.");
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
@@ -1564,8 +1781,11 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 long eval = evaluateCouponDiscount(couponCode, subtotal);
                 if (eval > 0) discount = eval;
             }
+            discount = discount + Math.max(0L, tierAndGiftDiscount);
             long afterDisc = Math.max(0L, subtotal - discount);
-            long shipping = afterDisc >= getFreeShippingThreshold() ? 0L : getShippingCost();
+            long shipping = shippingOverride >= 0
+                    ? shippingOverride
+                    : (afterDisc >= getFreeShippingThreshold() ? 0L : getShippingCost());
             long fee = Math.max(0L, extraFinancingFee);
             long total = afterDisc + shipping + fee;
             String orderNumber = "AS-1405-" + (1000 + new Random().nextInt(8999));
@@ -1575,7 +1795,8 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             ord.put("customer_name", customerName);
             ord.put("customer_mobile", customerMobile);
             ord.put("address_summary", addressSummary);
-            ord.put("shipping_method", "پست پیشتاز VIP");
+            ord.put("shipping_method", shippingLabel == null || shippingLabel.trim().isEmpty()
+                    ? "پست پیشتاز VIP" : shippingLabel.trim());
             ord.put("payment_method", paymentLabel);
             ord.put("installments_count", Math.max(1, installmentsCount));
             ord.put("subtotal", subtotal);

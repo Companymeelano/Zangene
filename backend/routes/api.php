@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\OperationsController;
 use App\Http\Controllers\Admin\ProductManagementController;
 use App\Http\Controllers\Customer\AccountController;
+use App\Http\Controllers\Customer\GiftCardController;
 use App\Http\Controllers\Admin\SmsController;
 use App\Http\Controllers\Customer\CheckoutController;
 use App\Http\Middleware\EnsureRoleOrPermission;
@@ -40,6 +41,9 @@ Route::prefix('v1')->middleware([EnsureTransactionSafety::class])->group(functio
     Route::post('/concierge/skin-analyze', [BeautyConciergeController::class, 'analyzeSkin']);
     Route::post('/concierge/fragrance-finder', [BeautyConciergeController::class, 'matchFragrance']);
     Route::get('/authenticity/verify/{code}', [BeautyConciergeController::class, 'verifyAuthenticity']);
+
+    // v6.9 · a gift card balance is public information: the recipient holds the code
+    Route::get('/gift-cards/{code}', [GiftCardController::class, 'show'])->middleware('throttle:20,1');
 
     // Official Torob & Emalls Price/Stock Feeds
     Route::get('/feeds/torob', [MarketplaceFeedController::class, 'torob']);
@@ -72,6 +76,9 @@ Route::prefix('v1')->middleware([EnsureTransactionSafety::class])->group(functio
         Route::put('/account', [AccountController::class, 'update']);
         Route::get('/account/orders', [AccountController::class, 'orders']);
         Route::post('/account/sms-test', [AccountController::class, 'smsTest'])->middleware('throttle:6,1');
+
+        // v6.9 · gift cards
+        Route::post('/gift-cards', [GiftCardController::class, 'store'])->middleware('throttle:10,1');
     });
 
     // v6.8 · merchant SMS control centre

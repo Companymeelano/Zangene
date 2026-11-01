@@ -126,6 +126,7 @@ public final class SmsGateway {
         v.put("coupon", "ASIYE20");
         v.put("percent", "۲۰");
         v.put("count", "۳");
+        v.put("eta", "۲ تا ۴ ساعت");
         return v;
     }
 
@@ -147,6 +148,10 @@ public final class SmsGateway {
         }
         if ("order_shipped".equals(key)) {
             return "{name} عزیز، سفارش {order} تحویل پست شد.\nکد رهگیری: {tracking}\nاز این پس می‌توانید مسیر بسته را دنبال کنید.\n{store}";
+        }
+        if ("courier_ontheway".equals(key)) {
+            return "{name} عزیز، پیک اسیه سفارش {order} را تحویل گرفت و تا {eta} به دست شما می‌رسد.\n"
+                    + "برای هماهنگی می‌توانید همین پیام را پاسخ دهید.\n{store}";
         }
         if ("order_delivered".equals(key)) {
             return "{name} عزیز، بستهٔ {order} تحویل شد.\nاگر از خرید راضی هستید، نظر شما با نشان «خرید تأییدشده» در ویترین منتشر می‌شود.\n{store}";
@@ -184,6 +189,7 @@ public final class SmsGateway {
         if ("order_placed".equals(key)) return "ثبت سفارش";
         if ("order_paid".equals(key)) return "تأیید پرداخت";
         if ("order_shipped".equals(key)) return "ارسال سفارش + کد رهگیری";
+        if ("courier_ontheway".equals(key)) return "پیک شهری در راه است";
         if ("order_delivered".equals(key)) return "تحویل سفارش + دعوت به نظر";
         if ("review_approved".equals(key)) return "تأیید و انتشار نظر";
         if ("reorder_reminder".equals(key)) return "یادآور سفارش مجدد";
@@ -198,8 +204,9 @@ public final class SmsGateway {
 
     public static String[] allKeys() {
         return new String[]{ "otp", "welcome", "order_placed", "order_paid", "order_shipped",
-                "order_delivered", "review_approved", "reorder_reminder", "birthday",
-                "back_in_stock", "cart_abandoned", "coupon_gift", "owner_alert", "owner_daily" };
+                "courier_ontheway", "order_delivered", "review_approved", "reorder_reminder", "birthday",
+                "back_in_stock", "cart_abandoned", "coupon_gift", "gift_card_gift",
+                "owner_alert", "owner_daily" };
     }
 
     // ══════════════════════════════════════════════════════════════════════

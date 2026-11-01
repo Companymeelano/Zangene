@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.8 · CONCIERGE ID";
+    private static final String APP_VERSION         = "V6.9 · PEARL HOUR";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static final int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -105,7 +105,11 @@ public final class MainActivity extends Activity {
     private static int TEXT_BODY         = 0xFF4E4840;
     private static int TEXT_BODY_2       = 0xFF5A5244;
 
-    /** v6.4 · obsidian night mode for the whole app. */
+    /** v6.9 · three house moods: ivory day, pearl-rose daylight, obsidian night. */
+    private static final int THEME_IVORY  = 0;
+    private static final int THEME_PEARL  = 1;
+    private static final int THEME_NIGHT  = 2;
+    private static int themeMode = THEME_IVORY;
     private static boolean darkMode = false;
     private static final String PREF_THEME = "asiye_prefs";
 
@@ -154,6 +158,11 @@ public final class MainActivity extends Activity {
     private final List<Models.CartItem> cart = new ArrayList<>();
     private String appliedCouponCode = "";
     private long appliedCouponValue = 0L;
+    // v6.9 · gift cards and same-day courier
+    private String appliedGiftCode = "";
+    private long appliedGiftValue = 0L;
+    private boolean courierSelected = false;
+    private String courierCity = "تهران";
     private boolean vipGiftPackaging = true;
     private String giftMessageDraft = "";
 
@@ -346,12 +355,42 @@ public final class MainActivity extends Activity {
     //  v6.4 · DUAL PALETTE — ivory day, obsidian night
     // ══════════════════════════════════════════════════════════════════════
     private void loadTheme() {
-        darkMode = getSharedPreferences(PREF_THEME, MODE_PRIVATE).getBoolean("dark_mode", false);
+        boolean legacyDark = getSharedPreferences(PREF_THEME, MODE_PRIVATE).getBoolean("dark_mode", false);
+        themeMode = getSharedPreferences(PREF_THEME, MODE_PRIVATE)
+                .getInt("theme_mode", legacyDark ? THEME_NIGHT : THEME_IVORY);
+        darkMode = themeMode == THEME_NIGHT;
         applyPalette();
     }
 
     private void applyPalette() {
-        if (darkMode) {
+        darkMode = themeMode == THEME_NIGHT;
+
+        if (themeMode == THEME_PEARL) {
+            // PEARL ROSE — porcelain blush, warm ink and rose-bronze gold.
+            COL_GOLD_DEEP     = 0xFF9A6148;
+            COL_IVORY_BG      = 0xFFFDF6F2;
+            COL_SILK_CREAM    = 0xFFF7E7E0;
+            COL_WHITE         = 0xFFFFFDFC;
+            COL_TEXT_MAIN     = 0xFF2C1E1C;
+            COL_TEXT_MUTED    = 0xFF6B534E;
+            COL_TEXT_FAINT    = 0xFF977F78;
+            COL_BORDER        = 0xFFF0DAD2;
+            COL_SUCCESS       = 0xFF2E6B52;
+            COL_SUCCESS_SOFT  = 0xFFEAF4EE;
+            COL_DANGER        = 0xFFA03A34;
+            COL_WARN          = 0xFFA26A2E;
+            SURF_CHIP         = 0xFFFBEDE7;
+            SURF_STRIP        = 0xFFFFFAF7;
+            SURF_SOFT         = 0xFFFFF6F1;
+            SURF_CHIP_LINE    = 0xFFEFCFC1;
+            SURF_SUCCESS_LINE = 0xFFBFDCCB;
+            SURF_GOLD_LINE    = 0xFFEDCFC0;
+            SURF_STAR_OFF     = 0xFFE3C9BE;
+            SURF_INACTIVE     = 0xFFA48D86;
+            SURF_DIVIDER      = 0x1A5A2E22;
+            TEXT_BODY         = 0xFF5C423D;
+            TEXT_BODY_2       = 0xFF684B45;
+        } else if (darkMode) {
             COL_GOLD_DEEP     = 0xFFD9B478;
             COL_IVORY_BG      = 0xFF0B0B0E;
             COL_SILK_CREAM    = 0xFF1F1D25;
@@ -437,15 +476,35 @@ public final class MainActivity extends Activity {
         }
     }
 
-    /** Flips the whole app between the ivory day palette and the obsidian night one. */
+    /** Cycles ivory day → pearl rose → obsidian night, keeping the choice forever. */
     private void toggleTheme() {
-        darkMode = !darkMode;
-        getSharedPreferences(PREF_THEME, MODE_PRIVATE).edit().putBoolean("dark_mode", darkMode).apply();
+        themeMode = themeMode == THEME_IVORY ? THEME_PEARL
+                : themeMode == THEME_PEARL ? THEME_NIGHT : THEME_IVORY;
+        persistTheme();
+    }
+
+    private void applyThemeMode(int mode) {
+        themeMode = mode;
+        persistTheme();
+    }
+
+    private void persistTheme() {
+        darkMode = themeMode == THEME_NIGHT;
+        getSharedPreferences(PREF_THEME, MODE_PRIVATE).edit()
+                .putInt("theme_mode", themeMode)
+                .putBoolean("dark_mode", darkMode)
+                .apply();
         applyPalette();
         restyleInputs();
         setContentView(buildRootShell());
         renderCurrentScreen();
-        toast(darkMode ? "حالت شب ابسیدین فعال شد." : "حالت روز عاجی فعال شد.");
+        toast("حالت " + themeLabel(themeMode) + " فعال شد.");
+    }
+
+    private String themeLabel(int mode) {
+        if (mode == THEME_PEARL) return "مروارید رزین (روشن)";
+        if (mode == THEME_NIGHT) return "شب ابسیدین";
+        return "روز عاجی";
     }
 
     /** The few inputs that survive a re-render keep their own colours, so they are repainted. */
@@ -2576,6 +2635,52 @@ public final class MainActivity extends Activity {
         return card;
     }
 
+    /** The merchant's view of every card in circulation. */
+    private void showGiftCardsList() {
+        final LinearLayout box = dialogBox();
+        box.addView(dialogTitle("کارت‌های هدیه", "اعتبار باقی‌ماندهٔ هر کارت به‌صورت زنده"));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+
+        android.widget.ScrollView scroll = new android.widget.ScrollView(this);
+        LinearLayout list = new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        scroll.addView(list);
+        box.addView(scroll, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(360)));
+
+        List<AsiyeDatabaseHelper.GiftCard> cards = db.getGiftCards(20);
+        if (cards.isEmpty()) {
+            list.addView(text("هنوز کارت هدیه‌ای ساخته نشده است.", 10f, COL_TEXT_MUTED, false));
+        }
+        for (AsiyeDatabaseHelper.GiftCard g : cards) {
+            LinearLayout line = new LinearLayout(this);
+            line.setOrientation(LinearLayout.VERTICAL);
+            line.setPadding(dp(10), dp(8), dp(10), dp(8));
+            line.setBackground(roundedShape(COL_IVORY_BG, dp(11), COL_BORDER, dp(1)));
+            LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            llp.setMargins(0, 0, 0, dp(6));
+
+            LinearLayout top = row(Gravity.CENTER_VERTICAL);
+            top.addView(text(ltr(g.code), 10.4f, COL_TEXT_MAIN, true), weight(1f));
+            top.addView(text("active".equals(g.status) ? "فعال" : "مصرف‌شده", 8.8f,
+                    "active".equals(g.status) ? COL_SUCCESS : COL_TEXT_FAINT, true));
+            line.addView(top);
+            line.addView(text("مبلغ " + PersianFormatter.formatToman(g.amount)
+                    + " · باقی‌مانده " + PersianFormatter.formatToman(g.remaining), 9.2f, COL_TEXT_MUTED, false));
+            if (g.recipientName != null && !g.recipientName.isEmpty()) {
+                line.addView(text("گیرنده: " + g.recipientName, 9f, COL_TEXT_FAINT, false));
+            }
+            list.addView(line, llp);
+        }
+
+        box.addView(space(8));
+        box.addView(ghostButton("بستن", new Runnable() {
+            @Override public void run() { dialog.dismiss(); }
+        }));
+        showRoundedDialog(dialog);
+    }
+
     private void showTemplateListDialog() {
         final LinearLayout box = dialogBox();
         box.addView(dialogTitle("قالب‌های پیام", "متن هر رویداد را می‌توانید با جای‌نگهدارها بنویسید"));
@@ -3183,6 +3288,287 @@ public final class MainActivity extends Activity {
         contentContainer.addView(certificateCard());
         contentContainer.addView(space(6));
         contentContainer.addView(footerNote());
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.9 · REWARDS — club tier, gift card, same-day courier
+    // ══════════════════════════════════════════════════════════════════════
+
+    private String checkoutMobile() {
+        Models.AccountRecord me = db.getAccount(AccountStore.sessionMobile(this));
+        if (me != null && !me.mobile.isEmpty()) return me.mobile;
+        String typed = PersianFormatter.toAsciiDigits(bagMobileInput.getText().toString()).trim();
+        return typed.isEmpty() ? profileMobile : typed;
+    }
+
+    private View rewardsCard() {
+        LinearLayout card = whiteCard();
+        card.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_CROWN, "باشگاه، کارت هدیه و روش ارسال"));
+        card.addView(space(9));
+
+        // ── club tier ────────────────────────────────────────────────────
+        int percent = db.getTierPercent(checkoutMobile());
+        LinearLayout tierRow = row(Gravity.CENTER_VERTICAL);
+        tierRow.setBackground(roundedShape(COL_OBSIDIAN, dp(14), 0x55C8A46B, dp(1)));
+        tierRow.setPadding(dp(12), dp(10), dp(12), dp(10));
+
+        FrameLayout crest = new FrameLayout(this);
+        crest.setLayoutParams(new LinearLayout.LayoutParams(dp(26), dp(26)));
+        crest.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_DIAMOND, true),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        tierRow.addView(crest);
+
+        LinearLayout tierTexts = new LinearLayout(this);
+        tierTexts.setOrientation(LinearLayout.VERTICAL);
+        tierTexts.setPadding(dp(9), 0, dp(9), 0);
+        tierTexts.addView(text("عضو " + db.getTierName(checkoutMobile()) + " باشگاه اسیه",
+                10.6f, 0xFFF6EFE3, true));
+        tierTexts.addView(text(percent > 0
+                        ? "تخفیف خودکار " + PersianFormatter.toPersianDigits(String.valueOf(percent))
+                          + "٪ روی همهٔ خریدها — بدون کد"
+                        : "با اولین خرید، عضویت نقره‌ای و ۳٪ تخفیف دائمی فعال می‌شود",
+                9f, 0xFFBEB6AA, false));
+        tierRow.addView(tierTexts, weight(1f));
+
+        if (percent > 0) {
+            TextView badge = text("−" + PersianFormatter.toPersianDigits(String.valueOf(percent)) + "٪",
+                    11f, COL_OBSIDIAN, true);
+            badge.setPadding(dp(9), dp(4), dp(9), dp(4));
+            badge.setBackground(roundedShape(COL_GOLD_LIGHT, dp(9), 0, 0));
+            tierRow.addView(badge);
+        }
+        card.addView(tierRow);
+
+        // ── gift card ────────────────────────────────────────────────────
+        if (db.getSettingBool("gift_cards_enabled", true)) {
+            card.addView(space(11));
+            card.addView(text("کارت هدیه", 10.4f, COL_TEXT_MAIN, true));
+            card.addView(space(6));
+
+            final EditText giftInput = makeInput("کد کارت هدیه (AS-GIFT-…)", InputType.TYPE_CLASS_TEXT, false);
+            giftInput.setText(appliedGiftCode);
+            card.addView(giftInput);
+            card.addView(space(7));
+
+            LinearLayout giftRow = row(Gravity.CENTER_VERTICAL);
+            TextView applyGift = text(appliedGiftValue > 0 ? "برداشتن کارت" : "اعمال کارت هدیه",
+                    9.6f, COL_OBSIDIAN, true);
+            applyGift.setGravity(Gravity.CENTER);
+            applyGift.setPadding(dp(14), dp(9), dp(14), dp(9));
+            applyGift.setBackground(roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0));
+            applyGift.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    if (appliedGiftValue > 0) {
+                        appliedGiftCode = "";
+                        appliedGiftValue = 0L;
+                        toast("کارت هدیه برداشته شد.");
+                    } else {
+                        AsiyeDatabaseHelper.GiftCard g = db.getGiftCard(giftInput.getText().toString());
+                        if (g == null) {
+                            toast("کارت هدیه‌ای با این کد پیدا نشد.");
+                            return;
+                        }
+                        if (!"active".equals(g.status) || g.remaining <= 0) {
+                            toast("این کارت هدیه استفاده شده است.");
+                            return;
+                        }
+                        appliedGiftCode = g.code;
+                        appliedGiftValue = Math.min(g.remaining, calculateCartSubtotal());
+                        toast("کارت هدیه اعمال شد.");
+                    }
+                    renderCurrentScreen();
+                }
+            });
+            giftRow.addView(applyGift);
+
+            TextView buy = text("خرید کارت هدیه", 9.6f, COL_GOLD_DEEP, true);
+            buy.setGravity(Gravity.CENTER);
+            buy.setPadding(dp(14), dp(9), dp(14), dp(9));
+            buy.setBackground(roundedShape(COL_IVORY_BG, dp(11), COL_BORDER, dp(1)));
+            buy.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { showGiftCardPurchase(); }
+            });
+            LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            blp.setMarginStart(dp(7));
+            giftRow.addView(buy, blp);
+            card.addView(giftRow);
+
+            if (appliedGiftValue > 0) {
+                card.addView(space(6));
+                card.addView(text("کارت " + ltr(appliedGiftCode) + " — "
+                                + PersianFormatter.formatToman(appliedGiftValue) + " از مبلغ کسر می‌شود.",
+                        9.2f, COL_SUCCESS, false));
+            }
+        }
+
+        // ── delivery method ──────────────────────────────────────────────
+        if (db.isCourierEnabled()) {
+            card.addView(space(12));
+            card.addView(text("روش ارسال", 10.4f, COL_TEXT_MAIN, true));
+            card.addView(space(7));
+
+            LinearLayout methods = row(Gravity.CENTER_VERTICAL);
+            methods.addView(deliveryChip("پست پیشتاز VIP", !courierSelected, new Runnable() {
+                @Override public void run() {
+                    courierSelected = false;
+                    renderCurrentScreen();
+                }
+            }), weight(1f));
+            methods.addView(spaceH(7));
+            methods.addView(deliveryChip("پیک شهری · " + db.getSetting("courier_eta", "۲ تا ۴ ساعت"),
+                    courierSelected, new Runnable() {
+                @Override public void run() {
+                    courierSelected = true;
+                    renderCurrentScreen();
+                }
+            }), weight(1f));
+            card.addView(methods);
+
+            if (courierSelected) {
+                card.addView(space(8));
+                card.addView(text("شهر تحویل", 9.4f, COL_TEXT_MUTED, false));
+                card.addView(space(6));
+                android.widget.HorizontalScrollView scroll = new android.widget.HorizontalScrollView(this);
+                LinearLayout cities = new LinearLayout(this);
+                cities.setOrientation(LinearLayout.HORIZONTAL);
+                cities.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+                for (final String city : db.getCourierCities()) {
+                    boolean on = city.equals(courierCity);
+                    TextView chip = text(city, 9.2f, on ? COL_OBSIDIAN : COL_TEXT_MUTED, on);
+                    chip.setPadding(dp(11), dp(6), dp(11), dp(6));
+                    chip.setBackground(on ? roundedShape(COL_GOLD_LIGHT, dp(10), 0, 0)
+                            : roundedShape(COL_IVORY_BG, dp(10), COL_BORDER, dp(1)));
+                    LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    clp.setMarginEnd(dp(6));
+                    chip.setLayoutParams(clp);
+                    chip.setOnClickListener(new View.OnClickListener() {
+                        @Override public void onClick(View v) {
+                            courierCity = city;
+                            renderCurrentScreen();
+                        }
+                    });
+                    cities.addView(chip);
+                }
+                scroll.addView(cities);
+                card.addView(scroll);
+                card.addView(space(6));
+                card.addView(text("کرایهٔ پیک " + PersianFormatter.formatToman(db.getCourierFee())
+                        + " — پرداخت در محل تحویل", 9.2f, COL_TEXT_FAINT, false));
+            }
+        }
+        return card;
+    }
+
+    private View deliveryChip(String label, boolean selected, final Runnable action) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER);
+        box.setPadding(dp(8), dp(10), dp(8), dp(10));
+        box.setBackground(roundedShape(selected ? SURF_SOFT : COL_IVORY_BG, dp(13),
+                selected ? COL_GOLD : COL_BORDER, dp(selected ? 2 : 1)));
+
+        FrameLayout icon = new FrameLayout(this);
+        icon.setLayoutParams(new LinearLayout.LayoutParams(dp(24), dp(24)));
+        icon.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_TRUCK, selected),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        box.addView(icon);
+        box.addView(space(5));
+
+        TextView t = text(label, 9.2f, selected ? COL_TEXT_MAIN : COL_TEXT_MUTED, selected);
+        t.setGravity(Gravity.CENTER);
+        box.addView(t);
+
+        box.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { action.run(); }
+        });
+        return box;
+    }
+
+    /** Buy a card for someone: amount, recipient, a short note — and an SMS to them. */
+    private void showGiftCardPurchase() {
+        final long[] amounts = { 1_000_000L, 2_000_000L, 5_000_000L, 10_000_000L };
+        final int[] chosen = { 1 };
+
+        final EditText recipientName = makeInput("نام گیرندهٔ هدیه", InputType.TYPE_CLASS_TEXT, false);
+        final EditText recipientMobile = makeInput("موبایل گیرنده", InputType.TYPE_CLASS_PHONE, true);
+        final EditText note = makeInput("یادداشت کوتاه روی کارت (اختیاری)", InputType.TYPE_CLASS_TEXT, false);
+
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("کارت هدیهٔ اسیه", "هدیه‌ای که با یک پیامک به دست عزیزتان می‌رسد"));
+
+        LinearLayout chips = row(Gravity.CENTER_VERTICAL);
+        final TextView[] chipsView = new TextView[amounts.length];
+        for (int i = 0; i < amounts.length; i++) {
+            final int idx = i;
+            boolean on = i == chosen[0];
+            TextView chip = text(PersianFormatter.formatToman(amounts[i]), 9.2f,
+                    on ? COL_OBSIDIAN : COL_TEXT_MUTED, on);
+            chip.setGravity(Gravity.CENTER);
+            chip.setPadding(dp(8), dp(8), dp(8), dp(8));
+            chip.setBackground(on ? roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0)
+                    : roundedShape(COL_IVORY_BG, dp(11), COL_BORDER, dp(1)));
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            clp.setMarginEnd(i < amounts.length - 1 ? dp(5) : 0);
+            chip.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    chosen[0] = idx;
+                    for (int k = 0; k < chipsView.length; k++) {
+                        boolean active = k == idx;
+                        chipsView[k].setTextColor(active ? COL_OBSIDIAN : COL_TEXT_MUTED);
+                        chipsView[k].setBackground(active ? roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0)
+                                : roundedShape(COL_IVORY_BG, dp(11), COL_BORDER, dp(1)));
+                    }
+                }
+            });
+            chipsView[i] = chip;
+            chips.addView(chip, clp);
+        }
+        box.addView(chips);
+        box.addView(space(10));
+        box.addView(recipientName);
+        box.addView(space(8));
+        box.addView(recipientMobile);
+        box.addView(space(8));
+        box.addView(note);
+        box.addView(space(12));
+
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ساخت کارت و ارسال پیامک", Luxury3DIconView.ICON_GIFT, new Runnable() {
+            @Override public void run() {
+                String rn = recipientName.getText().toString().trim();
+                String rm = recipientMobile.getText().toString().trim();
+                if (!SmsGateway.isValidMobile(rm)) {
+                    toast("شمارهٔ گیرنده معتبر نیست.");
+                    return;
+                }
+                final AsiyeDatabaseHelper.GiftCard card = db.createGiftCard(
+                        amounts[chosen[0]], profileName, checkoutMobile(), rn, rm,
+                        note.getText().toString().trim());
+
+                java.util.Map<String, String> vars = new java.util.HashMap<>();
+                vars.put("name", rn.isEmpty() ? "عزیز" : rn);
+                vars.put("coupon", card.code);
+                vars.put("percent", PersianFormatter.toPersianDigits("0"));
+                vars.put("total", PersianFormatter.formatToman(card.amount));
+                db.setTemplate("gift_card_gift",
+                        "{name} عزیز، {total} کارت هدیهٔ اسیه برای شما فعال شد.\n"
+                                + "کد: {coupon}\n"
+                                + "با این کد در سبد خرید، مبلغ از سفارش شما کسر می‌شود.\n{store} · {owner}", true);
+                SmsGateway.notify(MainActivity.this, db, rm, "gift_card_gift", vars);
+
+                dialog.dismiss();
+                toast("کارت " + card.code + " ساخته شد و پیامک برای گیرنده رفت.");
+                renderCurrentScreen();
+            }
+        }));
+        box.addView(space(8));
+        box.addView(ghostButton("انصراف", new Runnable() {
+            @Override public void run() { dialog.dismiss(); }
+        }));
+        showRoundedDialog(dialog);
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -4608,6 +4994,9 @@ public final class MainActivity extends Activity {
         contentContainer.addView(couponCard);
         contentContainer.addView(space(12));
 
+        contentContainer.addView(rewardsCard());
+        contentContainer.addView(space(12));
+
         // ── Delivery details ─────────────────────────────────────────────
         LinearLayout infoCard = whiteCard();
         infoCard.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_USERS, "اطلاعات تحویل‌گیرنده"));
@@ -4645,9 +5034,16 @@ public final class MainActivity extends Activity {
 
         // ══ Checkout economics ═══════════════════════════════════════════
         long subtotal = calculateCartSubtotal();
-        long shipping = subtotal >= db.getFreeShippingThreshold()
-                ? 0L : AsiyeDatabaseHelper.STANDARD_SHIPPING_COST;
-        long basePayable = Math.max(0L, subtotal - appliedCouponValue) + shipping;
+        int tierPercent = db.getTierPercent(checkoutMobile());
+        long tierDiscount = Math.round(subtotal * (tierPercent / 100.0));
+        long shipping;
+        if (courierSelected && db.isCourierEnabled()) {
+            shipping = db.getCourierFee();
+        } else {
+            shipping = subtotal >= db.getFreeShippingThreshold()
+                    ? 0L : AsiyeDatabaseHelper.STANDARD_SHIPPING_COST;
+        }
+        long basePayable = Math.max(0L, subtotal - appliedCouponValue - tierDiscount - appliedGiftValue) + shipping;
 
         InstallmentEngine.Config instCfg = InstallmentEngine.load(db);
         List<Models.InstallmentPlan> plans = InstallmentEngine.build(instCfg, basePayable);
@@ -4691,7 +5087,17 @@ public final class MainActivity extends Activity {
         if (appliedCouponValue > 0) {
             summary.addView(summaryLine("تخفیف کد اختصاصی", "− " + PersianFormatter.formatToman(appliedCouponValue), true));
         }
-        summary.addView(summaryLine("هزینه ارسال VIP",
+        if (tierDiscount > 0) {
+            summary.addView(summaryLine("تخفیف باشگاه " + db.getTierName(checkoutMobile())
+                            + " (" + PersianFormatter.toPersianDigits(String.valueOf(tierPercent)) + "٪)",
+                    "− " + PersianFormatter.formatToman(tierDiscount), true));
+        }
+        if (appliedGiftValue > 0) {
+            summary.addView(summaryLine("کارت هدیه " + ltr(appliedGiftCode),
+                    "− " + PersianFormatter.formatToman(appliedGiftValue), true));
+        }
+        summary.addView(summaryLine(courierSelected && db.isCourierEnabled()
+                        ? "پیک شهری — " + courierCity : "هزینه ارسال VIP",
                 shipping == 0L ? "رایگان" : PersianFormatter.formatToman(shipping), shipping == 0L));
         if (cashback > 0L) {
             LinearLayout club = row(Gravity.CENTER_VERTICAL);
@@ -4899,9 +5305,14 @@ public final class MainActivity extends Activity {
         }
 
         long subtotal = calculateCartSubtotal();
-        long shipping = subtotal >= db.getFreeShippingThreshold()
-                ? 0L : AsiyeDatabaseHelper.STANDARD_SHIPPING_COST;
-        long basePayable = Math.max(0L, subtotal - appliedCouponValue) + shipping;
+        int tierPercent = db.getTierPercent(checkoutMobile());
+        long tierDiscount = Math.round(subtotal * (tierPercent / 100.0));
+        boolean courier = courierSelected && db.isCourierEnabled();
+        long shipping = courier ? db.getCourierFee()
+                : (subtotal >= db.getFreeShippingThreshold()
+                        ? 0L : AsiyeDatabaseHelper.STANDARD_SHIPPING_COST);
+        String shippingLabel = courier ? "پیک شهری — " + courierCity : "پست پیشتاز VIP";
+        long basePayable = Math.max(0L, subtotal - appliedCouponValue - tierDiscount - appliedGiftValue) + shipping;
         InstallmentEngine.Config instCfg = InstallmentEngine.load(db);
         List<Models.InstallmentPlan> plans = InstallmentEngine.build(instCfg, basePayable);
         Models.InstallmentPlan plan = PAY_INSTALLMENT.equals(payMode)
@@ -4941,10 +5352,23 @@ public final class MainActivity extends Activity {
             Models.OrderRecord order = db.executeCheckoutAdvanced(cart, name, mobile, address,
                     paymentLabel, installments,
                     appliedCouponValue > 0 ? appliedCouponCode : "",
-                    vipGiftPackaging, giftMessageDraft, fee, status);
+                    vipGiftPackaging, giftMessageDraft, fee, status,
+                    tierDiscount + appliedGiftValue,
+                    appliedGiftValue,
+                    courier ? db.getCourierFee() : -1L,
+                    shippingLabel);
+
+            // consume the gift card only once the order really exists
+            if (appliedGiftValue > 0 && !appliedGiftCode.isEmpty()) {
+                db.redeemGiftCard(appliedGiftCode, appliedGiftValue);
+            }
+
             cart.clear();
             appliedCouponCode = "";
             appliedCouponValue = 0L;
+            appliedGiftCode = "";
+            appliedGiftValue = 0L;
+            courierSelected = false;
             selectedInstallmentId = "";
 
             if ("pending_payment".equals(order.status)) {
@@ -6136,7 +6560,13 @@ public final class MainActivity extends Activity {
                 vars.put("tracking", code);
                 vars.put("store", "اسیه استور");
                 vars.put("owner", "خانم زنگنه");
-                SmsGateway.notify(MainActivity.this, db, o.customerMobile, "order_shipped", vars);
+                boolean byCourier = o.shippingMethod != null && o.shippingMethod.contains("پیک");
+                if (byCourier) {
+                    vars.put("eta", db.getSetting("courier_eta", "۲ تا ۴ ساعت"));
+                    SmsGateway.notify(MainActivity.this, db, o.customerMobile, "courier_ontheway", vars);
+                } else {
+                    SmsGateway.notify(MainActivity.this, db, o.customerMobile, "order_shipped", vars);
+                }
 
                 toast("کد رهگیری ثبت شد و پیامک ارسال برای مشتری در صف قرار گرفت.");
                 renderCurrentScreen();
@@ -7114,28 +7544,57 @@ public final class MainActivity extends Activity {
         look.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_SUN, "ظاهر و تجربهٔ برنامه"));
         look.addView(space(9));
 
-        LinearLayout lookRow = row(Gravity.CENTER_VERTICAL);
-        LinearLayout lookText = new LinearLayout(this);
-        lookText.setOrientation(LinearLayout.VERTICAL);
-        lookText.addView(text("حالت شب ابسیدین", 11.5f, COL_TEXT_MAIN, true));
-        lookText.addView(text(darkMode
-                        ? "پس‌زمینهٔ مشکی مخملی با طلای ۲۴ عیار — مناسب شب"
-                        : "پس‌زمینهٔ عاجی روشن — حالت پیش‌فرض روز",
-                9.4f, COL_TEXT_MUTED, false));
-        lookRow.addView(lookText, weight(1f));
+        TextView lookHint = text("سه حالت طراحی‌شده برای اسیه — هر کدام با همان طلای ۲۴ عیار،"
+                + " ولی نور و بافت متفاوت. انتخاب شما ذخیره می‌شود.", 9.4f, COL_TEXT_MUTED, false);
+        lookHint.setLineSpacing(dp(3), 1f);
+        look.addView(lookHint);
+        look.addView(space(10));
 
-        TextView lookBtn = text(darkMode ? "روشن" : "تیره", 10f, COL_OBSIDIAN, true);
-        lookBtn.setGravity(Gravity.CENTER);
-        lookBtn.setPadding(dp(16), dp(9), dp(16), dp(9));
-        lookBtn.setBackground(roundedShape(COL_GOLD_LIGHT, dp(12), 0, 0));
-        lookBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                tap();
-                toggleTheme();
+        final int[] modes = { THEME_IVORY, THEME_PEARL, THEME_NIGHT };
+        final int[] faces = { 0xFFFAF8F3, 0xFFFDF6F2, 0xFF0B0B0E };
+        final int[] inks = { 0xFF8E6C3A, 0xFF9A6148, 0xFFD9B478 };
+        final String[] names = { "روز عاجی", "مروارید رزین", "شب ابسیدین" };
+        LinearLayout paletteRow = row(Gravity.TOP);
+
+        for (int i = 0; i < modes.length; i++) {
+            final int mode = modes[i];
+            boolean active = themeMode == mode;
+
+            LinearLayout tile = new LinearLayout(this);
+            tile.setOrientation(LinearLayout.VERTICAL);
+            tile.setGravity(Gravity.CENTER_HORIZONTAL);
+            tile.setPadding(dp(6), dp(9), dp(6), dp(9));
+            tile.setBackground(roundedShape(active ? SURF_SOFT : COL_IVORY_BG, dp(14),
+                    active ? COL_GOLD : COL_BORDER, dp(active ? 2 : 1)));
+
+            TextView swatch = text("", 10f, faces[i], true);
+            swatch.setLayoutParams(new LinearLayout.LayoutParams(dp(52), dp(34)));
+            swatch.setBackground(roundedShape(faces[i], dp(11), inks[i], dp(2)));
+            tile.addView(swatch);
+            tile.addView(space(6));
+
+            TextView nm = text(names[i], 9.2f, active ? COL_TEXT_MAIN : COL_TEXT_MUTED, active);
+            nm.setGravity(Gravity.CENTER);
+            tile.addView(nm);
+
+            if (active) {
+                TextView now = text("فعال", 8f, COL_GOLD_DEEP, true);
+                now.setGravity(Gravity.CENTER);
+                tile.addView(now);
             }
-        });
-        lookRow.addView(lookBtn);
-        look.addView(lookRow);
+
+            tile.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    tap();
+                    applyThemeMode(mode);
+                }
+            });
+            LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            tlp.setMarginEnd(i < modes.length - 1 ? dp(8) : 0);
+            paletteRow.addView(tile, tlp);
+        }
+        look.addView(paletteRow);
 
         look.addView(space(11));
         LinearLayout lookRow2 = row(Gravity.CENTER_VERTICAL);
@@ -7163,6 +7622,27 @@ public final class MainActivity extends Activity {
         contentContainer.addView(space(14));
         // ── SMS AUTOPILOT (v6.8) ─────────────────────────────────────────
         contentContainer.addView(smsCenterCard());
+        contentContainer.addView(space(14));
+
+        // ── COURIER & GIFT CARDS (v6.9) ─────────────────────────────────
+        LinearLayout courier = whiteCard();
+        courier.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_TRUCK, "پیک شهری و کارت هدیه"));
+        courier.addView(space(8));
+        courier.addView(settingsToggle("courier_enabled", "فعال بودن پیک شهری (تحویل همان روز)"));
+        courier.addView(settingsText("courier_fee", "کرایهٔ پیک (تومان)", String.valueOf(db.getCourierFee()), true));
+        courier.addView(settingsText("courier_cities", "شهرهای تحت پوشش (با کاما جدا کنید)",
+                db.getSetting("courier_cities", "تهران، شیراز، اصفهان، مشهد"), false));
+        courier.addView(settingsText("courier_eta", "زمان تقریبی تحویل",
+                db.getSetting("courier_eta", "۲ تا ۴ ساعت"), false));
+        courier.addView(space(9));
+        courier.addView(settingsToggle("gift_cards_enabled", "فعال بودن کارت هدیه"));
+        courier.addView(space(9));
+        courier.addView(resultDarkLine("اعتبار فعال کارت‌ها", PersianFormatter.formatToman(db.totalGiftLiability())));
+        courier.addView(space(8));
+        courier.addView(smallGoldAction("فهرست کارت‌های هدیه", Luxury3DIconView.ICON_GIFT, new Runnable() {
+            @Override public void run() { showGiftCardsList(); }
+        }));
+        contentContainer.addView(courier);
         contentContainer.addView(space(14));
 
         // ── SHIPPING (v6.6) ──────────────────────────────────────────────

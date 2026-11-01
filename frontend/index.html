@@ -29,6 +29,11 @@
     <header class="luxury-header">
         <a href="index.html" class="logo-container">
             <img src="../images/app_icon_dark.png" alt="ASIYE STORE" class="logo-img">
+            <div class="theme-switch" role="group" aria-label="انتخاب پوسته">
+                <button class="theme-dot" data-mode="ivory" aria-label="روز عاجی" aria-pressed="true"></button>
+                <button class="theme-dot" data-mode="pearl" aria-label="مروارید رزین" aria-pressed="false"></button>
+                <button class="theme-dot" data-mode="night" aria-label="شب ابسیدین" aria-pressed="false"></button>
+            </div>
             <div class="logo-text">
                 ASIYE STORE
                 <span class="slogan">مدیریت مجموعه: سرکار خانم زنگنه</span>
@@ -399,6 +404,34 @@
                     </ul>
                 </article>
             </div>
+
+            <article class="account-card gift-card-block" style="margin-top:1.2rem;">
+                <h3>کارت هدیهٔ اسیه</h3>
+                <p class="account-hint">مبلغ را انتخاب کنید؛ کد ساخته می‌شود و می‌توانید آن را برای عزیزتان بفرستید.</p>
+
+                <div class="gift-amounts" id="gift-amounts">
+                    <button class="gift-amount" data-amount="1000000">۱٬۰۰۰٬۰۰۰</button>
+                    <button class="gift-amount active" data-amount="2000000">۲٬۰۰۰٬۰۰۰</button>
+                    <button class="gift-amount" data-amount="5000000">۵٬۰۰۰٬۰۰۰</button>
+                    <button class="gift-amount" data-amount="10000000">۱۰٬۰۰۰٬۰۰۰</button>
+                </div>
+
+                <label class="account-field">
+                    <span>نام گیرنده</span>
+                    <input id="gift-name" placeholder="مثلاً مریم">
+                </label>
+
+                <button class="btn-obsidian-3d account-submit" id="gift-create">ساخت کارت هدیه</button>
+                <p class="account-status" id="gift-status" role="status"></p>
+
+                <hr class="gift-sep">
+                <label class="account-field">
+                    <span>بررسی اعتبار کارت</span>
+                    <input id="gift-check-code" placeholder="AS-GIFT-1234">
+                </label>
+                <button class="btn-ghost-lux" id="gift-check">بررسی موجودی</button>
+                <p class="account-status" id="gift-check-status" role="status"></p>
+            </article>
         </section>
 
         <!-- Executive Owner & Direct Smart Concierge Hub: سرکار خانم زنگنه -->
@@ -495,7 +528,7 @@
             <div style="font-size:0.8rem; color:#C4BBAE;">
                 طراحی رابط کاربری لوکس و معماری اکوسیستم وب و اپلیکیشن اختصاصی
             </div>
-            <div class="designer-version">V6.8 — CONCIERGE ID EDITION</div>
+            <div class="designer-version">V6.9 — PEARL HOUR EDITION</div>
         </div>
     </footer>
 
@@ -1134,6 +1167,77 @@
         });
 
         paintAccount();
+
+
+        // v6.9 · three daylight moods for the maison
+        (function initThemeSwitch() {
+            const root = document.documentElement;
+            const saved = localStorage.getItem('asiye_theme') || 'ivory';
+            root.setAttribute('data-theme', saved);
+
+            const paint = (mode) => {
+                root.setAttribute('data-theme', mode);
+                document.querySelectorAll('.theme-dot').forEach((dot) => {
+                    dot.setAttribute('aria-pressed', String(dot.dataset.mode === mode));
+                });
+            };
+
+            document.querySelectorAll('.theme-dot').forEach((dot) => {
+                dot.addEventListener('click', () => {
+                    localStorage.setItem('asiye_theme', dot.dataset.mode);
+                    paint(dot.dataset.mode);
+                });
+            });
+
+            paint(saved);
+        })();
+
+
+        // v6.9 · gift cards — bought here, spent at checkout
+        (function initGiftCards() {
+            const STORE = 'asiye_gift_cards';
+            const read = () => { try { return JSON.parse(localStorage.getItem(STORE) || '[]'); } catch (e) { return []; } };
+            const write = (cards) => localStorage.setItem(STORE, JSON.stringify(cards));
+            let amount = 2000000;
+
+            document.querySelectorAll('.gift-amount').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.gift-amount').forEach((b) => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    amount = Number(btn.dataset.amount);
+                });
+            });
+
+            document.getElementById('gift-create')?.addEventListener('click', () => {
+                const name = (document.getElementById('gift-name').value || '').trim();
+                const status = document.getElementById('gift-status');
+                if (name.length < 2) {
+                    status.textContent = 'نام گیرنده را وارد کنید.';
+                    status.classList.add('is-error');
+                    return;
+                }
+                const code = 'AS-GIFT-' + Math.floor(1000 + Math.random() * 9000);
+                const cards = read();
+                cards.push({ code, amount, remaining: amount, recipient: name, createdAt: new Date().toISOString() });
+                write(cards);
+
+                status.classList.remove('is-error');
+                status.textContent = `کارت ${code} برای ${name} ساخته شد — مبلغ ${amount.toLocaleString('fa-IR')} تومان.`;
+            });
+
+            document.getElementById('gift-check')?.addEventListener('click', () => {
+                const code = (document.getElementById('gift-check-code').value || '').trim().toUpperCase();
+                const status = document.getElementById('gift-check-status');
+                const card = read().find((c) => c.code === code);
+                if (!card) {
+                    status.textContent = 'کارتی با این کد پیدا نشد.';
+                    status.classList.add('is-error');
+                    return;
+                }
+                status.classList.remove('is-error');
+                status.textContent = `اعتبار باقی‌مانده: ${Number(card.remaining).toLocaleString('fa-IR')} تومان`;
+            });
+        })();
 
         // Routine Advisor
         const concernMap = {

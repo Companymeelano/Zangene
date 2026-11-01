@@ -1700,3 +1700,121 @@ a:hover .lux-3d-svg {
     .account-hub { padding: 1.8rem 1.2rem; }
     .account-grid { max-width: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   v6.9 · PEARL ROSE — the maison's second daylight mood.
+   Same 24K thread, a warmer porcelain ground and a rose-bronze accent.
+   Applied to <html data-theme="pearl">.
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-theme="pearl"] {
+    --obsidian: #2A1A1B;
+    --obsidian-elevated: #35211F;
+    --obsidian-soft: #40282A;
+    --gold-24k: #C08A6A;
+    --gold-light: #EBC7B4;
+    --gold-deep: #9A6148;
+    --ivory-bg: #FDF6F2;
+    --ivory-card: #FFFDFC;
+    --silk-cream: #F7E7E0;
+    --text-primary: #2C1E1C;
+    --text-muted: #6B534E;
+    --border-hairline: rgba(192, 138, 106, 0.30);
+    --shadow-whisper: 0 14px 38px rgba(58, 26, 24, 0.07);
+    --shadow-luxe: 0 22px 56px rgba(58, 26, 24, 0.14);
+}
+
+html[data-theme="pearl"] body {
+    background-image:
+        radial-gradient(1200px 620px at 90% -10%, rgba(235, 199, 180, 0.35), transparent 62%),
+        radial-gradient(900px 500px at 5% 5%, rgba(192, 138, 106, 0.14), transparent 58%);
+}
+
+html[data-theme="pearl"] .account-hub,
+html[data-theme="pearl"] .vip-card {
+    background: linear-gradient(160deg, #FFFCFA 0%, #F9EDE7 100%);
+}
+
+html[data-theme="pearl"] .brand-story {
+    background: linear-gradient(150deg, #35211F 0%, #21131A 100%);
+}
+
+html[data-theme="pearl"] .foil-divider span {
+    color: var(--gold-deep);
+}
+
+/* the theme switch — three small pearls beside the logo */
+.theme-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-inline-start: 0.9rem;
+}
+
+.theme-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.theme-dot[data-mode="ivory"] { background: linear-gradient(140deg, #FAF8F4, #E7CC9B); }
+.theme-dot[data-mode="pearl"] { background: linear-gradient(140deg, #FDF6F2, #C08A6A); }
+.theme-dot[data-mode="night"] { background: linear-gradient(140deg, #2A1A1B, #0B0B0E); }
+
+.theme-dot:hover { transform: translateY(-1px) scale(1.06); }
+
+.theme-dot[aria-pressed="true"] {
+    box-shadow: 0 0 0 2px rgba(200, 164, 107, 0.85), 0 0 14px rgba(200, 164, 107, 0.5);
+}
+
+/* v6.9 · gift card block */
+.gift-amounts {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+    margin: 0.2rem 0 1rem;
+}
+
+.gift-amount {
+    border: 1px solid var(--border-hairline);
+    background: var(--ivory-card);
+    border-radius: 11px;
+    padding: 0.55rem 0.3rem;
+    font-family: inherit;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.22s ease;
+}
+
+.gift-amount.active {
+    border-color: var(--gold-deep);
+    color: var(--gold-deep);
+    font-weight: 700;
+    box-shadow: 0 6px 16px rgba(200, 164, 107, 0.22);
+}
+
+.gift-sep {
+    border: 0;
+    border-top: 1px solid var(--border-hairline);
+    margin: 1.3rem 0 1rem;
+}
+
+.btn-ghost-lux {
+    width: 100%;
+    border: 1px solid var(--border-hairline);
+    background: transparent;
+    border-radius: 12px;
+    padding: 0.6rem 1rem;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--gold-deep);
+    cursor: pointer;
+}
+
+.btn-ghost-lux:hover {
+    background: var(--silk-cream);
+}
