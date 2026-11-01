@@ -17,14 +17,14 @@ class SapphireThemeTest(unittest.TestCase):
     def test_palette_persistence_and_entry_points(self):
         s = SOURCE.read_text(encoding='utf8')
         self.assertIn('THEME_SAPPHIRE = 3', s)
-        self.assertIn('themeMode == THEME_EMERALD ? THEME_SAPPHIRE', s)
-        self.assertIn('THEME_EMERALD, THEME_SAPPHIRE, THEME_ROSE, THEME_NIGHT', s)
+        self.assertIn('showThemePicker()', s)
+        self.assertIn('THEME_EMERALD, THEME_SAPPHIRE, THEME_ROSE, THEME_PINK, THEME_NIGHT', s)
         self.assertIn('.putInt("theme_mode", themeMode)', s)
         self.assertIn('getInt("theme_mode"', s)
         self.assertIn('PALETTE_SAPPHIRE', s)
     def test_sapphire_text_contrast(self):
         s = SOURCE.read_text(encoding='utf8')
-        block = s.split('} else if (themeMode == THEME_SAPPHIRE) {', 1)[1].split('} else if (darkMode)', 1)[0]
+        block = s.split('} else if (themeMode == THEME_SAPPHIRE) {', 1)[1].split('} else if (', 1)[0]
         colors = dict(re.findall(r'(\w+)\s*=\s*0xFF([0-9A-F]{6})', block))
         for ink, background in [('COL_TEXT_MAIN','COL_WHITE'), ('COL_TEXT_MUTED','COL_WHITE'),
                                 ('COL_TEXT_FAINT','COL_WHITE'), ('TEXT_ON_DARK','COL_OBSIDIAN'),

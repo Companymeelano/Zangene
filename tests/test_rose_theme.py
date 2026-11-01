@@ -6,9 +6,9 @@ class RoseThemeTest(unittest.TestCase):
     def test_theme_selection_and_persistence(self):
         s = SOURCE.read_text(encoding='utf8')
         self.assertIn('THEME_ROSE = 4', s)
-        self.assertIn('themeMode == THEME_SAPPHIRE ? THEME_ROSE', s)
-        self.assertIn('themeMode == THEME_ROSE ? THEME_NIGHT', s)
-        self.assertIn('THEME_SAPPHIRE, THEME_ROSE, THEME_NIGHT', s)
+        self.assertIn('showThemePicker()', s)
+        self.assertIn('themeTiles(null)', s)
+        self.assertIn('THEME_SAPPHIRE, THEME_ROSE, THEME_PINK, THEME_NIGHT', s)
         self.assertIn('.putInt("theme_mode", themeMode)', s)
         self.assertIn('PALETTE_ROSE', s)
         self.assertIn('METAL_ROSE', s)

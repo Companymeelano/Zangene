@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.9.7 · ROSE ATELIER";
+    private static final String APP_VERSION         = "V6.9.8 · PINK MAISON";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -126,6 +126,7 @@ public final class MainActivity extends Activity {
     private static final int THEME_NIGHT  = 2;
     private static final int THEME_SAPPHIRE = 3;
     private static final int THEME_ROSE = 4;
+    private static final int THEME_PINK = 5;
     private static int themeMode = THEME_IVORY;
     private static boolean darkMode = false;
     private static final String PREF_THEME = "asiye_prefs";
@@ -432,6 +433,42 @@ public final class MainActivity extends Activity {
             COL_METAL          = 0xFFC8A46B;
             ACCENT_ON_DARK     = 0xFFD9B98A;
             SUCCESS_ON_DARK    = 0xFF9BD8B4;
+        } else if (themeMode == THEME_PINK) {
+            // PINK MAISON: clear petal pink, warm ivory and raspberry accents.
+            COL_OBSIDIAN      = 0xFF512536;
+            COL_OBSIDIAN_SOFT = 0xFF75334C;
+            COL_GOLD          = 0xFFAB2850;
+            COL_GOLD_LIGHT    = 0xFFFFEAF0;
+            COL_GOLD_DEEP     = 0xFF84203F;
+            COL_IVORY_BG      = 0xFFFFEEF3;
+            COL_SILK_CREAM    = 0xFFFFDDE7;
+            COL_WHITE         = 0xFFFFFBFC;
+            COL_TEXT_MAIN     = 0xFF3D202A;
+            COL_TEXT_MUTED    = 0xFF70505A;
+            COL_TEXT_FAINT    = 0xFF805A65;
+            COL_BORDER        = 0xFFF0CAD5;
+            COL_SUCCESS       = 0xFF176B4C;
+            COL_SUCCESS_SOFT  = 0xFFEAF5EF;
+            COL_DANGER        = 0xFFA3332F;
+            COL_WARN          = 0xFF805A0F;
+            SURF_CHIP         = 0xFFFFE1EA;
+            SURF_STRIP        = 0xFFFFF2F6;
+            SURF_SOFT         = 0xFFFFF0F4;
+            SURF_CHIP_LINE    = 0xFFF1C5D3;
+            SURF_SUCCESS_LINE = 0xFFB6DCCF;
+            SURF_GOLD_LINE    = 0xFFECCDD0;
+            SURF_STAR_OFF     = 0xFFEBCDD3;
+            STAR_ON           = 0xFF8E6C3A;
+            SURF_INACTIVE     = 0xFFA17B84;
+            SURF_DIVIDER      = 0x1A512536;
+            TEXT_BODY         = 0xFF60454E;
+            TEXT_BODY_2       = 0xFF6B4A55;
+            TEXT_ON_DARK       = 0xFFFFF5F7;
+            TEXT_ON_DARK_MUTED = 0xFFFFDCE5;
+            TEXT_ON_DARK_FAINT = 0xFFF5C8D4;
+            COL_METAL          = 0xFFD5A477;
+            ACCENT_ON_DARK     = 0xFFFFD8B4;
+            SUCCESS_ON_DARK    = 0xFFB8E5CD;
         } else if (themeMode == THEME_SAPPHIRE) {
             // Sapphire and champagne gold: light reading surfaces with deep blue framing.
             COL_OBSIDIAN      = 0xFF091D3B;
@@ -579,11 +616,12 @@ public final class MainActivity extends Activity {
         boolean emerald = themeMode == THEME_EMERALD;
         boolean sapphire = themeMode == THEME_SAPPHIRE;
         boolean rose = themeMode == THEME_ROSE;
-        Luxury3DIconView.palette = rose ? Luxury3DIconView.PALETTE_ROSE : sapphire ? Luxury3DIconView.PALETTE_SAPPHIRE
+        boolean pink = themeMode == THEME_PINK;
+        Luxury3DIconView.palette = pink ? Luxury3DIconView.PALETTE_PINK : rose ? Luxury3DIconView.PALETTE_ROSE : sapphire ? Luxury3DIconView.PALETTE_SAPPHIRE
                 : emerald ? Luxury3DIconView.PALETTE_EMERALD : Luxury3DIconView.PALETTE_GOLD;
-        LuxuryCanvas.metal = rose ? LuxuryCanvas.METAL_ROSE : sapphire ? LuxuryCanvas.METAL_SAPPHIRE
+        LuxuryCanvas.metal = pink ? LuxuryCanvas.METAL_PINK : rose ? LuxuryCanvas.METAL_ROSE : sapphire ? LuxuryCanvas.METAL_SAPPHIRE
                 : emerald ? LuxuryCanvas.METAL_EMERALD : LuxuryCanvas.METAL_GOLD;
-        SalesChartView.metal = rose ? SalesChartView.METAL_ROSE : sapphire ? SalesChartView.METAL_SAPPHIRE
+        SalesChartView.metal = pink ? SalesChartView.METAL_PINK : rose ? SalesChartView.METAL_ROSE : sapphire ? SalesChartView.METAL_SAPPHIRE
                 : emerald ? SalesChartView.METAL_EMERALD : SalesChartView.METAL_GOLD;
 
         Window window = getWindow();
@@ -624,13 +662,22 @@ public final class MainActivity extends Activity {
         }
     }
 
-    /** Cycles ivory, emerald, sapphire, rose and night, preserving the choice. */
-    private void toggleTheme() {
-        themeMode = themeMode == THEME_IVORY ? THEME_EMERALD
-                : themeMode == THEME_EMERALD ? THEME_SAPPHIRE
-                : themeMode == THEME_SAPPHIRE ? THEME_ROSE
-                : themeMode == THEME_ROSE ? THEME_NIGHT : THEME_IVORY;
-        persistTheme();
+    /** A direct theme selector for customers as well as administrators. */
+    private void showThemePicker() {
+        LinearLayout box = dialogBox();
+        box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        box.addView(dialogTitle("انتخاب تم فروشگاه", "رنگ دلخواه خود را انتخاب کنید؛ انتخاب شما ذخیره می‌شود."));
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(false);
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        scroll.addView(themeTiles(dialog));
+        int pickerHeight = Math.min(dp(350), (int) (getResources().getDisplayMetrics().heightPixels * 0.45f));
+        box.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, pickerHeight));
+        box.addView(space(8));
+        box.addView(ghostButton("بستن", new Runnable() {
+            @Override public void run() { dialog.dismiss(); }
+        }));
+        showRoundedDialog(dialog);
     }
 
     private void applyThemeMode(int mode) {
@@ -656,6 +703,7 @@ public final class MainActivity extends Activity {
         if (mode == THEME_EMERALD) return "زمرد سلطنتی (روشن)";
         if (mode == THEME_SAPPHIRE) return "یاقوت کبود";
         if (mode == THEME_ROSE) return "رز آتلیه";
+        if (mode == THEME_PINK) return "صورتی پینک مزون";
         if (mode == THEME_NIGHT) return "شب ابسیدین";
         return "روز عاجی";
     }
@@ -768,9 +816,9 @@ public final class MainActivity extends Activity {
         // Quiet actions: night mode + search + admin gate
         FrameLayout themeButton = headerActionButton(darkMode ? Luxury3DIconView.ICON_SUN : Luxury3DIconView.ICON_MOON,
                 new Runnable() {
-            @Override public void run() { toggleTheme(); }
+            @Override public void run() { showThemePicker(); }
         });
-        themeButton.setContentDescription("تغییر تم، حالت فعلی: " + themeLabel(themeMode));
+        themeButton.setContentDescription("انتخاب تم، حالت فعلی: " + themeLabel(themeMode));
         header.addView(themeButton, actionLp(8));
 
         header.addView(headerActionButton(Luxury3DIconView.ICON_SEARCH, new Runnable() {
@@ -7801,39 +7849,21 @@ public final class MainActivity extends Activity {
     // ══════════════════════════════════════════════════════════════════════
     //  ADMIN · SETTINGS (online payment · installments · AI studio)
     // ══════════════════════════════════════════════════════════════════════
-    private void renderAdminSettings() {
-        settingsTextKeys.clear();
-        settingsTextInputs.clear();
-        settingsCheckKeys.clear();
-        settingsCheckInputs.clear();
-
-        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_SETTINGS, "تنظیمات فروشگاه",
-                "پرداخت آنلاین، فروش اقساطی و استودیوی هوش مصنوعی — همه در یک صفحه"));
-        contentContainer.addView(space(14));
-
-        // ── APPEARANCE (v6.4) ────────────────────────────────────────────
-        LinearLayout look = whiteCard();
-        look.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_SUN, "ظاهر و تجربهٔ برنامه"));
-        look.addView(space(9));
-
-        TextView lookHint = text("پنج حالت طراحی‌شده برای اسیه — عاجی، زمرد، یاقوت کبود، رز آتلیه و شب ابسیدین."
-                + " کاشی‌ها، آیکن‌های سه‌بعدی و همهٔ بخش‌ها با هم تغییر می‌کنند و انتخاب شما ذخیره می‌شود.",
-                9.4f, COL_TEXT_MUTED, false);
-        lookHint.setLineSpacing(dp(3), 1f);
-        look.addView(lookHint);
-        look.addView(space(10));
-
-        final int[] modes = { THEME_IVORY, THEME_EMERALD, THEME_SAPPHIRE, THEME_ROSE, THEME_NIGHT };
-        final int[] faces = { 0xFFFAF8F3, 0xFFF3F8F4, 0xFF14345F, 0xFFFFE7ED, 0xFF0B0B0E };
-        final int[] inks = { 0xFF8E6C3A, 0xFF0B4832, 0xFFD9B478, 0xFF934A60, 0xFFD9B478 };
-        final String[] names = { "روز عاجی", "زمرد سلطنتی", "یاقوت کبود", "رز آتلیه", "شب ابسیدین" };
+    /** Shared two-column palette cards, used by the storefront and settings. */
+    private LinearLayout themeTiles(final AlertDialog dialog) {
+        final int[] modes = { THEME_IVORY, THEME_EMERALD, THEME_SAPPHIRE, THEME_ROSE, THEME_PINK, THEME_NIGHT };
+        final int[] faces = { 0xFFFAF8F3, 0xFFF3F8F4, 0xFF14345F, 0xFFFFE7ED, 0xFFFFC6D7, 0xFF0B0B0E };
+        final int[] inks = { 0xFF8E6C3A, 0xFF0B4832, 0xFFD9B478, 0xFF934A60, 0xFFAB2850, 0xFFD9B478 };
+        final String[] names = { "روز عاجی", "زمرد سلطنتی", "یاقوت کبود", "رز آتلیه", "صورتی پینک مزون", "شب ابسیدین" };
+        LinearLayout grid = new LinearLayout(this);
+        grid.setOrientation(LinearLayout.VERTICAL);
         LinearLayout paletteRow = null;
 
         for (int i = 0; i < modes.length; i++) {
             if (i % 2 == 0) {
-                if (i > 0) look.addView(space(8));
+                if (i > 0) grid.addView(space(8));
                 paletteRow = row(Gravity.TOP);
-                look.addView(paletteRow);
+                grid.addView(paletteRow);
             }
             final int mode = modes[i];
             boolean active = themeMode == mode;
@@ -7864,6 +7894,7 @@ public final class MainActivity extends Activity {
             tile.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
                     tap();
+                    if (dialog != null) dialog.dismiss();
                     applyThemeMode(mode);
                 }
             });
@@ -7873,8 +7904,34 @@ public final class MainActivity extends Activity {
             paletteRow.addView(tile, tlp);
         }
 
-        // Keep the final odd tile half-width, aligned with the rows above.
         if (modes.length % 2 != 0) paletteRow.addView(space(0), weight(1f));
+        return grid;
+    }
+
+    private void renderAdminSettings() {
+        settingsTextKeys.clear();
+        settingsTextInputs.clear();
+        settingsCheckKeys.clear();
+        settingsCheckInputs.clear();
+
+        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_SETTINGS, "تنظیمات فروشگاه",
+                "پرداخت آنلاین، فروش اقساطی و استودیوی هوش مصنوعی — همه در یک صفحه"));
+        contentContainer.addView(space(14));
+
+        // ── APPEARANCE (v6.4) ────────────────────────────────────────────
+        LinearLayout look = whiteCard();
+        look.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_SUN, "ظاهر و تجربهٔ برنامه"));
+        look.addView(space(9));
+
+        TextView lookHint = text("شش حالت طراحی‌شده برای اسیه — عاجی، زمرد، یاقوت کبود، رز آتلیه، صورتی و شب ابسیدین."
+                + " کاشی‌ها، آیکن‌های سه‌بعدی و همهٔ بخش‌ها با هم تغییر می‌کنند و انتخاب شما ذخیره می‌شود.",
+                9.4f, COL_TEXT_MUTED, false);
+        lookHint.setLineSpacing(dp(3), 1f);
+        look.addView(lookHint);
+        look.addView(space(10));
+
+        look.addView(themeTiles(null));
+
         look.addView(space(11));
         LinearLayout lookRow2 = row(Gravity.CENTER_VERTICAL);
         LinearLayout lookText2 = new LinearLayout(this);
