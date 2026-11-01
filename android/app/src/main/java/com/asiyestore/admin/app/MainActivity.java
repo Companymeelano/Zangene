@@ -361,8 +361,12 @@ public final class MainActivity extends Activity {
     // ══════════════════════════════════════════════════════════════════════
     private void loadTheme() {
         boolean legacyDark = getSharedPreferences(PREF_THEME, MODE_PRIVATE).getBoolean("dark_mode", false);
+        boolean chosen = getSharedPreferences(PREF_THEME, MODE_PRIVATE)
+                .getBoolean("theme_choice_by_user", false);
         themeMode = getSharedPreferences(PREF_THEME, MODE_PRIVATE)
-                .getInt("theme_mode", legacyDark ? THEME_NIGHT : THEME_IVORY);
+                .getInt("theme_mode", legacyDark ? THEME_NIGHT : THEME_COBALT);
+        // v6.9.1 — the house daylight is royal cobalt: anyone who never used the picker lands there.
+        if (!chosen && !legacyDark) themeMode = THEME_COBALT;
         darkMode = themeMode == THEME_NIGHT;
         applyPalette();
     }
@@ -537,6 +541,7 @@ public final class MainActivity extends Activity {
         getSharedPreferences(PREF_THEME, MODE_PRIVATE).edit()
                 .putInt("theme_mode", themeMode)
                 .putBoolean("dark_mode", darkMode)
+                .putBoolean("theme_choice_by_user", true)
                 .apply();
         applyPalette();
         restyleInputs();
