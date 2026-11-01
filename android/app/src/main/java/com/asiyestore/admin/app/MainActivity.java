@@ -25,6 +25,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -70,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.6 · SIGNATURE SEAL";
+    private static final String APP_VERSION         = "V6.7 · GOLDEN HOUR";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static final int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -239,8 +240,98 @@ public final class MainActivity extends Activity {
             cart.add(seed);
         }
 
-        setContentView(buildRootShell());
+        View shell = buildRootShell();
+        setContentView(shell);
         renderCurrentScreen();
+        showSplash(shell);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.7 · OPENING CREST — the logo announces the maison, then dissolves
+    // ══════════════════════════════════════════════════════════════════════
+    private void showSplash(View shell) {
+        if (!(shell instanceof FrameLayout)) return;
+        final FrameLayout root = (FrameLayout) shell;
+
+        final FrameLayout veil = new FrameLayout(this);
+        veil.setBackgroundColor(COL_OBSIDIAN);
+        veil.setClickable(true); // swallows taps while it is on screen
+
+        LinearLayout column = new LinearLayout(this);
+        column.setOrientation(LinearLayout.VERTICAL);
+        column.setGravity(Gravity.CENTER_HORIZONTAL);
+        column.setPadding(dp(30), 0, dp(30), 0);
+
+        FrameLayout crest = new FrameLayout(this);
+        crest.setLayoutParams(new LinearLayout.LayoutParams(dp(112), dp(112)));
+        crest.setBackground(roundedShape(0xFF100F14, dp(30), 0x66C8A46B, dp(1)));
+        crest.setClipToOutline(true);
+        ImageView mark = new ImageView(this);
+        mark.setImageResource(R.drawable.img_brand_emblem);
+        mark.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        crest.addView(mark, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        column.addView(crest);
+
+        column.addView(space(22));
+
+        TextView word = new TextView(this);
+        word.setText("ASIYE STORE");
+        word.setTextColor(COL_GOLD_LIGHT);
+        word.setTextSize(TypedValue.COMPLEX_UNIT_SP, 21f);
+        word.setTypeface(Typeface.SERIF, Typeface.BOLD);
+        word.setLetterSpacing(0.26f);
+        word.setGravity(Gravity.CENTER);
+        column.addView(word);
+
+        column.addView(space(9));
+
+        TextView kicker = new TextView(this);
+        kicker.setText("IMPERIAL LUXURY BEAUTY MAISON");
+        kicker.setTextColor(0xFF9E8F78);
+        kicker.setTextSize(TypedValue.COMPLEX_UNIT_SP, 8.4f);
+        kicker.setTypeface(Typeface.SERIF, Typeface.NORMAL);
+        kicker.setLetterSpacing(0.3f);
+        kicker.setGravity(Gravity.CENTER);
+        column.addView(kicker);
+
+        column.addView(space(26));
+
+        LuxuryCanvas.GoldFoilDivider foil = new LuxuryCanvas.GoldFoilDivider(this);
+        foil.onDark(true);
+        column.addView(foil, new LinearLayout.LayoutParams(dp(168), dp(22)));
+
+        column.addView(space(26));
+
+        TextView owner = new TextView(this);
+        owner.setText("مدیریت مجموعه: سرکار خانم زنگنه");
+        owner.setTextColor(0xFF6F675B);
+        owner.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9.4f);
+        owner.setGravity(Gravity.CENTER);
+        column.addView(owner);
+
+        veil.addView(column, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+
+        root.addView(veil, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        // entrance: crest rises and settles
+        crest.setScaleX(0.86f);
+        crest.setScaleY(0.86f);
+        crest.setAlpha(0f);
+        crest.animate().scaleX(1f).scaleY(1f).alpha(1f)
+                .setDuration(620L).setInterpolator(new DecelerateInterpolator()).start();
+
+        veil.postDelayed(new Runnable() {
+            @Override public void run() {
+                veil.animate().alpha(0f).setDuration(430L).withEndAction(new Runnable() {
+                    @Override public void run() {
+                        try { root.removeView(veil); } catch (Throwable ignored) { }
+                    }
+                }).start();
+            }
+        }, 1050L);
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -605,6 +696,7 @@ public final class MainActivity extends Activity {
             }
         } catch (Throwable t) {
             // Defensive shell: one broken component must never blank the whole store.
+            android.util.Log.e("ASIYE", "screen render failed (admin=" + adminMode + ", tab=" + adminTab + ")", t);
             contentContainer.removeAllViews();
             bottomNavContainer.removeAllViews();
             contentContainer.addView(safeModeCard(t));
@@ -752,7 +844,7 @@ public final class MainActivity extends Activity {
     // ══════════════════════════════════════════════════════════════════════
     private void renderBoutique() {
         contentContainer.addView(crestTitle(Luxury3DIconView.ICON_BOUTIQUE, "ویترین اختصاصی",
-                "کلکسیون منتخب پوست، مو و زیبایی — اورجینال، با ضمانت اصالت"));
+                "کلکسیون منتخب پوست، مو و زیبایی — اورجینال، با ضمانت اصالت", "LA COLLECTION"));
         contentContainer.addView(editorialDivider());
 
         contentContainer.addView(buildHeroCard());
@@ -783,19 +875,15 @@ public final class MainActivity extends Activity {
             contentContainer.addView(emptyCard(Luxury3DIconView.ICON_HEART, "هنوز کالایی در منتخب‌های شما نیست",
                     "قلب بالای هر کالا را لمس کنید تا در ویترین اختصاصی شما ذخیره شود."));
         } else {
-            int idx = 0;
-            for (Models.Product p : products) {
-                View card = buildProductCard(p);
-                reveal(card, idx++);
-                contentContainer.addView(card);
-                contentContainer.addView(space(16));
-            }
+            addProductGrid(products);
         }
 
         contentContainer.addView(space(2));
+        contentContainer.addView(foilDivider(false));
         contentContainer.addView(bundleCard());
         contentContainer.addView(space(18));
 
+        contentContainer.addView(foilDivider(false));
         contentContainer.addView(brandStoryCard());
         contentContainer.addView(space(16));
 
@@ -988,6 +1076,50 @@ public final class MainActivity extends Activity {
         return panel;
     }
 
+    /** True on tablets and wide foldables — the boutique then reads as a catalogue spread. */
+    private boolean isWideCanvas() {
+        return getResources().getConfiguration().smallestScreenWidthDp >= 600;
+    }
+
+    /**
+     * v6.7 · the same cards, arranged for the surface they land on:
+     * a single quiet column on phones, a paired spread on tablets.
+     */
+    private void addProductGrid(List<Models.Product> products) {
+        if (!isWideCanvas()) {
+            int idx = 0;
+            for (Models.Product p : products) {
+                View card = buildProductCard(p);
+                reveal(card, idx++);
+                contentContainer.addView(card);
+                contentContainer.addView(space(16));
+            }
+            return;
+        }
+
+        int idx = 0;
+        for (int i = 0; i < products.size(); i += 2) {
+            LinearLayout pair = row(Gravity.TOP);
+            View left = buildProductCard(products.get(i));
+            reveal(left, idx++);
+            pair.addView(left, weight(1f));
+
+            if (i + 1 < products.size()) {
+                pair.addView(spaceH(14));
+                View right = buildProductCard(products.get(i + 1));
+                reveal(right, idx++);
+                pair.addView(right, weight(1f));
+            } else {
+                // keep the last card from stretching across the full spread
+                pair.addView(spaceH(14));
+                View spacer = new View(this);
+                pair.addView(spacer, weight(1f));
+            }
+            contentContainer.addView(pair);
+            contentContainer.addView(space(16));
+        }
+    }
+
     private View buildProductCard(final Models.Product p) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
@@ -1006,6 +1138,16 @@ public final class MainActivity extends Activity {
         image.setScaleType(ImageView.ScaleType.CENTER_CROP);
         imageWrap.addView(image, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        // v6.7 · a golden shimmer holds the frame for a beat, then dissolves
+        final LuxuryCanvas.ShimmerSkeleton skeleton =
+                new LuxuryCanvas.ShimmerSkeleton(this, false);
+        imageWrap.addView(skeleton, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        skeleton.startShimmer();
+        skeleton.postDelayed(new Runnable() {
+            @Override public void run() { skeleton.release(); }
+        }, 260L + (long) (Math.random() * 240));
 
         // subtle bottom scrim
         View scrim = new View(this);
@@ -1715,7 +1857,7 @@ public final class MainActivity extends Activity {
     // ══════════════════════════════════════════════════════════════════════
     private void renderAdvisor() {
         contentContainer.addView(crestTitle(Luxury3DIconView.ICON_AI, "مشاور هوشمند و اصالت کالا",
-                "پیشنهاد دقیق متناسب با نیاز پوست و موی شما، با ضمانت اصالت"));
+                "پیشنهاد دقیق متناسب با نیاز پوست و موی شما، با ضمانت اصالت", "BEAUTY ADVISOR"));
 
         // ── Advisor (single obsidian card, no nested dark boxes) ───────────
         LinearLayout advisorCard = new LinearLayout(this);
@@ -2281,7 +2423,54 @@ public final class MainActivity extends Activity {
     //  v6.6 · BRAND STORY · INGREDIENT GLOSSARY · INVOICE EXPORT
     // ══════════════════════════════════════════════════════════════════════
 
+    /** The panel's "open" sign: it must be obvious the moment the owner signs in. */
+    private View adminLiveStrip() {
+        LinearLayout strip = new LinearLayout(this);
+        strip.setOrientation(LinearLayout.HORIZONTAL);
+        strip.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        strip.setGravity(Gravity.CENTER_VERTICAL);
+        strip.setPadding(dp(13), dp(11), dp(13), dp(11));
+        strip.setBackground(roundedShape(0xFF131218, dp(16), 0x55C8A46B, dp(1)));
+
+        FrameLayout seal = iconMedallion(Luxury3DIconView.ICON_CROWN, 34, Luxury3DIconView.PEDESTAL_GOLD);
+        strip.addView(seal);
+
+        LinearLayout texts = new LinearLayout(this);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        texts.setPadding(dp(10), 0, dp(10), 0);
+        texts.addView(text("پنل مدیریت فعال است", 11.8f, 0xFFF6EFE3, true));
+        texts.addView(text("خوش آمدید خانم زنگنه — همهٔ ابزارها در دسترس شماست", 9.4f, 0xFFB3A99B, false));
+        strip.addView(texts, weight(1f));
+
+        TextView out = text("خروج", 9.4f, COL_GOLD_LIGHT, true);
+        out.setPadding(dp(10), dp(6), dp(10), dp(6));
+        out.setBackground(roundedShape(0x22000000, dp(10), 0x66C8A46B, dp(1)));
+        out.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                adminMode = false;
+                aiStudioOpen = false;
+                customerTab = TAB_BOUTIQUE;
+                headerSubtitle.setText("مدیریت مجموعه: سرکار خانم زنگنه");
+                renderCurrentScreen();
+                toast("از پنل مدیریت خارج شدید.");
+            }
+        });
+        strip.addView(out);
+        return strip;
+    }
+
     /** "پشت ویترین" — the boutique's story, told in three quiet frames. */
+    /** A hairline of beaten gold with a diamond at its heart. */
+    private View foilDivider(boolean onDark) {
+        LuxuryCanvas.GoldFoilDivider d = new LuxuryCanvas.GoldFoilDivider(this);
+        d.onDark(onDark);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(22));
+        lp.setMargins(dp(10), dp(4), dp(10), dp(4));
+        d.setLayoutParams(lp);
+        return d;
+    }
+
     private View brandStoryCard() {
         LinearLayout card = whiteCard();
         LinearLayout head = row(Gravity.CENTER_VERTICAL);
@@ -2646,7 +2835,7 @@ public final class MainActivity extends Activity {
 
     private void renderAccount() {
         contentContainer.addView(crestTitle(Luxury3DIconView.ICON_MEDAL, "حساب من",
-                "سفارش‌ها، نشانی‌ها و گواهی اصالت شما در یک نگاه"));
+                "سفارش‌ها، نشانی‌ها و گواهی اصالت شما در یک نگاه", "MAISON ACCOUNT"));
         contentContainer.addView(editorialDivider());
         contentContainer.addView(space(10));
 
@@ -3491,7 +3680,7 @@ public final class MainActivity extends Activity {
     // ══════════════════════════════════════════════════════════════════════
     private void renderBag() {
         contentContainer.addView(crestTitle(Luxury3DIconView.ICON_BAG, "سبد خرید اختصاصی شما",
-                "پرداخت در ۴ قسط بدون کارمزد، یا ارسال هوشمند سبد در واتس‌اپ مدیریت"));
+                "پرداخت در ۴ قسط بدون کارمزد، یا ارسال هوشمند سبد در واتس‌اپ مدیریت", "YOUR SELECTION"));
         contentContainer.addView(space(14));
 
         if (cart.isEmpty()) {
@@ -4010,13 +4199,15 @@ public final class MainActivity extends Activity {
         box.setBackgroundColor(COL_WHITE);
         box.setGravity(Gravity.CENTER_HORIZONTAL);
 
-        FrameLayout seal = new FrameLayout(this);
-        seal.setLayoutParams(new LinearLayout.LayoutParams(dp(64), dp(64)));
-        seal.setBackground(roundedShape(COL_OBSIDIAN, dp(24), 0x66C8A46B, dp(1)));
-        seal.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_CROWN, true),
-                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        box.addView(seal);
-        box.addView(space(14));
+        // v6.7 · the wax seal that closes the order
+        final LuxuryCanvas.WaxSealView seal = new LuxuryCanvas.WaxSealView(this);
+        LinearLayout.LayoutParams sealLp = new LinearLayout.LayoutParams(dp(104), dp(104));
+        sealLp.setMargins(0, 0, 0, dp(2));
+        box.addView(seal, sealLp);
+        seal.postDelayed(new Runnable() {
+            @Override public void run() { seal.stamp(); }
+        }, 180L);
+        box.addView(space(10));
 
         TextView title = text("سفارش شما با موفقیت ثبت شد", 17f, COL_TEXT_MAIN, true);
         title.setGravity(Gravity.CENTER);
@@ -4069,13 +4260,13 @@ public final class MainActivity extends Activity {
     // ══════════════════════════════════════════════════════════════════════
     private void renderConcierge() {
         contentContainer.addView(crestTitle(Luxury3DIconView.ICON_CROWN, "مدیریت و ارتباط اختصاصی",
-                "خط مستقیم مدیریت مجموعه، پیام هوشمند واتس‌اپ و اینستاگرام رسمی"));
+                "خط مستقیم مدیریت مجموعه، پیام هوشمند واتس‌اپ و اینستاگرام رسمی", "VIP CONCIERGE"));
         contentContainer.addView(space(14));
 
-        // ── Executive card ────────────────────────────────────────────────
+        // ── Executive card, set on a whisper of islimi lattice ────────────
         LinearLayout exec = new LinearLayout(this);
         exec.setOrientation(LinearLayout.VERTICAL);
-        exec.setBackground(roundedShape(COL_OBSIDIAN, dp(24), 0x66C8A46B, dp(1)));
+        exec.setBackground(roundedShape(0xE60B0B0E, dp(24), 0x66C8A46B, dp(1)));
         exec.setPadding(dp(18), dp(18), dp(18), dp(18));
 
         LinearLayout eyebrowRow = row(Gravity.CENTER_VERTICAL);
@@ -4182,7 +4373,20 @@ public final class MainActivity extends Activity {
             @Override public void onClick(View v) { addOwnerToContacts(); }
         });
         exec.addView(contactRow);
-        contentContainer.addView(exec);
+        // the lattice lives behind the card, visible only where the obsidian thins
+        FrameLayout execStage = new FrameLayout(this);
+        execStage.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        execStage.setClipToOutline(true);
+        execStage.setBackground(roundedShape(COL_OBSIDIAN, dp(24), 0x66C8A46B, dp(1)));
+        LuxuryCanvas.ArabesqueBackdrop lattice = new LuxuryCanvas.ArabesqueBackdrop(this);
+        lattice.ink(true).strength(20);
+        execStage.addView(lattice, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        exec.setBackground(null);
+        execStage.addView(exec, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        contentContainer.addView(execStage);
         contentContainer.addView(space(14));
 
         // ── Instagram highlights (never clipped) ──────────────────────────
@@ -4480,7 +4684,9 @@ public final class MainActivity extends Activity {
         final Models.DashboardSnapshot snap = db.getDashboardSnapshot();
 
         contentContainer.addView(crestTitle(Luxury3DIconView.ICON_CHART, "گزارش عملکرد مجموعه",
-                "مدیریت سرکار خانم زنگنه • آمار زنده فروش و سفارش‌ها"));
+                "مدیریت سرکار خانم زنگنه • آمار زنده فروش و سفارش‌ها", "ATELIER DASHBOARD"));
+        contentContainer.addView(space(10));
+        contentContainer.addView(adminLiveStrip());
         contentContainer.addView(space(12));
         contentContainer.addView(morningBriefCard());
         contentContainer.addView(space(14));
@@ -4995,9 +5201,6 @@ public final class MainActivity extends Activity {
         }
         card.addView(space(6));
         card.addView(resultDarkLine("مبلغ کل", PersianFormatter.formatToman(o.totalAmount)));
-        if (o.trackingCode != null && !o.trackingCode.isEmpty()) {
-            card.addView(resultDarkLine("کد رهگیری", ltr(o.trackingCode)));
-        }
         card.addView(resultDarkLine("تحویل", o.shippingMethod));
         if (o.trackingCode != null && !o.trackingCode.isEmpty()) {
             card.addView(resultDarkLine("کد رهگیری", ltr(o.trackingCode)));
@@ -5441,7 +5644,34 @@ public final class MainActivity extends Activity {
 
         final EditText query = makeInput("جستجو در کلکسیون امضایی…", InputType.TYPE_CLASS_TEXT, false);
         box.addView(query);
-        box.addView(space(12));
+        box.addView(space(9));
+
+        // v6.7 · the phrases customers actually look for
+        android.widget.HorizontalScrollView chipScroll = new android.widget.HorizontalScrollView(this);
+        chipScroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout chips = new LinearLayout(this);
+        chips.setOrientation(LinearLayout.HORIZONTAL);
+        chips.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        String[] quick = {"ضدلک", "ضدچروک", "تونر", "شامپو", "گراتیو", "اوردینری", "پوست خشک"};
+        for (final String q : quick) {
+            TextView chip = text(q, 9.6f, COL_GOLD_DEEP, true);
+            chip.setPadding(dp(11), dp(6), dp(11), dp(6));
+            chip.setBackground(roundedShape(COL_IVORY_BG, dp(12), COL_BORDER, dp(1)));
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            clp.setMarginEnd(dp(6));
+            chip.setLayoutParams(clp);
+            chip.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    query.setText(q);
+                    query.setSelection(q.length());
+                }
+            });
+            chips.addView(chip);
+        }
+        chipScroll.addView(chips);
+        box.addView(chipScroll);
+        box.addView(space(10));
 
         final LinearLayout results = new LinearLayout(this);
         results.setOrientation(LinearLayout.VERTICAL);
@@ -7060,6 +7290,14 @@ public final class MainActivity extends Activity {
      * Exactly one icon per screen keeps the composition calm and editorial.
      */
     private LinearLayout crestTitle(int iconType, String title, String subtitle) {
+        return crestTitle(iconType, title, subtitle, null);
+    }
+
+    /**
+     * v6.7 · editorial heading: the Persian title keeps the sans face,
+     * a small serif Latin kicker above it carries the couture signature.
+     */
+    private LinearLayout crestTitle(int iconType, String title, String subtitle, String kicker) {
         LinearLayout wrap = new LinearLayout(this);
         wrap.setOrientation(LinearLayout.HORIZONTAL);
         wrap.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
@@ -7072,6 +7310,18 @@ public final class MainActivity extends Activity {
         LinearLayout texts = new LinearLayout(this);
         texts.setOrientation(LinearLayout.VERTICAL);
         texts.setPadding(dp(12), 0, dp(12), 0);
+
+        if (kicker != null && !kicker.isEmpty()) {
+            TextView k = new TextView(this);
+            k.setText(kicker);
+            k.setTextColor(COL_GOLD_DEEP);
+            k.setTextSize(TypedValue.COMPLEX_UNIT_SP, 8.2f);
+            k.setTypeface(Typeface.SERIF, Typeface.BOLD);
+            k.setLetterSpacing(0.24f);
+            k.setIncludeFontPadding(false);
+            k.setPadding(0, 0, 0, dp(3));
+            texts.addView(k);
+        }
 
         TextView t = text(title, 18.5f, COL_TEXT_MAIN, true);
         t.setLineSpacing(dp(2), 1f);

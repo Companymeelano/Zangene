@@ -19,7 +19,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public static final long STANDARD_SHIPPING_COST  = 65_000L;
 
     private static final String DB_NAME = "asiye_royal_v5.db";
-    private static final int DB_VERSION = 5;
+    private static final int DB_VERSION = 6;
 
     public AsiyeDatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -93,6 +93,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "certificate_code TEXT," +
                 "status TEXT NOT NULL DEFAULT 'paid'," +
                 "tracking_code TEXT," +
+                "created_at_ms INTEGER NOT NULL DEFAULT 0," +
                 "created_at_label TEXT NOT NULL" +
                 ")");
 
@@ -164,6 +165,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if (oldVersion >= newVersion) return;
+        repairSchema(db);
 
         // v5 → v6.0 : AI/SEO columns + payment & BNPL settings (non-destructive).
         if (oldVersion < 2) {
@@ -197,6 +199,38 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 db.execSQL("UPDATE orders SET created_at_ms = ? WHERE created_at_ms IS NULL",
                         new Object[]{System.currentTimeMillis()});
             } catch (Exception ignored) { }
+        }
+    }
+
+    /**
+     * v6.7 · self-healing schema guard.
+     * A previous build shipped `orders` without `created_at_ms` on fresh installs, which made
+     * every dashboard/CRM query throw and silently switched the admin panel into safe mode.
+     * This runs on every open (and after every upgrade) and can never lose data.
+     */
+    public void repairSchema(SQLiteDatabase db) {
+        alterAdd(db, "orders", "created_at_ms", "INTEGER NOT NULL DEFAULT 0");
+        alterAdd(db, "orders", "tracking_code", "TEXT");
+        alterAdd(db, "orders", "certificate_code", "TEXT");
+        alterAdd(db, "orders", "vip_gift_box", "INTEGER NOT NULL DEFAULT 1");
+        alterAdd(db, "orders", "cold_chain", "INTEGER NOT NULL DEFAULT 0");
+        alterAdd(db, "products", "wishlisted", "INTEGER NOT NULL DEFAULT 0");
+        alterAdd(db, "products", "image_key", "TEXT NOT NULL DEFAULT 'gatieau_whitening'");
+        createReviewsTable(db);
+        createRecentViewsTable(db);
+        createAddressesTable(db);
+        try {
+            db.execSQL("UPDATE orders SET created_at_ms = 0 WHERE created_at_ms IS NULL");
+        } catch (Exception ignored) { }
+    }
+
+    @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        try {
+            repairSchema(db);
+        } catch (Throwable ignored) {
+            // never let a repair attempt block the store from opening
         }
     }
 
