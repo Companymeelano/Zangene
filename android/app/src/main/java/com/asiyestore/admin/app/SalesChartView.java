@@ -42,9 +42,29 @@ public final class SalesChartView extends View {
     /** v6.9.2 · champagne chart in the warm moods, emerald and gold in the daylight one. */
     public static final int METAL_GOLD    = 0;
     public static final int METAL_EMERALD = 1;
+    public static final int METAL_SAPPHIRE = 2;
     public static int metal = METAL_GOLD;
 
     private int m(int gold, int emerald) {
+        if (metal == METAL_SAPPHIRE) {
+            switch (emerald) {
+                case 0xFF1E7A57: return 0xFF19528E;
+                case 0xFF0B4832: return 0xFF123B69;
+                case 0xFF08251A: return 0xFF091D3B;
+                case 0xFF0F3A29: return 0xFF14345F;
+                case 0xFF0F2A20: return 0xFF102A4C;
+                case 0xFF35886A: return 0xFF477EB4;
+                case 0xFFEAF4EE: return 0xFFEAF2FC;
+                case 0xFFE6F0E9: return 0xFFE3EDF9;
+                case 0xFF7B8F82: return 0xFF586F86;
+                case 0xFF435C4D: return 0xFF425971;
+                case 0xFF10241B: return 0xFF12253F;
+                case 0x22EAF4EE: return 0x22EAF2FC;
+                case 0x220B4832: return 0x22123B69;
+                case 0x221E7A57: return 0x2219528E;
+                default: return emerald;
+            }
+        }
         return metal == METAL_EMERALD ? emerald : gold;
     }
 
