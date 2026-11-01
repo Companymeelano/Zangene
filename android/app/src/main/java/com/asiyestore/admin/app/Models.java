@@ -168,6 +168,33 @@ public final class Models {
         public boolean active;
     }
 
+    /** v6.5 · a saved delivery address from the customer's address book. */
+    public static final class AddressRecord {
+        public long id;
+        public String label;
+        public String name;
+        public String mobile;
+        public String address;
+        public boolean isDefault;
+    }
+
+    /** v6.5 · one row of the merchant CRM, aggregated from real orders. */
+    public static final class CustomerRecord {
+        public String name;
+        public String mobile;
+        public int ordersCount;
+        public long totalSpend;
+        public String lastOrderLabel;
+        public String lastStatus;
+    }
+
+    /** v6.5 · one line of the customer's notification centre. */
+    public static final class NotificationRecord {
+        public int icon;
+        public String title;
+        public String body;
+    }
+
     public static final class TopProductRecord {
         public String productName;
         public int unitsSold;

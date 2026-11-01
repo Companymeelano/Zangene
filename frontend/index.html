@@ -88,6 +88,13 @@
                     <div class="section-kicker"><span class="section-crest" data-crest="diamond"></span>CURATED SELECTION</div>
                     <h2>محصولات شاخص مجموعه ASIYE STORE</h2>
                 </div>
+                <div class="filter-pills" id="skin-filters">
+                    <button class="filter-pill active" data-skin="all">هر نوع پوست</button>
+                    <button class="filter-pill" data-skin="خشک">پوست خشک</button>
+                    <button class="filter-pill" data-skin="چرب">پوست چرب</button>
+                    <button class="filter-pill" data-skin="مختلط">پوست مختلط</button>
+                    <button class="filter-pill" data-skin="حساس">پوست حساس</button>
+                </div>
                 <div class="filter-pills" id="category-filters">
                     <button class="filter-pill active" data-cat="all">همه محصولات</button>
                     <button class="filter-pill" data-cat="مراقبت تخصصی پوست">مراقبت تخصصی پوست</button>
@@ -96,6 +103,7 @@
                 </div>
             </div>
 
+            <div id="compare-panel" class="compare-panel" style="display:none;"></div>
             <div class="product-gallery" id="product-gallery"></div>
             <div class="foil-divider" aria-hidden="true"><span>ASIYE STORE</span></div>
         </section>
@@ -397,7 +405,7 @@
             <div style="font-size:0.8rem; color:#C4BBAE;">
                 طراحی رابط کاربری لوکس و معماری اکوسیستم وب و اپلیکیشن اختصاصی
             </div>
-            <div class="designer-version">V6.3 — ATELIER ICONS EDITION</div>
+            <div class="designer-version">V6.5 — COMPLETE SUITE EDITION</div>
         </div>
     </footer>
 
@@ -658,7 +666,113 @@
             reviewDraft.body = '';
         };
 
-        let activeCategory = 'all';
+        const SKIN_BY_ID = { 1: 'هر پوست', 2: 'خشک', 3: 'چرب', 4: 'حساس', 5: 'مختلط', 6: 'چرب' };
+        let activeSkin = 'all';
+        let compareIds = [];
+
+        const skinOf = (p) => SKIN_BY_ID[p.id] || 'هر پوست';
+        const matchesSkin = (p) => activeSkin === 'all' || skinOf(p) === activeSkin || skinOf(p) === 'هر پوست';
+
+        window.toggleCompare = (id) => {
+            if (compareIds.includes(id)) {
+                compareIds = compareIds.filter((x) => x !== id);
+            } else {
+                if (compareIds.length >= 2) compareIds.shift();
+                compareIds.push(id);
+            }
+            renderCompare();
+            renderGallery();
+        };
+
+        function renderCompare() {
+            const panel = document.getElementById('compare-panel');
+            if (compareIds.length === 0) {
+                panel.style.display = 'none';
+                panel.innerHTML = '';
+                return;
+            }
+            const items = compareIds.map((id) => CATALOG.find((p) => p.id === id)).filter(Boolean);
+            const rows = [
+                ['قیمت', (p) => `${toFa(p.price)} تومان`],
+                ['حجم / وزن', (p) => p.volume || '—'],
+                ['مناسب برای', (p) => skinOf(p)],
+                ['دورهٔ مصرف', (p) => `${toFa(p.replenish || 60)} روز`]
+            ];
+            panel.style.display = 'block';
+            panel.innerHTML = `
+                <div class="compare-head">
+                    <strong>مقایسهٔ سریع</strong>
+                    <button class="compare-clear" onclick="window.clearCompare()">پاک‌کردن</button>
+                </div>
+                <table class="compare-table">
+                    <thead><tr><th></th>${items.map((p) => `<th>${p.name_fa}</th>`).join('')}</tr></thead>
+                    <tbody>
+                        ${rows.map(([label, cell]) => `<tr><td>${label}</td>${items.map((p) => `<td>${cell(p)}</td>`).join('')}</tr>`).join('')}
+                    </tbody>
+                </table>
+                ${items.length < 2 ? '<div class="compare-hint">یک کالای دیگر را برای مقایسه انتخاب کنید.</div>' : ''}`;
+        }
+
+        window.clearCompare = () => { compareIds = []; renderCompare(); renderGallery(); };
+
+        window.makeCertificate = (id) => {
+            const p = CATALOG.find((x) => x.id === id);
+            if (!p) return;
+            const canvas = document.createElement('canvas');
+            canvas.width = 900;
+            canvas.height = 1300;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 900, 1300);
+            grad.addColorStop(0, '#14131A');
+            grad.addColorStop(1, '#0B0B0E');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 900, 1300);
+            ctx.strokeStyle = '#C8A46B';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(46, 46, 808, 1208);
+            ctx.strokeStyle = 'rgba(200,164,107,0.35)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(62, 62, 776, 1176);
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#EBD6B0';
+            ctx.font = '600 26px Vazirmatn, serif';
+            ctx.fillText('CERTIFICATE  OF  AUTHENTICITY', 450, 150);
+            ctx.fillStyle = '#F6EFE3';
+            ctx.font = '700 54px Vazirmatn, serif';
+            ctx.fillText('ASIYE STORE', 450, 230);
+            ctx.fillStyle = '#C8A46B';
+            ctx.font = '500 30px Vazirmatn, serif';
+            ctx.fillText(p.name_fa.slice(0, 42), 450, 330);
+            const rows = [
+                ['سریال اصالت', p.sku],
+                ['شناسهٔ بچ', p.batch],
+                ['اصالت', p.origin]
+            ];
+            let y = 450;
+            rows.forEach(([k, v]) => {
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#BDB3A4';
+                ctx.font = '400 24px Vazirmatn, serif';
+                ctx.fillText(k, 730, y);
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#F6EFE3';
+                ctx.font = '600 26px Vazirmatn, serif';
+                ctx.fillText(String(v).slice(0, 34), 170, y);
+                y += 74;
+            });
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#C8A46B';
+            ctx.font = '600 24px Vazirmatn, serif';
+            ctx.fillText('مهر مجموعه و ضمانت اصالت', 450, 830);
+            ctx.fillStyle = '#A79E90';
+            ctx.font = '400 22px Vazirmatn, serif';
+            ctx.fillText('مدیریت: سرکار خانم زنگنه  ·  +98 904 420 0993', 450, 900);
+            ctx.fillText('@asiyeh.store', 450, 950);
+            const link = document.createElement('a');
+            link.download = `asiye-certificate-${p.sku}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        };
         let bag = [{ ...CATALOG[0], quantity: 1 }];
 
         // Mount 3D SVG Icons
@@ -697,9 +811,10 @@
 
         function renderGallery() {
             const box = document.getElementById('product-gallery');
-            const list = activeCategory === 'all'
+            const base = activeCategory === 'all'
                 ? CATALOG
                 : CATALOG.filter((p) => p.category === activeCategory);
+            const list = base.filter(matchesSkin);
 
             box.innerHTML = list.map((p) => `
                 <article class="gallery-card">
@@ -721,6 +836,12 @@
                                 ${icon3D('plus', 26)}
                                 <span>افزودن به سبد</span>
                             </button>
+                            <button class="btn-obsidian-3d" onclick="window.toggleCompare(${p.id})" style="padding:0.55rem 0.8rem; font-size:0.82rem;">
+                                <span>${compareIds.includes(p.id) ? 'حذف از مقایسه' : 'مقایسه'}</span>
+                            </button>
+                            <button class="btn-obsidian-3d" onclick="window.makeCertificate(${p.id})" style="padding:0.55rem 0.8rem; font-size:0.82rem;">
+                                <span>گواهی اصالت</span>
+                            </button>
                             <a class="btn-obsidian-3d" href="${buildSmartWhatsAppUrl({ topic: 'مشاوره و ثبت سفارش محصول', productName: p.name_fa })}" target="_blank" rel="noopener" style="padding:0.55rem 0.85rem; font-size:0.83rem;">
                                 ${icon3D('whatsapp', 26)}
                                 <span>سفارش واتس‌اپ</span>
@@ -737,6 +858,15 @@
                 document.querySelectorAll('#category-filters .filter-pill').forEach((b) => b.classList.remove('active'));
                 btn.classList.add('active');
                 activeCategory = btn.dataset.cat;
+                renderGallery();
+            });
+        });
+
+        document.querySelectorAll('#skin-filters .filter-pill').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#skin-filters .filter-pill').forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeSkin = btn.dataset.skin;
                 renderGallery();
             });
         });

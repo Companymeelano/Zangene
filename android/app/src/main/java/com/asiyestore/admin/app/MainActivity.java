@@ -70,7 +70,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.4 · DUAL MOOD";
+    private static final String APP_VERSION         = "V6.5 · COMPLETE SUITE";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static final int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -112,6 +112,7 @@ public final class MainActivity extends Activity {
     private static final int TAB_ADVISOR   = 1;
     private static final int TAB_BAG       = 2;
     private static final int TAB_CONCIERGE = 3;
+    private static final int TAB_ACCOUNT   = 4;
 
     private static final int ADMIN_REPORT    = 0;
     private static final int ADMIN_CATALOG   = 1;
@@ -140,7 +141,11 @@ public final class MainActivity extends Activity {
     private Models.Product verifiedProduct = null;
     private boolean advisorAnswered = false;
     private String giftOccasion = "";
+    private String profileName = "";
+    private String profileMobile = "";
     private int bundleIdx = 0;
+    private String skinFilter = "همه";
+    private final List<Long> compareIds = new ArrayList<>();
     private boolean briefReminderOn = false;
     private int giftBudget = -1;
     private long giftSuggestionId = -1L;
@@ -152,6 +157,7 @@ public final class MainActivity extends Activity {
     private String giftMessageDraft = "";
 
     private String adminOrderFilter = "all";
+    private String adminOrderQuery = "";
     private String trackingQuery = "";
 
     // v6.0 · installments, gateways & AI studio
@@ -209,6 +215,8 @@ public final class MainActivity extends Activity {
         loadTheme();
         briefReminderOn = getSharedPreferences(PREF_THEME, MODE_PRIVATE)
                 .getBoolean("brief_reminder", false);
+        profileName = getSharedPreferences(PREF_THEME, MODE_PRIVATE).getString("profile_name", "");
+        profileMobile = getSharedPreferences(PREF_THEME, MODE_PRIVATE).getString("profile_mobile", "");
         if (briefReminderOn) {
             try { DailyBriefReceiver.schedule(this); } catch (Throwable ignored) { }
         }
@@ -590,6 +598,7 @@ public final class MainActivity extends Activity {
                     case TAB_ADVISOR:   renderAdvisor();   break;
                     case TAB_BAG:       renderBag();       break;
                     case TAB_CONCIERGE: renderConcierge(); break;
+                    case TAB_ACCOUNT:   renderAccount();   break;
                     default:            renderBoutique();  break;
                 }
                 renderCustomerNav();
@@ -650,9 +659,13 @@ public final class MainActivity extends Activity {
                 customerTab == TAB_BAG, totalCartItems(), new Runnable() {
                     @Override public void run() { switchCustomerTab(TAB_BAG); }
                 }));
-        bottomNavContainer.addView(navTab(Luxury3DIconView.ICON_CROWN, "مدیریت و ارتباط",
+        bottomNavContainer.addView(navTab(Luxury3DIconView.ICON_CROWN, "ارتباط",
                 customerTab == TAB_CONCIERGE, 0, new Runnable() {
                     @Override public void run() { switchCustomerTab(TAB_CONCIERGE); }
+                }));
+        bottomNavContainer.addView(navTab(Luxury3DIconView.ICON_USERS, "حساب من",
+                customerTab == TAB_ACCOUNT, 0, new Runnable() {
+                    @Override public void run() { switchCustomerTab(TAB_ACCOUNT); }
                 }));
     }
 
@@ -753,9 +766,19 @@ public final class MainActivity extends Activity {
         contentContainer.addView(space(10));
 
         contentContainer.addView(categoryChips());
-        contentContainer.addView(space(14));
+        contentContainer.addView(space(7));
+        contentContainer.addView(skinChips());
+        contentContainer.addView(space(12));
 
-        List<Models.Product> products = db.getProducts(true, selectedCategory, "", "newest");
+        if (!compareIds.isEmpty()) {
+            contentContainer.addView(compareTray());
+            contentContainer.addView(space(14));
+        }
+
+        List<Models.Product> products = new ArrayList<>();
+        for (Models.Product candidate : db.getProducts(true, selectedCategory, "", "newest")) {
+            if (matchesSkin(candidate)) products.add(candidate);
+        }
         if (products.isEmpty()) {
             contentContainer.addView(emptyCard(Luxury3DIconView.ICON_HEART, "هنوز کالایی در منتخب‌های شما نیست",
                     "قلب بالای هر کالا را لمس کنید تا در ویترین اختصاصی شما ذخیره شود."));
@@ -1595,6 +1618,12 @@ public final class MainActivity extends Activity {
             @Override public void run() { openSmartWhatsApp("سفارش مستقیم کالا", p.nameFa); }
         }), weight(1f));
         body.addView(actions);
+        body.addView(space(12));
+        final boolean inCompare = compareIds.contains(p.id);
+        body.addView(ghostGoldButton(inCompare ? "حذف از مقایسه" : "افزودن به مقایسهٔ کالاها",
+                new Runnable() {
+            @Override public void run() { toggleCompare(p); }
+        }));
         body.addView(space(14));
         body.addView(reviewsBlock(p));
 
@@ -2046,6 +2075,781 @@ public final class MainActivity extends Activity {
             }
         }
         return best;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.5 · MERCHANT OPERATIONS — coupons, exports, backup, CRM
+    // ══════════════════════════════════════════════════════════════════════
+
+    private View operationsCard() {
+        LinearLayout card = whiteCard();
+        card.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_SETTINGS, "ابزارهای عملیاتی مجموعه"));
+        card.addView(space(10));
+
+        // Coupons
+        card.addView(text("کوپن‌های تخفیف", 10.6f, COL_TEXT_MAIN, true));
+        for (final Models.CouponRecord cp : db.getCoupons()) {
+            card.addView(space(7));
+            LinearLayout line = row(Gravity.CENTER_VERTICAL);
+            TextView code = text(ltr(cp.code), 10f, COL_TEXT_MAIN, true);
+            line.addView(code);
+            String desc = cp.discountPercent > 0
+                    ? PersianFormatter.toPersianDigits(String.valueOf(cp.discountPercent)) + "٪"
+                    : PersianFormatter.formatToman(cp.discountAmount);
+            TextView meta = text("  ·  " + desc, 9.2f, COL_TEXT_MUTED, false);
+            line.addView(meta, weight(1f));
+            TextView toggle = text(cp.active ? "فعال" : "خاموش", 8.8f,
+                    cp.active ? COL_SUCCESS : COL_TEXT_FAINT, true);
+            toggle.setPadding(dp(8), dp(4), dp(8), dp(4));
+            toggle.setBackground(roundedShape(cp.active ? COL_SUCCESS_SOFT : COL_SILK_CREAM, dp(8),
+                    cp.active ? SURF_SUCCESS_LINE : COL_BORDER, dp(1)));
+            toggle.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    db.toggleCoupon(cp.id, !cp.active);
+                    renderCurrentScreen();
+                }
+            });
+            line.addView(toggle);
+            TextView del = text("×", 13f, COL_DANGER, true);
+            del.setPadding(dp(9), dp(2), dp(4), dp(2));
+            del.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    db.deleteCoupon(cp.id);
+                    toast("کوپن حذف شد.");
+                    renderCurrentScreen();
+                }
+            });
+            line.addView(del);
+            card.addView(line);
+        }
+        card.addView(space(9));
+        card.addView(ghostGoldButton("ساخت کوپن تازه", new Runnable() {
+            @Override public void run() { showCouponBuilderDialog(); }
+        }));
+
+        // Exports
+        card.addView(space(14));
+        card.addView(editorialDivider());
+        card.addView(space(8));
+        card.addView(text("خروجی و پشتیبان", 10.6f, COL_TEXT_MAIN, true));
+        card.addView(space(7));
+        LinearLayout exports = row(Gravity.CENTER_VERTICAL);
+        exports.addView(smallAction("سفارش‌ها (CSV)", new Runnable() {
+            @Override public void run() { shareCsv("سفارش‌های ASIYE STORE", db.exportOrdersCsv()); }
+        }), weight(1f));
+        exports.addView(spaceH(7));
+        exports.addView(smallAction("موجودی (CSV)", new Runnable() {
+            @Override public void run() { shareCsv("موجودی انبار ASIYE STORE", db.exportInventoryCsv()); }
+        }), weight(1f));
+        card.addView(exports);
+        card.addView(space(7));
+        LinearLayout backupRow = row(Gravity.CENTER_VERTICAL);
+        backupRow.addView(smallAction("پشتیبان‌گیری", new Runnable() {
+            @Override public void run() { backupDatabase(); }
+        }), weight(1f));
+        backupRow.addView(spaceH(7));
+        backupRow.addView(smallAction("بازیابی آخرین نسخه", new Runnable() {
+            @Override public void run() { restoreDatabase(); }
+        }), weight(1f));
+        card.addView(backupRow);
+        card.addView(space(6));
+        TextView note = text("نسخهٔ پشتیبان در پوشهٔ اختصاصی برنامه ذخیره می‌شود؛ مسیر آن پس از ساخت نمایش داده می‌شود.",
+                8.8f, COL_TEXT_FAINT, false);
+        note.setLineSpacing(dp(2), 1f);
+        card.addView(note);
+
+        // CRM
+        card.addView(space(14));
+        card.addView(editorialDivider());
+        card.addView(space(8));
+        card.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_USERS, "مشتریان مجموعه"));
+        List<Models.CustomerRecord> customers = db.getCustomers();
+        if (customers.isEmpty()) {
+            card.addView(space(6));
+            card.addView(text("پس از ثبت اولین سفارش، پروفایل مشتریان این‌جا ساخته می‌شود.", 9.4f, COL_TEXT_MUTED, false));
+        } else {
+            int shown = 0;
+            for (final Models.CustomerRecord c : customers) {
+                if (shown >= 4) break;
+                card.addView(space(8));
+                LinearLayout line = row(Gravity.CENTER_VERTICAL);
+                LinearLayout texts = new LinearLayout(this);
+                texts.setOrientation(LinearLayout.VERTICAL);
+                texts.addView(text(c.name, 10.4f, COL_TEXT_MAIN, true));
+                texts.addView(text(ltr(c.mobile) + " · " + PersianFormatter.formatToman(c.totalSpend)
+                        + " · " + PersianFormatter.toPersianDigits(String.valueOf(c.ordersCount)) + " سفارش",
+                        8.8f, COL_TEXT_MUTED, false));
+                line.addView(texts, weight(1f));
+                TextView wa = text("واتس‌اپ", 8.8f, 0xFF1F5B45, true);
+                wa.setPadding(dp(9), dp(5), dp(9), dp(5));
+                wa.setBackground(roundedShape(COL_SUCCESS_SOFT, dp(8), SURF_SUCCESS_LINE, dp(1)));
+                wa.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        openSmartWhatsApp("پیگیری وضعیت سفارش مشتری", c.name);
+                    }
+                });
+                line.addView(wa);
+                card.addView(line);
+                shown++;
+            }
+        }
+        return card;
+    }
+
+    private void shareCsv(String subject, String csv) {
+        Intent send = new Intent(Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(Intent.EXTRA_SUBJECT, subject);
+        send.putExtra(Intent.EXTRA_TEXT, csv);
+        startActivity(Intent.createChooser(send, "ارسال خروجی " + subject));
+    }
+
+    /** Copies the live database next to the app's private files and reports the path. */
+    private void backupDatabase() {
+        try {
+            java.io.File dbFile = getDatabasePath("asiye_royal_v5.db");
+            java.io.File dir = getExternalFilesDir(null);
+            if (dir == null) dir = getFilesDir();
+            java.io.File target = new java.io.File(dir, "asiye-backup-" + System.currentTimeMillis() + ".db");
+            java.io.FileInputStream in = new java.io.FileInputStream(dbFile);
+            java.io.FileOutputStream out = new java.io.FileOutputStream(target);
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            in.close();
+            out.close();
+            toast("پشتیبان ساخته شد: " + target.getAbsolutePath());
+            android.content.ClipboardManager cm =
+                    (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            if (cm != null) {
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("backup", target.getAbsolutePath()));
+                toast("مسیر پشتیبان در کلیپ‌بورد کپی شد.");
+            }
+        } catch (Throwable t) {
+            toast("پشتیبان‌گیری ممکن نشد: " + t.getClass().getSimpleName());
+        }
+    }
+
+    private void restoreDatabase() {
+        try {
+            java.io.File dir = getExternalFilesDir(null);
+            if (dir == null) dir = getFilesDir();
+            java.io.File[] files = dir.listFiles();
+            java.io.File latest = null;
+            if (files != null) {
+                for (java.io.File f : files) {
+                    if (!f.getName().startsWith("asiye-backup-")) continue;
+                    if (latest == null || f.lastModified() > latest.lastModified()) latest = f;
+                }
+            }
+            if (latest == null) {
+                toast("نسخهٔ پشتیبانی پیدا نشد.");
+                return;
+            }
+            db.close();
+            java.io.File target = getDatabasePath("asiye_royal_v5.db");
+            java.io.FileInputStream in = new java.io.FileInputStream(latest);
+            java.io.FileOutputStream out = new java.io.FileOutputStream(target);
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            in.close();
+            out.close();
+            db = new AsiyeDatabaseHelper(this);
+            toast("پایگاه‌داده از نسخهٔ پشتیبان بازیابی شد.");
+            renderCurrentScreen();
+        } catch (Throwable t) {
+            toast("بازیابی ممکن نشد: " + t.getClass().getSimpleName());
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.5 · SKIN-TYPE FILTER · PRODUCT COMPARISON
+    // ══════════════════════════════════════════════════════════════════════
+
+    /** The catalog is fixed, so suitability is derived from each SKU's real formulation. */
+    private String skinTypeFor(Models.Product p) {
+        String sku = p.sku == null ? "" : p.sku;
+        if ("AS-GAT-150".equals(sku)) return "هر پوست";
+        if ("AS-GAT-050".equals(sku)) return "خشک";
+        if ("AS-LC-104".equals(sku)) return "چرب";
+        if ("AS-ORD-240".equals(sku)) return "مختلط";
+        if ("AS-HF-300".equals(sku)) return "حساس";
+        if ("AS-MRG-500".equals(sku)) return "چرب";
+        return "هر پوست";
+    }
+
+    private boolean matchesSkin(Models.Product p) {
+        if ("همه".equals(skinFilter)) return true;
+        String t = skinTypeFor(p);
+        return t.equals(skinFilter) || "هر پوست".equals(t);
+    }
+
+    private View skinChips() {
+        final String[] types = {"همه", "خشک", "چرب", "مختلط", "حساس"};
+        LinearLayout row = row(Gravity.CENTER_VERTICAL);
+        for (int i = 0; i < types.length; i++) {
+            final String type = types[i];
+            boolean active = skinFilter.equals(type);
+            TextView chip = text(type, 9.4f, active ? COL_OBSIDIAN : COL_TEXT_MUTED, active);
+            chip.setGravity(Gravity.CENTER);
+            chip.setSingleLine(true);
+            chip.setPadding(dp(2), dp(7), dp(2), dp(7));
+            chip.setBackground(active
+                    ? roundedShape(COL_GOLD_LIGHT, dp(11), COL_GOLD_LIGHT, dp(1))
+                    : roundedShape(COL_IVORY_BG, dp(11), COL_BORDER, dp(1)));
+            chip.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    if (!skinFilter.equals(type)) {
+                        skinFilter = type;
+                        renderCurrentScreen();
+                    }
+                }
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            lp.setMargins(dp(3), 0, dp(3), 0);
+            row.addView(chip, lp);
+        }
+        return row;
+    }
+
+    private View compareTray() {
+        if (compareIds.isEmpty()) return new View(this);
+
+        LinearLayout card = whiteCard();
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        head.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_DIAMOND, "مقایسهٔ سریع"), weight(1f));
+        TextView clear = text("پاک‌کردن", 9f, COL_TEXT_FAINT, true);
+        clear.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                compareIds.clear();
+                renderCurrentScreen();
+            }
+        });
+        head.addView(clear);
+        card.addView(head);
+
+        LinearLayout chips = row(Gravity.CENTER_VERTICAL);
+        chips.setPadding(0, dp(9), 0, dp(4));
+        for (long id : compareIds) {
+            Models.Product p = db.getProductById(id);
+            if (p == null) continue;
+            TextView chip = text(p.nameFa, 9f, COL_TEXT_MAIN, false);
+            chip.setSingleLine(true);
+            chip.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            chip.setPadding(dp(8), dp(6), dp(8), dp(6));
+            chip.setBackground(roundedShape(COL_SILK_CREAM, dp(9), COL_BORDER, dp(1)));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            lp.setMargins(dp(3), 0, dp(3), 0);
+            chips.addView(chip, lp);
+        }
+        card.addView(chips);
+
+        if (compareIds.size() < 2) {
+            card.addView(text("یک کالای دیگر را از شیت محصول به مقایسه اضافه کنید.", 9.2f, COL_TEXT_FAINT, false));
+        } else {
+            card.addView(primaryButton("مقایسهٔ دو کالا", Luxury3DIconView.ICON_CHART, new Runnable() {
+                @Override public void run() { showCompareDialog(); }
+            }));
+        }
+        return card;
+    }
+
+    private void toggleCompare(Models.Product p) {
+        if (compareIds.contains(p.id)) {
+            compareIds.remove(p.id);
+            toast("از مقایسه حذف شد.");
+        } else {
+            if (compareIds.size() >= 2) compareIds.remove(0);
+            compareIds.add(p.id);
+            toast("به مقایسه اضافه شد.");
+        }
+        renderCurrentScreen();
+    }
+
+    private void showCompareDialog() {
+        if (compareIds.size() < 2) return;
+        Models.Product a = db.getProductById(compareIds.get(0));
+        Models.Product b = db.getProductById(compareIds.get(1));
+        if (a == null || b == null) return;
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(18), dp(18), dp(18), dp(16));
+        box.setBackgroundColor(COL_WHITE);
+        box.addView(text("مقایسهٔ دو کالا", 14f, COL_TEXT_MAIN, true));
+        box.addView(space(12));
+
+        String[][] rows = {
+                {"قیمت", PersianFormatter.formatToman(a.salePrice), PersianFormatter.formatToman(b.salePrice)},
+                {"حجم / وزن", a.volume, b.volume},
+                {"کشور / اصالت", a.country, b.country},
+                {"مناسب برای", skinTypeFor(a), skinTypeFor(b)},
+                {"موجودی", a.stock > 0 ? "موجود" : "ناموجود", b.stock > 0 ? "موجود" : "ناموجود"},
+                {"دورهٔ مصرف", PersianFormatter.toPersianDigits(String.valueOf(a.replenishDays)) + " روز",
+                        PersianFormatter.toPersianDigits(String.valueOf(b.replenishDays)) + " روز"}
+        };
+
+        LinearLayout header = row(Gravity.CENTER_VERTICAL);
+        header.addView(text("", 9f, COL_TEXT_FAINT, false), weight(1f));
+        header.addView(compareHead(a.nameFa), weight(1f));
+        header.addView(compareHead(b.nameFa), weight(1f));
+        box.addView(header);
+
+        for (String[] r : rows) {
+            LinearLayout line = row(Gravity.CENTER_VERTICAL);
+            line.setPadding(0, dp(7), 0, dp(7));
+            TextView label = text(r[0], 9.2f, COL_TEXT_MUTED, false);
+            line.addView(label, weight(1f));
+            line.addView(text(r[1], 9.2f, COL_TEXT_MAIN, true), weight(1f));
+            line.addView(text(r[2], 9.2f, COL_TEXT_MAIN, true), weight(1f));
+            box.addView(line);
+            View divider = new View(this);
+            divider.setBackgroundColor(SURF_DIVIDER);
+            box.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+        }
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(box);
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(scroll).create();
+        box.addView(space(10));
+        box.addView(primaryButton("بستن", Luxury3DIconView.ICON_CHECK, new Runnable() {
+            @Override public void run() { dialog.dismiss(); }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    private TextView compareHead(String name) {
+        TextView t = text(name, 9f, COL_GOLD_DEEP, true);
+        t.setMaxLines(2);
+        t.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        return t;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.5 · ACCOUNT · ORDERS · ADDRESS BOOK · CERTIFICATE · ALERTS
+    // ══════════════════════════════════════════════════════════════════════
+
+    private void renderAccount() {
+        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_MEDAL, "حساب من",
+                "سفارش‌ها، نشانی‌ها و گواهی اصالت شما در یک نگاه"));
+        contentContainer.addView(editorialDivider());
+        contentContainer.addView(space(10));
+
+        contentContainer.addView(profileCard());
+        contentContainer.addView(space(12));
+
+        View alerts = notificationsCard();
+        if (alerts != null) {
+            contentContainer.addView(alerts);
+            contentContainer.addView(space(12));
+        }
+
+        contentContainer.addView(ordersCard());
+        contentContainer.addView(space(12));
+        contentContainer.addView(addressBookCard());
+        contentContainer.addView(space(12));
+        contentContainer.addView(certificateCard());
+        contentContainer.addView(space(6));
+        contentContainer.addView(footerNote());
+    }
+
+    private View profileCard() {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(roundedShape(COL_OBSIDIAN, dp(22), 0x45C8A46B, dp(1)));
+        card.setPadding(dp(17), dp(16), dp(17), dp(16));
+
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        FrameLayout crest = iconMedallion(Luxury3DIconView.ICON_MEDAL, 44, Luxury3DIconView.PEDESTAL_GOLD);
+        head.addView(crest);
+        LinearLayout texts = new LinearLayout(this);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        texts.setPadding(dp(11), 0, dp(11), 0);
+        texts.addView(text(profileName.isEmpty() ? "مشتری گرامی اسیه" : profileName, 13f, 0xFFF6EFE3, true));
+        texts.addView(text(profileMobile.isEmpty() ? "برای ثبت سفارش، نام و شماره را کامل کنید" : ltr(profileMobile),
+                9.6f, 0xFFBEB6AA, false));
+        head.addView(texts, weight(1f));
+
+        TextView edit = text("ویرایش", 9.4f, COL_OBSIDIAN, true);
+        edit.setPadding(dp(11), dp(7), dp(11), dp(7));
+        edit.setBackground(roundedShape(COL_GOLD_LIGHT, dp(10), 0, 0));
+        edit.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { showProfileDialog(); }
+        });
+        head.addView(edit);
+        card.addView(head);
+
+        long spend = db.getLifetimeSpend();
+        card.addView(space(11));
+        LinearLayout stats = row(Gravity.CENTER_VERTICAL);
+        stats.addView(briefStat("مجموع خرید", PersianFormatter.formatToman(spend)), weight(1f));
+        stats.addView(briefStat("سفارش‌ها", PersianFormatter.toPersianDigits(String.valueOf(db.getOrders("all").size())) + " مورد"), weight(1f));
+        card.addView(stats);
+        return card;
+    }
+
+    private void showProfileDialog() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(22), dp(22), dp(22), dp(18));
+        box.setBackgroundColor(COL_WHITE);
+        box.addView(text("مشخصات شما", 14f, COL_TEXT_MAIN, true));
+        box.addView(space(4));
+        box.addView(text("این اطلاعات در تسویهٔ سفارش خودکار پر می‌شود.", 9.8f, COL_TEXT_MUTED, false));
+        box.addView(space(12));
+
+        final EditText name = makeInput("نام و نام خانوادگی", InputType.TYPE_CLASS_TEXT, false);
+        name.setText(profileName);
+        final EditText mobile = makeInput("شماره موبایل ۱۱ رقمی", InputType.TYPE_CLASS_PHONE, true);
+        mobile.setText(profileMobile);
+        box.addView(name);
+        box.addView(space(9));
+        box.addView(mobile);
+        box.addView(space(14));
+
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ذخیرهٔ مشخصات", Luxury3DIconView.ICON_CHECK, new Runnable() {
+            @Override public void run() {
+                profileName = name.getText().toString().trim();
+                profileMobile = mobile.getText().toString().trim();
+                getSharedPreferences(PREF_THEME, MODE_PRIVATE).edit()
+                        .putString("profile_name", profileName)
+                        .putString("profile_mobile", profileMobile).apply();
+                dialog.dismiss();
+                toast("مشخصات شما ذخیره شد.");
+                renderCurrentScreen();
+            }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    private View notificationsCard() {
+        List<Models.NotificationRecord> list = db.getNotifications();
+        if (list.isEmpty()) return null;
+        LinearLayout card = whiteCard();
+        card.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_BELL, "اعلان‌های شما"));
+        int shown = 0;
+        for (Models.NotificationRecord n : list) {
+            if (shown >= 3) break;
+            card.addView(space(9));
+            LinearLayout line = row(Gravity.CENTER_VERTICAL);
+            line.addView(iconMedallion(n.icon, 26, Luxury3DIconView.PEDESTAL_IVORY));
+            LinearLayout texts = new LinearLayout(this);
+            texts.setOrientation(LinearLayout.VERTICAL);
+            texts.setPadding(dp(9), 0, dp(9), 0);
+            texts.addView(text(n.title, 10.6f, COL_TEXT_MAIN, true));
+            TextView body = text(n.body, 9.4f, COL_TEXT_MUTED, false);
+            body.setMaxLines(2);
+            body.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            texts.addView(body);
+            line.addView(texts, weight(1f));
+            card.addView(line);
+            shown++;
+        }
+        return card;
+    }
+
+    private View ordersCard() {
+        List<Models.OrderRecord> orders = db.getOrders("all");
+        LinearLayout card = whiteCard();
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        head.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_DOC, "دفترچهٔ سفارش‌ها"), weight(1f));
+        head.addView(text(PersianFormatter.toPersianDigits(String.valueOf(orders.size())) + " سفارش",
+                9f, COL_TEXT_FAINT, false));
+        card.addView(head);
+
+        if (orders.isEmpty()) {
+            card.addView(space(8));
+            card.addView(text("هنوز سفارشی ثبت نشده است. اولین انتخاب شما این‌جا ثبت می‌شود.", 10f, COL_TEXT_MUTED, false));
+            return card;
+        }
+
+        int shown = 0;
+        for (final Models.OrderRecord o : orders) {
+            if (shown >= 4) break;
+            card.addView(space(10));
+            View divider = new View(this);
+            divider.setBackgroundColor(SURF_DIVIDER);
+            card.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+            card.addView(space(9));
+
+            LinearLayout line = row(Gravity.CENTER_VERTICAL);
+            LinearLayout texts = new LinearLayout(this);
+            texts.setOrientation(LinearLayout.VERTICAL);
+            texts.addView(text(ltr(o.orderNumber), 10.8f, COL_TEXT_MAIN, true));
+            texts.addView(text(o.createdAtLabel, 9f, COL_TEXT_FAINT, false));
+            line.addView(texts, weight(1f));
+            line.addView(text(PersianFormatter.formatToman(o.totalAmount), 10.4f, COL_TEXT_MAIN, true));
+            card.addView(line);
+
+            card.addView(space(6));
+            LinearLayout actions = row(Gravity.CENTER_VERTICAL);
+            actions.addView(statusPill(o.status));
+            actions.addView(spaceH(8));
+            TextView inv = text("فاکتور", 9.2f, COL_GOLD_DEEP, true);
+            inv.setPadding(dp(10), dp(6), dp(10), dp(6));
+            inv.setBackground(roundedShape(COL_IVORY_BG, dp(9), COL_BORDER, dp(1)));
+            inv.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { shareInvoice(o); }
+            });
+            actions.addView(inv);
+            TextView again = text("سفارش مجدد", 9.2f, COL_OBSIDIAN, true);
+            again.setPadding(dp(10), dp(6), dp(10), dp(6));
+            again.setBackground(roundedShape(COL_GOLD_LIGHT, dp(9), 0, 0));
+            again.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { reorder(o); }
+            });
+            actions.addView(spaceH(8));
+            actions.addView(again);
+            card.addView(actions);
+            shown++;
+        }
+        return card;
+    }
+
+    /** Re-adds every still-available line of a past order to the bag. */
+    private void reorder(Models.OrderRecord order) {
+        tap();
+        int added = 0;
+        for (Models.OrderItemRecord item : order.items) {
+            Models.Product p = db.getProductById(item.productId);
+            if (p != null && p.stock > 0) {
+                addToCart(p);
+                added++;
+            }
+        }
+        if (added == 0) {
+            toast("کالاهای این سفارش فعلاً موجود نیستند.");
+            return;
+        }
+        customerTab = TAB_BAG;
+        renderCurrentScreen();
+    }
+
+    private View addressBookCard() {
+        List<Models.AddressRecord> list = db.getAddresses();
+        LinearLayout card = whiteCard();
+        LinearLayout head = row(Gravity.CENTER_VERTICAL);
+        head.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_GLOBE, "دفترچهٔ نشانی"), weight(1f));
+        TextView add = text("+ نشانی تازه", 9.6f, COL_GOLD_DEEP, true);
+        add.setPadding(dp(9), dp(5), dp(9), dp(5));
+        add.setBackground(roundedShape(SURF_CHIP, dp(9), SURF_CHIP_LINE, dp(1)));
+        add.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { showAddressDialog(null); }
+        });
+        head.addView(add);
+        card.addView(head);
+
+        if (list.isEmpty()) {
+            card.addView(space(8));
+            card.addView(text("نشانی‌ای ذخیره نشده است؛ با یک‌بار ثبت، تسویهٔ بعدی سریع‌تر می‌شود.", 10f, COL_TEXT_MUTED, false));
+            return card;
+        }
+
+        for (final Models.AddressRecord a : list) {
+            card.addView(space(9));
+            View divider = new View(this);
+            divider.setBackgroundColor(SURF_DIVIDER);
+            card.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+            card.addView(space(8));
+
+            LinearLayout line = row(Gravity.CENTER_VERTICAL);
+            LinearLayout texts = new LinearLayout(this);
+            texts.setOrientation(LinearLayout.VERTICAL);
+            LinearLayout titleRow = row(Gravity.CENTER_VERTICAL);
+            titleRow.addView(text(a.label, 10.6f, COL_TEXT_MAIN, true));
+            if (a.isDefault) {
+                TextView star = text("پیش‌فرض", 8.4f, COL_GOLD_DEEP, true);
+                star.setPadding(dp(7), dp(2), dp(7), dp(2));
+                star.setBackground(roundedShape(SURF_CHIP, dp(7), SURF_CHIP_LINE, dp(1)));
+                star.setLayoutParams(new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                slp.setMargins(dp(7), 0, 0, 0);
+                star.setLayoutParams(slp);
+                titleRow.addView(star);
+            }
+            texts.addView(titleRow);
+            TextView detail = text(a.name + " · " + a.address, 9.4f, COL_TEXT_MUTED, false);
+            detail.setMaxLines(2);
+            detail.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            detail.setPadding(0, dp(3), 0, 0);
+            texts.addView(detail);
+            line.addView(texts, weight(1f));
+
+            TextView del = text("حذف", 9f, COL_DANGER, true);
+            del.setPadding(dp(9), dp(5), dp(9), dp(5));
+            del.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    db.deleteAddress(a.id);
+                    toast("نشانی حذف شد.");
+                    renderCurrentScreen();
+                }
+            });
+            line.addView(del);
+            card.addView(line);
+        }
+        return card;
+    }
+
+    private void showAddressDialog(final Models.AddressRecord editing) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(22), dp(22), dp(22), dp(18));
+        box.setBackgroundColor(COL_WHITE);
+        box.addView(text("نشانی تازه", 14f, COL_TEXT_MAIN, true));
+        box.addView(space(12));
+
+        final EditText label = makeInput("برچسب (خانه، محل کار…)", InputType.TYPE_CLASS_TEXT, false);
+        final EditText name = makeInput("نام تحویل‌گیرنده", InputType.TYPE_CLASS_TEXT, false);
+        final EditText mobile = makeInput("شماره موبایل", InputType.TYPE_CLASS_PHONE, true);
+        final EditText address = makeInput("نشانی کامل پستی", InputType.TYPE_CLASS_TEXT, false);
+        if (editing != null) {
+            label.setText(editing.label);
+            name.setText(editing.name);
+            mobile.setText(editing.mobile);
+            address.setText(editing.address);
+        } else {
+            name.setText(profileName);
+            mobile.setText(profileMobile);
+        }
+        box.addView(label); box.addView(space(8));
+        box.addView(name); box.addView(space(8));
+        box.addView(mobile); box.addView(space(8));
+        box.addView(address); box.addView(space(14));
+
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ذخیرهٔ نشانی", Luxury3DIconView.ICON_CHECK, new Runnable() {
+            @Override public void run() {
+                if (address.getText().toString().trim().length() < 6) {
+                    toast("نشانی را کامل‌تر وارد کنید.");
+                    return;
+                }
+                db.addAddress(label.getText().toString(), name.getText().toString(),
+                        mobile.getText().toString(), address.getText().toString(), true);
+                dialog.dismiss();
+                toast("نشانی ذخیره شد.");
+                renderCurrentScreen();
+            }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    /** The shareable certificate of authenticity — drawn in-app, shared as text (and image on Q+). */
+    private View certificateCard() {
+        LinearLayout card = whiteCard();
+        card.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_SHIELD, "گواهی اصالت دیجیتال"));
+        card.addView(space(5));
+        card.addView(text("برای کالای تأییدشدهٔ خود یک گواهی رسمی با سریال TTAC بسازید؛ مناسب انتشار در استوری.",
+                9.6f, COL_TEXT_MUTED, false));
+        card.addView(space(11));
+
+        final Models.Product target = verifiedProduct != null ? verifiedProduct : findProductBySku("AS-GAT-150");
+        if (target == null) return card;
+        card.addView(outlineGoldButton("ساخت گواهی برای " + target.nameFa, Luxury3DIconView.ICON_SHIELD,
+                new Runnable() {
+            @Override public void run() { showCertificate(target); }
+        }));
+        return card;
+    }
+
+    private void showCertificate(final Models.Product p) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setBackgroundColor(COL_OBSIDIAN);
+        box.setPadding(dp(18), dp(18), dp(18), dp(16));
+
+        LinearLayout frame = new LinearLayout(this);
+        frame.setOrientation(LinearLayout.VERTICAL);
+        frame.setGravity(Gravity.CENTER_HORIZONTAL);
+        frame.setBackground(roundedShape(COL_OBSIDIAN_SOFT, dp(18), COL_GOLD, dp(1)));
+        frame.setPadding(dp(16), dp(20), dp(16), dp(18));
+
+        frame.addView(iconMedallion(Luxury3DIconView.ICON_SHIELD, 52, Luxury3DIconView.PEDESTAL_GOLD));
+        TextView k = text("CERTIFICATE OF AUTHENTICITY", 8.4f, COL_GOLD, false);
+        k.setLetterSpacing(0.22f);
+        k.setPadding(0, dp(10), 0, dp(4));
+        frame.addView(k);
+
+        TextView brand = text("ASIYE STORE", 17f, 0xFFF6EFE3, true);
+        brand.setTypeface(Typeface.SERIF, Typeface.BOLD);
+        brand.setLetterSpacing(0.12f);
+        frame.addView(brand);
+
+        TextView name = text(p.nameFa, 12.4f, COL_GOLD_LIGHT, true);
+        name.setGravity(Gravity.CENTER);
+        name.setPadding(0, dp(10), 0, dp(10));
+        frame.addView(name);
+
+        String[][] rows = {
+                {"سریال اصالت", ltr(p.ttacSerial)},
+                {"شناسهٔ بچ", ltr(p.batchCode)},
+                {"کد کالا", ltr(p.sku)},
+                {"اعتبار", p.expiryLabel}
+        };
+        for (String[] r : rows) {
+            LinearLayout line = row(Gravity.CENTER_VERTICAL);
+            line.setPadding(0, dp(4), 0, dp(4));
+            line.addView(text(r[0], 9f, 0xFFBEB6AA, false), weight(1f));
+            line.addView(text(r[1], 9.4f, 0xFFF6EFE3, true));
+            frame.addView(line);
+        }
+
+        frame.addView(space(12));
+        TextView seal = text("مهر مجموعه و ضمانت اصالت", 8.8f, COL_GOLD, false);
+        seal.setGravity(Gravity.CENTER);
+        seal.setPadding(dp(10), dp(5), dp(10), dp(5));
+        seal.setBackground(roundedShape(0x1AC8A46B, dp(9), 0x55C8A46B, dp(1)));
+        frame.addView(seal);
+
+        TextView sig = text("مدیریت: سرکار خانم زنگنه · " + OWNER_PHONE_DISPLAY, 8.2f, 0xFFA79E90, false);
+        sig.setGravity(Gravity.CENTER);
+        sig.setPadding(0, dp(8), 0, 0);
+        frame.addView(sig);
+
+        box.addView(frame);
+        box.addView(space(12));
+
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        LinearLayout actions = row(Gravity.CENTER_VERTICAL);
+        actions.addView(primaryButton("اشتراک گواهی", Luxury3DIconView.ICON_SHARE, new Runnable() {
+            @Override public void run() {
+                Intent send = new Intent(Intent.ACTION_SEND);
+                send.setType("text/plain");
+                send.putExtra(Intent.EXTRA_SUBJECT, "گواهی اصالت ASIYE STORE");
+                send.putExtra(Intent.EXTRA_TEXT, certificateText(p));
+                startActivity(Intent.createChooser(send, "ارسال گواهی اصالت"));
+            }
+        }), weight(1f));
+        actions.addView(spaceH(8));
+        TextView copy = text("کپی متن", 10.4f, COL_GOLD_LIGHT, true);
+        copy.setGravity(Gravity.CENTER);
+        copy.setPadding(dp(14), dp(13), dp(14), dp(13));
+        copy.setBackground(roundedShape(0x1FC8A46B, dp(12), 0x66C8A46B, dp(1)));
+        copy.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                android.content.ClipboardManager cm =
+                        (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                if (cm != null) cm.setPrimaryClip(android.content.ClipData.newPlainText("certificate", certificateText(p)));
+                toast("متن گواهی کپی شد.");
+            }
+        });
+        actions.addView(copy);
+        box.addView(actions);
+        showRoundedDialog(dialog);
+    }
+
+    private String certificateText(Models.Product p) {
+        return "گواهی اصالت ASIYE STORE\n"
+                + "کالا: " + p.nameFa + "\n"
+                + "سریال اصالت: " + p.ttacSerial + "\n"
+                + "شناسهٔ بچ: " + p.batchCode + "\n"
+                + "کد کالا: " + p.sku + "\n"
+                + "اعتبار: " + p.expiryLabel + "\n"
+                + "مجموعهٔ تخصصی پوست، مو و زیبایی به مدیریت سرکار خانم زنگنه\n"
+                + OWNER_PHONE_DISPLAY + " · " + INSTAGRAM_HANDLE;
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -3885,6 +4689,25 @@ public final class MainActivity extends Activity {
                 "به‌روزرسانی وضعیت، ثبت کد رهگیری و ارتباط مستقیم"));
         contentContainer.addView(space(14));
 
+        final EditText orderSearch = makeInput("جستجوی شمارهٔ سفارش، نام یا موبایل", InputType.TYPE_CLASS_TEXT, false);
+        orderSearch.setText(adminOrderQuery);
+        orderSearch.setSingleLine(true);
+        LinearLayout searchRow = row(Gravity.CENTER_VERTICAL);
+        searchRow.addView(orderSearch, weight(1f));
+        searchRow.addView(spaceH(7));
+        final TextView go = text("جستجو", 9.6f, COL_OBSIDIAN, true);
+        go.setPadding(dp(13), dp(12), dp(13), dp(12));
+        go.setBackground(roundedShape(COL_GOLD_LIGHT, dp(11), 0, 0));
+        go.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                adminOrderQuery = orderSearch.getText().toString().trim();
+                renderCurrentScreen();
+            }
+        });
+        searchRow.addView(go);
+        contentContainer.addView(searchRow);
+        contentContainer.addView(space(10));
+
         String[][] filters = {
                 {"همه", "all"}, {"در آماده‌سازی", "preparing"},
                 {"ارسال‌شده", "shipped"}, {"تحویل‌شده", "delivered"}
@@ -3917,7 +4740,7 @@ public final class MainActivity extends Activity {
         contentContainer.addView(filterRow);
         contentContainer.addView(space(14));
 
-        List<Models.OrderRecord> orders = db.getOrders(adminOrderFilter);
+        List<Models.OrderRecord> orders = db.searchOrders(adminOrderQuery, adminOrderFilter);
         if (orders.isEmpty()) {
             contentContainer.addView(emptyCard(Luxury3DIconView.ICON_BAG, "سفارشی در این وضعیت وجود ندارد",
                     "با انتخاب «همه» می‌توانید تمام سفارش‌های ثبت‌شده را ببینید."));
@@ -5012,6 +5835,8 @@ public final class MainActivity extends Activity {
         look.addView(lookRow2);
 
         contentContainer.addView(look);
+        contentContainer.addView(space(14));
+        contentContainer.addView(operationsCard());
         contentContainer.addView(space(14));
 
         // ── ONLINE PAYMENT ───────────────────────────────────────────────

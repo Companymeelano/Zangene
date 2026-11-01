@@ -11,6 +11,7 @@ use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\OperationsController;
 use App\Http\Controllers\Admin\ProductManagementController;
 use App\Http\Controllers\Customer\CheckoutController;
 use App\Http\Middleware\EnsureRoleOrPermission;
@@ -78,6 +79,14 @@ Route::prefix('v1')->middleware([EnsureTransactionSafety::class])->group(functio
             Route::post('/products', [ProductManagementController::class, 'store']);
             Route::put('/products/{id}', [ProductManagementController::class, 'update'])->whereNumber('id');
             Route::delete('/products/{id}', [ProductManagementController::class, 'destroy'])->whereNumber('id');
+
+            // v6.5 · merchant operations
+            Route::get('/customers', [OperationsController::class, 'customers']);
+            Route::get('/coupons', [OperationsController::class, 'coupons']);
+            Route::post('/coupons/{id}/toggle', [OperationsController::class, 'toggleCoupon'])->whereNumber('id');
+            Route::delete('/coupons/{id}', [OperationsController::class, 'destroyCoupon'])->whereNumber('id');
+            Route::get('/orders/search', [OperationsController::class, 'searchOrders']);
+            Route::get('/export/orders.csv', [OperationsController::class, 'exportOrders']);
 
             Route::get('/reviews/pending', [ReviewController::class, 'pending']);
             Route::post('/reviews/{id}/approve', [ReviewController::class, 'approve'])->whereNumber('id');

@@ -19,7 +19,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public static final long STANDARD_SHIPPING_COST  = 65_000L;
 
     private static final String DB_NAME = "asiye_royal_v5.db";
-    private static final int DB_VERSION = 4;
+    private static final int DB_VERSION = 5;
 
     public AsiyeDatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -124,8 +124,21 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
 
         createReviewsTable(db);
         createRecentViewsTable(db);
+        createAddressesTable(db);
         seedSignatureCatalog(db);
         seedSignatureReviews(db);
+    }
+
+    /** v6.5 · the customer's saved delivery addresses. */
+    private void createAddressesTable(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS addresses (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "label TEXT NOT NULL," +
+                "name TEXT NOT NULL," +
+                "mobile TEXT NOT NULL," +
+                "address TEXT NOT NULL," +
+                "is_default INTEGER NOT NULL DEFAULT 0" +
+                ")");
     }
 
     /** v6.4 · a tiny, self-trimming trail so the boutique can greet returning customers. */
@@ -169,6 +182,11 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 3) {
             createReviewsTable(db);
             seedSignatureReviews(db);
+        }
+
+        // v6.4 → v6.5 : the customer address book.
+        if (oldVersion < 5) {
+            createAddressesTable(db);
         }
 
         // v6.2 → v6.4 : recently-viewed trail + a real epoch on orders for the beauty cabinet.
@@ -1397,6 +1415,199 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             if (c.moveToFirst()) return c.getInt(0);
         }
         return 0;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  v6.5 · ADDRESS BOOK · CRM · COUPON CONTROL · ORDER SEARCH · ALERTS
+    // ══════════════════════════════════════════════════════════════════════
+
+    public long addAddress(String label, String name, String mobile, String address, boolean makeDefault) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("label", label == null || label.trim().isEmpty() ? "نشانی من" : label.trim());
+        cv.put("name", name == null ? "" : name.trim());
+        cv.put("mobile", mobile == null ? "" : mobile.trim());
+        cv.put("address", address == null ? "" : address.trim());
+        cv.put("is_default", makeDefault ? 1 : 0);
+        long id = db.insert("addresses", null, cv);
+        if (id > 0 && makeDefault) setDefaultAddress(id);
+        return id;
+    }
+
+    public void setDefaultAddress(long id) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.execSQL("UPDATE addresses SET is_default = 0");
+        ContentValues cv = new ContentValues();
+        cv.put("is_default", 1);
+        db.update("addresses", cv, "id = ?", new String[]{String.valueOf(id)});
+    }
+
+    public void deleteAddress(long id) {
+        getWritableDatabase().delete("addresses", "id = ?", new String[]{String.valueOf(id)});
+    }
+
+    public Models.AddressRecord getDefaultAddress() {
+        List<Models.AddressRecord> all = getAddresses();
+        for (Models.AddressRecord a : all) {
+            if (a.isDefault) return a;
+        }
+        return all.isEmpty() ? null : all.get(0);
+    }
+
+    public List<Models.AddressRecord> getAddresses() {
+        List<Models.AddressRecord> list = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT * FROM addresses ORDER BY is_default DESC, id DESC", null)) {
+            while (c.moveToNext()) {
+                Models.AddressRecord a = new Models.AddressRecord();
+                a.id = c.getLong(c.getColumnIndexOrThrow("id"));
+                a.label = c.getString(c.getColumnIndexOrThrow("label"));
+                a.name = c.getString(c.getColumnIndexOrThrow("name"));
+                a.mobile = c.getString(c.getColumnIndexOrThrow("mobile"));
+                a.address = c.getString(c.getColumnIndexOrThrow("address"));
+                a.isDefault = c.getInt(c.getColumnIndexOrThrow("is_default")) == 1;
+                list.add(a);
+            }
+        }
+        return list;
+    }
+
+    /** Merchant CRM: one row per mobile number, newest and biggest first. */
+    public List<Models.CustomerRecord> getCustomers() {
+        List<Models.CustomerRecord> list = new ArrayList<>();
+        String sql = "SELECT customer_name, customer_mobile, COUNT(*) AS n, " +
+                "SUM(total_amount) AS spend, MAX(created_at_label) AS last_label, " +
+                "MAX(created_at_ms) AS last_ms " +
+                "FROM orders GROUP BY customer_mobile ORDER BY last_ms DESC, spend DESC LIMIT 40";
+        try (Cursor c = getReadableDatabase().rawQuery(sql, null)) {
+            while (c.moveToNext()) {
+                Models.CustomerRecord r = new Models.CustomerRecord();
+                r.name = c.getString(0);
+                r.mobile = c.getString(1);
+                r.ordersCount = c.getInt(2);
+                r.totalSpend = c.getLong(3);
+                r.lastOrderLabel = c.getString(4);
+                r.lastStatus = "";
+                list.add(r);
+            }
+        }
+        return list;
+    }
+
+    /** Admin order search across number, name and mobile. */
+    public List<Models.OrderRecord> searchOrders(String query, String statusFilter) {
+        String q = query == null ? "" : query.trim();
+        if (q.isEmpty()) return getOrders(statusFilter);
+        List<Models.OrderRecord> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM orders WHERE ");
+        List<String> args = new ArrayList<>();
+        if (statusFilter != null && !"all".equals(statusFilter)) {
+            sql.append("status = ? AND ");
+            args.add(statusFilter);
+        }
+        sql.append("(order_number LIKE ? OR customer_name LIKE ? OR customer_mobile LIKE ?) ");
+        String like = "%" + q + "%";
+        args.add(like); args.add(like); args.add(like);
+        sql.append("ORDER BY id DESC LIMIT 60");
+        try (Cursor c = getReadableDatabase().rawQuery(sql.toString(), args.toArray(new String[0]))) {
+            while (c.moveToNext()) list.add(readOrder(c));
+        }
+        return list;
+    }
+
+    public void toggleCoupon(long id, boolean active) {
+        ContentValues cv = new ContentValues();
+        cv.put("active", active ? 1 : 0);
+        getWritableDatabase().update("coupons", cv, "id = ?", new String[]{String.valueOf(id)});
+    }
+
+    public void deleteCoupon(long id) {
+        getWritableDatabase().delete("coupons", "id = ?", new String[]{String.valueOf(id)});
+    }
+
+    /** CSV rows for accounting — orders or stock, in the merchant's own language. */
+    public String exportOrdersCsv() {
+        StringBuilder sb = new StringBuilder("order_number,customer,mobile,total,status,payment,created\n");
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT order_number, customer_name, customer_mobile, total_amount, status, payment_method, created_at_label " +
+                        "FROM orders ORDER BY id DESC", null)) {
+            while (c.moveToNext()) {
+                sb.append(csv(c.getString(0))).append(',')
+                        .append(csv(c.getString(1))).append(',')
+                        .append(csv(c.getString(2))).append(',')
+                        .append(c.getLong(3)).append(',')
+                        .append(csv(c.getString(4))).append(',')
+                        .append(csv(c.getString(5))).append(',')
+                        .append(csv(c.getString(6))).append('\n');
+            }
+        }
+        return sb.toString();
+    }
+
+    public String exportInventoryCsv() {
+        StringBuilder sb = new StringBuilder("sku,name,stock,low_stock_threshold,sale_price\n");
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT sku, name_fa, stock, low_stock_threshold, sale_price FROM products ORDER BY id", null)) {
+            while (c.moveToNext()) {
+                sb.append(csv(c.getString(0))).append(',')
+                        .append(csv(c.getString(1))).append(',')
+                        .append(c.getInt(2)).append(',')
+                        .append(c.getInt(3)).append(',')
+                        .append(c.getLong(4)).append('\n');
+            }
+        }
+        return sb.toString();
+    }
+
+    private String csv(String raw) {
+        if (raw == null) return "";
+        String v = raw.replace("\"", "\"\"");
+        return v.indexOf(',') >= 0 || v.indexOf('"') >= 0 ? "\"" + v + "\"" : v;
+    }
+
+    /** Real, non-invented alerts for the customer notification centre. */
+    public List<Models.NotificationRecord> getNotifications() {
+        List<Models.NotificationRecord> list = new ArrayList<>();
+
+        int approved = getStoreRating().count;
+        if (approved > 0) {
+            Models.NotificationRecord n = new Models.NotificationRecord();
+            n.icon = 30;
+            n.title = "نظر شما تأیید شد";
+            n.body = "تجربه‌های منتشرشده در صفحهٔ محصول به‌روزرسانی شد.";
+            list.add(n);
+        }
+
+        try (Cursor c = getReadableDatabase().rawQuery(
+                "SELECT order_number, status FROM orders WHERE status IN ('shipped','delivered') " +
+                        "ORDER BY id DESC LIMIT 2", null)) {
+            while (c.moveToNext()) {
+                Models.NotificationRecord n = new Models.NotificationRecord();
+                n.icon = 31;
+                n.title = "سفارش " + PersianFormatter.toPersianDigits(c.getString(0));
+                n.body = "وضعیت فعلی: " + PersianFormatter.statusLabelFa(c.getString(1));
+                list.add(n);
+            }
+        } catch (Exception ignored) { }
+
+        List<Long> owned = getPurchasedProductIds();
+        long now = System.currentTimeMillis();
+        for (long id : owned) {
+            long last = getLastPurchaseMs(id);
+            if (last <= 0L) continue;
+            Models.Product p = getProductById(id);
+            if (p == null) continue;
+            long days = (now - last) / 86_400_000L;
+            if (days >= 30) {
+                Models.NotificationRecord n = new Models.NotificationRecord();
+                n.icon = 36;
+                n.title = "زمان سفارش مجدد";
+                n.body = p.nameFa + " — " + PersianFormatter.toPersianDigits(String.valueOf(days)) + " روز از خرید گذشته است.";
+                list.add(n);
+            }
+            break;
+        }
+        return list;
     }
 
     public Models.DashboardSnapshot getDashboardSnapshot() {
