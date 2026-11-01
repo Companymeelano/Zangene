@@ -29,7 +29,8 @@ public final class ApiSyncClient {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public void syncCatalogFromBackend(final String rawBaseUrl, final String bearerToken, final AsiyeDatabaseHelper db, final SyncCallback callback) {
-        executor.execute(() -> {
+        executor.execute(new Runnable() {
+            @Override public void run() {
             if (rawBaseUrl == null || rawBaseUrl.trim().isEmpty()) {
                 post(callback, false, "آدرس سرور خالی است. اپ در حالت پایگاه‌داده آفلاین محلی فعال است.", 0);
                 return;
@@ -99,10 +100,13 @@ public final class ApiSyncClient {
             } finally {
                 if (conn != null) conn.disconnect();
             }
+            }
         });
     }
 
     private void post(SyncCallback cb, boolean ok, String msg, int count) {
-        mainHandler.post(() -> cb.onComplete(ok, msg, count));
+        mainHandler.post(new Runnable() {
+            @Override public void run() { cb.onComplete(ok, msg, count); }
+        });
     }
 }

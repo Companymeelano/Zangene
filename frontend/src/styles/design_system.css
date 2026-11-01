@@ -1118,3 +1118,105 @@ a:hover .lux-3d-svg {
         width: 100%;
     }
 }
+
+/* ==========================================================================
+   v6.3 · ATELIER ICONS — 3D crests on every section, gold foil ornaments
+   ========================================================================== */
+
+.section-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.section-crest,
+.card-crest,
+.hero-crest {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.section-crest .lux-3d-svg,
+.card-crest .lux-3d-svg,
+.hero-crest .lux-3d-svg {
+    filter: drop-shadow(0 6px 12px rgba(11, 11, 14, 0.18));
+    animation: crestLevitate 7s ease-in-out infinite;
+}
+
+.section-crest {
+    margin-inline-end: 0.1rem;
+}
+
+.card-crest {
+    margin-inline-end: 0.45rem;
+    vertical-align: -0.35rem;
+}
+
+.hero-crest {
+    margin-inline-end: 0.45rem;
+    vertical-align: -0.35rem;
+}
+
+.vip-card h3,
+.quiet-hero .hero-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@keyframes crestLevitate {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-2.5px) rotate(-0.6deg); }
+}
+
+/* A slow 24K sheen that travels across the crest on hover */
+.section-crest .lux-3d-svg:hover,
+.card-crest .lux-3d-svg:hover {
+    animation-play-state: paused;
+    filter: drop-shadow(0 10px 18px rgba(200, 164, 107, 0.34)) brightness(1.06);
+}
+
+/* Gold-foil divider ornament used between editorial blocks */
+.foil-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 3.2rem 0 0;
+    color: var(--gold-deep);
+}
+
+.foil-divider::before,
+.foil-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(200, 164, 107, 0), rgba(200, 164, 107, 0.55), rgba(200, 164, 107, 0));
+}
+
+.foil-divider span {
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+}
+
+@media (max-width: 620px) {
+    .section-crest .lux-3d-svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .section-kicker {
+        gap: 0.4rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .section-crest .lux-3d-svg,
+    .card-crest .lux-3d-svg,
+    .hero-crest .lux-3d-svg {
+        animation: none;
+    }
+}

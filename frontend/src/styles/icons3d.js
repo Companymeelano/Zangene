@@ -162,6 +162,59 @@ export function icon3D(name, size = 44) {
           <circle cx="39.5" cy="39" r="2" fill="url(#gold3dGlyph)"/>`,
         check: `
           <path d="M22.5 32.5l6.5 6.5 12.5-13" fill="none" stroke="url(#gold3dGlyph)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+        star: `
+          <path d="M32 16.5l4.9 10.4 11.4 1.5-8.3 8 2.1 11.3-10.1-5.5-10.1 5.5 2.1-11.3-8.3-8 11.4-1.5L32 16.5z"
+                fill="url(#gold3dGlyph)" stroke="#FFF3D6" stroke-width="0.6" stroke-linejoin="round"/>`,
+        diamond: `
+          <path d="M22.5 21.5h19L47 29 32 46 17 29l5.5-7.5z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M17 29h30M22.5 21.5L26.5 29M41.5 21.5L37.5 29M26.5 29L32 46l5.5-17"
+                fill="none" stroke="url(#gold3dGlyph)" stroke-width="1.5" stroke-linejoin="round"/>`,
+        truck: `
+          <rect x="16.5" y="23.5" width="20.5" height="15" rx="2.4" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2"/>
+          <path d="M37 29h5.5L47.5 34v4.5H37z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linejoin="round"/>
+          <circle cx="24" cy="42.8" r="3.4" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2"/>
+          <circle cx="41.5" cy="42.8" r="3.4" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2"/>`,
+        medal: `
+          <circle cx="32" cy="35.5" r="10" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2"/>
+          <path d="M23 15.5l5.4 12 3.6-4 3.6 4 5.4-12" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M32 30l1.9 3.9 4.3.6-3.1 3 .7 4.3-3.8-2-3.8 2 .7-4.3-3.1-3 4.3-.6L32 30z" fill="url(#gold3dGlyph)"/>`,
+        percent: `
+          <circle cx="24.5" cy="24" r="3.5" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2"/>
+          <circle cx="39.5" cy="40" r="3.5" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2"/>
+          <line x1="40.5" y1="21.5" x2="23.5" y2="42.5" stroke="url(#gold3dGlyph)" stroke-width="2.4" stroke-linecap="round"/>`,
+        box: `
+          <path d="M32 17.5l14.5 7-14.5 7-14.5-7 14.5-7z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M17.5 24.5v14.5L32 46.5l14.5-7.5V24.5M32 31.5v15" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linejoin="round"/>`,
+        users: `
+          <circle cx="26" cy="26" r="4" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2"/>
+          <circle cx="40.5" cy="29.5" r="3.1" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2"/>
+          <path d="M16.5 44c0-6 4.3-10.5 9.5-10.5S35.5 38 35.5 44" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M38 44c0-4 2.6-7 7.5-7 1.7 0 2.5.6 2.5 1.4" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2" stroke-linecap="round"/>`,
+        leaf: `
+          <path d="M43.5 19c.7 10.7-4 20.4-11.5 23.5-6.4-3-10.4-11-9.5-23.5 5.7 2.6 13.8 2.6 21 0z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M21.5 44.5c4.5-8.5 10.5-15 19-20.5" fill="none" stroke="url(#gold3dGlyph)" stroke-width="1.8" stroke-linecap="round"/>`,
+        tag: `
+          <path d="M22.5 19.5H36l10.5 10.5-15 15.5L18 32l4.5-12.5z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linejoin="round"/>
+          <circle cx="28.5" cy="26.5" r="2.1" fill="url(#gold3dGlyph)"/>`,
+        bell: `
+          <path d="M32 17.5c6 0 10.5 3.6 10.5 13.5 0 4.3 1.2 7 3.5 9.5H18c2.3-2.5 3.5-5.2 3.5-9.5C21.5 21.1 26 17.5 32 17.5z"
+                fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linejoin="round"/>
+          <circle cx="32" cy="45" r="2.2" fill="url(#gold3dGlyph)"/>`,
+        globe: `
+          <circle cx="32" cy="32" r="11.8" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2"/>
+          <ellipse cx="32" cy="32" rx="6.4" ry="11.8" fill="none" stroke="url(#gold3dGlyph)" stroke-width="1.6"/>
+          <line x1="20" y1="32" x2="44" y2="32" stroke="url(#gold3dGlyph)" stroke-width="1.6"/>`,
+        doc: `
+          <path d="M20 16.5h17.5L45 24v23.5H20z" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M37 16.5V24h8" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M25.5 31.5h14M25.5 37.5h14M25.5 43h8" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2" stroke-linecap="round"/>`,
+        moon: `
+          <path d="M39.5 19.5c-9 1.4-15 8.4-15 17 0 5 2.3 9.3 6 12-11-.5-19.5-8.6-19.5-18.7 0-10.4 9-18.8 20.4-18.8 3.4 0 6 .6 8.1 1.5z"
+                transform="translate(6 2)" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2" stroke-linejoin="round"/>`,
+        image: `
+          <rect x="17" y="20.5" width="30" height="24" rx="4" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2.2"/>
+          <circle cx="25.5" cy="28" r="2.6" fill="url(#gold3dGlyph)"/>
+          <path d="M19.5 42l10.5-9.5 7 6 5-4.5 3.5 8" fill="none" stroke="url(#gold3dGlyph)" stroke-width="2" stroke-linejoin="round"/>`,
     };
 
     return `

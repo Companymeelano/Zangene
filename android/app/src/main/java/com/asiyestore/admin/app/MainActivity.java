@@ -70,7 +70,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.2 · VERIFIED REVIEWS";
+    private static final String APP_VERSION         = "V6.3 · ATELIER ICONS";
 
     // ── Palette ────────────────────────────────────────────────────────────
     private static final int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -587,8 +587,9 @@ public final class MainActivity extends Activity {
     //  1 · BOUTIQUE (ویترین)
     // ══════════════════════════════════════════════════════════════════════
     private void renderBoutique() {
-        contentContainer.addView(pageTitle("ویترین اختصاصی",
+        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_BOUTIQUE, "ویترین اختصاصی",
                 "کلکسیون منتخب پوست، مو و زیبایی — اورجینال، با ضمانت اصالت"));
+        contentContainer.addView(editorialDivider());
 
         contentContainer.addView(buildHeroCard());
         contentContainer.addView(space(10));
@@ -596,7 +597,8 @@ public final class MainActivity extends Activity {
         contentContainer.addView(space(20));
 
         // Section head + wishlist shortcut
-        contentContainer.addView(pageTitle("کلکسیون امضایی", "شش کالای منتخب از پیج رسمی مجموعه"));
+        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_DIAMOND, "کلکسیون امضایی",
+                "شش کالای منتخب از پیج رسمی مجموعه"));
         contentContainer.addView(space(10));
 
         contentContainer.addView(categoryChips());
@@ -656,6 +658,14 @@ public final class MainActivity extends Activity {
         tagLp.setMargins(dp(14), dp(14), 0, 0);
         heroWrap.addView(heroTag, tagLp);
 
+        // v6.3 — a 24K wax-seal crest floating over the editorial photograph.
+        FrameLayout seal = iconMedallion(Luxury3DIconView.ICON_DIAMOND, 44, Luxury3DIconView.PEDESTAL_GOLD);
+        ((Luxury3DIconView) seal.getChildAt(0)).enableSweep(true);
+        FrameLayout.LayoutParams sealLp = new FrameLayout.LayoutParams(dp(44), dp(44));
+        sealLp.gravity = Gravity.TOP | Gravity.END;
+        sealLp.setMargins(0, dp(12), dp(12), 0);
+        heroWrap.addView(seal, sealLp);
+
         LinearLayout.LayoutParams heroLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(168));
         heroLp.setMargins(dp(10), dp(10), dp(10), 0);
@@ -707,16 +717,40 @@ public final class MainActivity extends Activity {
         return card;
     }
 
+    /**
+     * v6.3 — the old one-line text strip is now a calm row of three small 3D crests.
+     * Same information, dramatically more luxurious, still a single band.
+     */
     private View trustStrip() {
-        TextView strip = new TextView(this);
-        strip.setText("ضمانت اصالت   •   ارسال سریع VIP   •   پرداخت در ۴ قسط");
-        strip.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.6f);
-        strip.setTextColor(0xFF5A5244);
-        strip.setTypeface(Typeface.DEFAULT_BOLD);
-        strip.setGravity(Gravity.CENTER);
-        strip.setPadding(dp(12), dp(9), dp(12), dp(9));
-        strip.setBackground(roundedShape(0xFFFFFDF9, dp(14), 0xFFEFE6D6, dp(1)));
-        return strip;
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.HORIZONTAL);
+        panel.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        panel.setGravity(Gravity.CENTER_VERTICAL);
+        panel.setPadding(dp(6), dp(10), dp(6), dp(10));
+        panel.setBackground(roundedShape(0xFFFFFDF9, dp(16), 0xFFEFE6D6, dp(1)));
+
+        int[] icons = {Luxury3DIconView.ICON_SHIELD, Luxury3DIconView.ICON_TRUCK, Luxury3DIconView.ICON_INSTALLMENT};
+        String[] labels = {"ضمانت اصالت", "ارسال سریع VIP", "پرداخت ۴ قسط"};
+        for (int i = 0; i < icons.length; i++) {
+            LinearLayout cell = new LinearLayout(this);
+            cell.setOrientation(LinearLayout.VERTICAL);
+            cell.setGravity(Gravity.CENTER);
+            cell.setPadding(dp(2), 0, dp(2), 0);
+            cell.addView(iconMedallion(icons[i], 34, Luxury3DIconView.PEDESTAL_OBSIDIAN));
+            TextView label = text(labels[i], 8.8f, 0xFF5A5244, true);
+            label.setGravity(Gravity.CENTER);
+            label.setSingleLine(true);
+            label.setPadding(0, dp(4), 0, 0);
+            cell.addView(label);
+            panel.addView(cell, weight(1f));
+
+            if (i < icons.length - 1) {
+                View hair = new View(this);
+                hair.setBackgroundColor(0x24C8A46B);
+                panel.addView(hair, new LinearLayout.LayoutParams(dp(1), dp(30)));
+            }
+        }
+        return panel;
     }
 
     private View categoryChips() {
@@ -1173,7 +1207,9 @@ public final class MainActivity extends Activity {
         LinearLayout head = row(Gravity.CENTER_VERTICAL);
         FrameLayout crown = new FrameLayout(this);
         crown.setLayoutParams(new LinearLayout.LayoutParams(dp(38), dp(38)));
-        crown.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_CROWN, true),
+        Luxury3DIconView crownIcon = new Luxury3DIconView(this, Luxury3DIconView.ICON_MEDAL, true);
+        crownIcon.enableSweep(true);
+        crown.addView(crownIcon,
                 new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         head.addView(crown);
         LinearLayout titles = new LinearLayout(this);
@@ -1468,7 +1504,7 @@ public final class MainActivity extends Activity {
     //  2 · ADVISOR & AUTHENTICITY (مشاور و اصالت)
     // ══════════════════════════════════════════════════════════════════════
     private void renderAdvisor() {
-        contentContainer.addView(pageTitle("مشاور هوشمند و اصالت کالا",
+        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_AI, "مشاور هوشمند و اصالت کالا",
                 "پیشنهاد دقیق متناسب با نیاز پوست و موی شما، با ضمانت اصالت"));
 
         // ── Advisor (single obsidian card, no nested dark boxes) ───────────
@@ -1932,7 +1968,7 @@ public final class MainActivity extends Activity {
     //  3 · BAG & CHECKOUT (سبد خرید)
     // ══════════════════════════════════════════════════════════════════════
     private void renderBag() {
-        contentContainer.addView(pageTitle("سبد خرید اختصاصی شما",
+        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_BAG, "سبد خرید اختصاصی شما",
                 "پرداخت در ۴ قسط بدون کارمزد، یا ارسال هوشمند سبد در واتس‌اپ مدیریت"));
         contentContainer.addView(space(14));
 
@@ -1953,7 +1989,7 @@ public final class MainActivity extends Activity {
 
         // ── Gift & packaging ─────────────────────────────────────────────
         LinearLayout giftCard = whiteCard();
-        giftCard.addView(sectionLabel("بسته‌بندی هدیه و کارت دست‌نویس"));
+        giftCard.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_GIFT, "بسته‌بندی هدیه و کارت دست‌نویس"));
         giftCard.addView(space(8));
 
         LinearLayout giftRow = row(Gravity.CENTER_VERTICAL);
@@ -1979,7 +2015,7 @@ public final class MainActivity extends Activity {
 
         // ── Coupon ────────────────────────────────────────────────────────
         LinearLayout couponCard = whiteCard();
-        couponCard.addView(sectionLabel("کد تخفیف اختصاصی"));
+        couponCard.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_PERCENT, "کد تخفیف اختصاصی"));
         couponCard.addView(space(8));
         LinearLayout couponRow = row(Gravity.CENTER_VERTICAL);
         detach(bagCouponInput);
@@ -2032,7 +2068,7 @@ public final class MainActivity extends Activity {
 
         // ── Delivery details ─────────────────────────────────────────────
         LinearLayout infoCard = whiteCard();
-        infoCard.addView(sectionLabel("اطلاعات تحویل‌گیرنده"));
+        infoCard.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_USERS, "اطلاعات تحویل‌گیرنده"));
         infoCard.addView(space(8));
         String savedName = db.getSetting("customer_name", "");
         String savedMobile = db.getSetting("customer_mobile", "");
@@ -2510,7 +2546,7 @@ public final class MainActivity extends Activity {
     //  4 · CONCIERGE & DESIGNER (مدیریت و ارتباط)
     // ══════════════════════════════════════════════════════════════════════
     private void renderConcierge() {
-        contentContainer.addView(pageTitle("مدیریت و ارتباط اختصاصی",
+        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_CROWN, "مدیریت و ارتباط اختصاصی",
                 "خط مستقیم مدیریت مجموعه، پیام هوشمند واتس‌اپ و اینستاگرام رسمی"));
         contentContainer.addView(space(14));
 
@@ -2683,7 +2719,7 @@ public final class MainActivity extends Activity {
 
         // ── Order tracking ────────────────────────────────────────────────
         LinearLayout track = whiteCard();
-        track.addView(sectionLabel("پیگیری سفارش و گواهی اصالت"));
+        track.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_TRUCK, "پیگیری سفارش و گواهی اصالت"));
         track.addView(space(8));
         LinearLayout trackRow = row(Gravity.CENTER_VERTICAL);
         detach(trackingInput);
@@ -2740,7 +2776,7 @@ public final class MainActivity extends Activity {
         // ── Recent orders ─────────────────────────────────────────────────
         List<Models.OrderRecord> orders = db.getOrders("all");
         if (!orders.isEmpty()) {
-            contentContainer.addView(sectionHeader("سفارش‌های ثبت‌شده اخیر",
+            contentContainer.addView(sectionHeader(Luxury3DIconView.ICON_DOC, "سفارش‌های ثبت‌شده اخیر",
                     "وضعیت پرداخت و رهگیری مرسوله‌ها"));
             contentContainer.addView(space(10));
             int shown = 0;
@@ -2921,25 +2957,25 @@ public final class MainActivity extends Activity {
     private void renderAdminReport() {
         final Models.DashboardSnapshot snap = db.getDashboardSnapshot();
 
-        contentContainer.addView(pageTitle("گزارش عملکرد مجموعه",
+        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_CHART, "گزارش عملکرد مجموعه",
                 "مدیریت سرکار خانم زنگنه • آمار زنده فروش و سفارش‌ها"));
         contentContainer.addView(space(14));
 
         LinearLayout kpiRow1 = row(Gravity.CENTER_VERTICAL);
-        kpiRow1.addView(kpiCard("فروش ۷ روز", PersianFormatter.formatCompactMillions(snap.salesWeek),
+        kpiRow1.addView(kpiCard(Luxury3DIconView.ICON_CHART, "فروش ۷ روز", PersianFormatter.formatCompactMillions(snap.salesWeek),
                 "+۲۱٪ نسبت به هفته گذشته", COL_SUCCESS), weight(1f));
         kpiRow1.addView(spaceH(10));
-        kpiRow1.addView(kpiCard("سفارش‌های در جریان",
+        kpiRow1.addView(kpiCard(Luxury3DIconView.ICON_TRUCK, "سفارش‌های در جریان",
                 PersianFormatter.toPersianDigits(String.valueOf(snap.activeOrdersCount)) + " سفارش",
                 "از " + PersianFormatter.toPersianDigits(String.valueOf(snap.totalOrdersCount)) + " سفارش کل", COL_TEXT_MUTED), weight(1f));
         contentContainer.addView(kpiRow1);
         contentContainer.addView(space(10));
 
         LinearLayout kpiRow2 = row(Gravity.CENTER_VERTICAL);
-        kpiRow2.addView(kpiCard("میانگین سبد خرید", PersianFormatter.formatCompactMillions(snap.avgOrderValue),
+        kpiRow2.addView(kpiCard(Luxury3DIconView.ICON_WALLET, "میانگین سبد خرید", PersianFormatter.formatCompactMillions(snap.avgOrderValue),
                 "ارزش هر سفارش", COL_TEXT_MUTED), weight(1f));
         kpiRow2.addView(spaceH(10));
-        kpiRow2.addView(kpiCard("هشدار موجودی",
+        kpiRow2.addView(kpiCard(Luxury3DIconView.ICON_BOX, "هشدار موجودی",
                 PersianFormatter.toPersianDigits(String.valueOf(snap.lowStockCount)) + " کالا",
                 snap.lowStockCount > 0 ? "نیاز به شارژ فوری" : "موجودی سالم است",
                 snap.lowStockCount > 0 ? COL_DANGER : COL_SUCCESS), weight(1f));
@@ -2969,7 +3005,7 @@ public final class MainActivity extends Activity {
 
         // Top products
         LinearLayout topCard = whiteCard();
-        topCard.addView(sectionLabel("پرفروش‌ترین کالاهای مجموعه"));
+        topCard.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_MEDAL, "پرفروش‌ترین کالاهای مجموعه"));
         topCard.addView(space(10));
         List<Models.TopProductRecord> top = db.getTopProducts(3);
         if (top.isEmpty()) {
@@ -3000,7 +3036,7 @@ public final class MainActivity extends Activity {
         // Coupons
         LinearLayout couponCard = whiteCard();
         LinearLayout couponHead = row(Gravity.CENTER_VERTICAL);
-        couponHead.addView(sectionLabel("کوپن‌های تخفیف فعال"), weight(1f));
+        couponHead.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_PERCENT, "کوپن‌های تخفیف فعال"), weight(1f));
         TextView add = text("+ کوپن جدید", 10.5f, COL_GOLD_DEEP, true);
         add.setPadding(dp(8), dp(4), dp(8), dp(4));
         add.setOnClickListener(new View.OnClickListener() {
@@ -3042,7 +3078,7 @@ public final class MainActivity extends Activity {
 
         // Server sync
         LinearLayout syncCard = whiteCard();
-        syncCard.addView(sectionLabel("همگام‌سازی با سرور لاراول"));
+        syncCard.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_GLOBE, "همگام‌سازی با سرور لاراول"));
         syncCard.addView(space(4));
         syncCard.addView(text("کاتالوگ و قیمت‌ها را از API رسمی مجموعه به‌روزرسانی کنید.", 10.3f, COL_TEXT_FAINT, false));
         syncCard.addView(space(8));
@@ -3074,11 +3110,17 @@ public final class MainActivity extends Activity {
         contentContainer.addView(footerNote());
     }
 
-    private View kpiCard(String label, String value, String hint, int hintColor) {
+    /** v6.3 — KPI tile with a small 3D medallion; callers pass 0 for a text-only tile. */
+    private View kpiCard(int iconType, String label, String value, String hint, int hintColor) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setBackground(roundedShape(COL_WHITE, dp(18), COL_BORDER, dp(1)));
         card.setPadding(dp(14), dp(13), dp(14), dp(13));
+
+        if (iconType != 0) {
+            card.addView(iconMedallion(iconType, 30, Luxury3DIconView.PEDESTAL_IVORY));
+            card.addView(space(7));
+        }
 
         TextView l = text(label, 9.8f, COL_TEXT_MUTED, false);
         TextView v = text(value, 15.5f, COL_TEXT_MAIN, true);
@@ -3125,7 +3167,7 @@ public final class MainActivity extends Activity {
     // ══════════════════════════════════════════════════════════════════════
     private void renderAdminCatalog() {
         LinearLayout headRow = row(Gravity.CENTER_VERTICAL);
-        headRow.addView(pageTitle("مدیریت محصولات مجموعه",
+        headRow.addView(crestTitle(Luxury3DIconView.ICON_TAG, "مدیریت محصولات مجموعه",
                 "افزودن، ویرایش قیمت و کنترل نمایش کالاها"), weight(1f));
         contentContainer.addView(headRow);
         contentContainer.addView(space(12));
@@ -3162,7 +3204,7 @@ public final class MainActivity extends Activity {
         List<Models.ReviewRecord> pending = db.getPendingReviews();
         LinearLayout card = whiteCard();
         LinearLayout head = row(Gravity.CENTER_VERTICAL);
-        head.addView(text("نظرات در انتظار تأیید", 12f, COL_TEXT_MAIN, true), weight(1f));
+        head.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_STAR, "نظرات در انتظار تأیید"), weight(1f));
         TextView count = text(PersianFormatter.toPersianDigits(String.valueOf(pending.size())), 9.5f,
                 pending.isEmpty() ? COL_SUCCESS : COL_GOLD_DEEP, true);
         count.setPadding(dp(9), dp(4), dp(9), dp(4));
@@ -3338,7 +3380,7 @@ public final class MainActivity extends Activity {
     //  ADMIN · ORDERS
     // ══════════════════════════════════════════════════════════════════════
     private void renderAdminOrders() {
-        contentContainer.addView(pageTitle("مدیریت سفارش‌های مشتریان",
+        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_TRUCK, "مدیریت سفارش‌های مشتریان",
                 "به‌روزرسانی وضعیت، ثبت کد رهگیری و ارتباط مستقیم"));
         contentContainer.addView(space(14));
 
@@ -3489,7 +3531,7 @@ public final class MainActivity extends Activity {
     //  ADMIN · INVENTORY
     // ══════════════════════════════════════════════════════════════════════
     private void renderAdminInventory() {
-        contentContainer.addView(pageTitle("کنترل موجودی انبار",
+        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_BOX, "کنترل موجودی انبار",
                 "شارژ سریع کالاهای اورجینال با ثبت خودکار در دفتر انبار"));
         contentContainer.addView(space(12));
 
@@ -3517,7 +3559,7 @@ public final class MainActivity extends Activity {
 
         contentContainer.addView(space(6));
         LinearLayout logCard = whiteCard();
-        logCard.addView(sectionLabel("آخرین گردش انبار"));
+        logCard.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_BOX, "آخرین گردش انبار"));
         logCard.addView(space(8));
         List<Models.StockMovementRecord> moves = db.getRecentMovements(6);
         if (moves.isEmpty()) {
@@ -4113,7 +4155,7 @@ public final class MainActivity extends Activity {
         LinearLayout card = whiteCard();
 
         LinearLayout head = row(Gravity.CENTER_VERTICAL);
-        head.addView(sectionLabel("روش پرداخت و تسویه"), weight(1f));
+        head.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_CARD, "روش پرداخت و تسویه"), weight(1f));
         TextView official = text("۳ روش رسمی", 8.8f, COL_GOLD_DEEP, true);
         official.setPadding(dp(9), dp(4), dp(9), dp(4));
         official.setBackground(roundedShape(0xFFFBF4E7, dp(9), 0xFFEAD9B8, dp(1)));
@@ -4322,7 +4364,7 @@ public final class MainActivity extends Activity {
     private View buildGatewayPanel(long payable) {
         LinearLayout card = whiteCard();
         LinearLayout head = row(Gravity.CENTER_VERTICAL);
-        head.addView(sectionLabel("درگاه پرداخت آنلاین"), weight(1f));
+        head.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_BANK, "درگاه پرداخت آنلاین"), weight(1f));
         head.addView(text(db.getSettingBool("pay_sandbox", true) ? "Sandbox" : "Live", 8.8f,
                 db.getSettingBool("pay_sandbox", true) ? COL_WARN : COL_SUCCESS, true));
         card.addView(head);
@@ -4413,7 +4455,7 @@ public final class MainActivity extends Activity {
         settingsCheckKeys.clear();
         settingsCheckInputs.clear();
 
-        contentContainer.addView(pageTitle("تنظیمات فروشگاه",
+        contentContainer.addView(crestTitle(Luxury3DIconView.ICON_SETTINGS, "تنظیمات فروشگاه",
                 "پرداخت آنلاین، فروش اقساطی و استودیوی هوش مصنوعی — همه در یک صفحه"));
         contentContainer.addView(space(14));
 
@@ -4653,10 +4695,8 @@ public final class MainActivity extends Activity {
         bar.setBackground(roundedShape(COL_OBSIDIAN, dp(18), 0x4DC8A46B, dp(1)));
         bar.setPadding(dp(12), dp(11), dp(12), dp(11));
 
-        FrameLayout medal = new FrameLayout(this);
-        medal.setLayoutParams(new LinearLayout.LayoutParams(dp(36), dp(36)));
-        medal.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_AI, Luxury3DIconView.PEDESTAL_GOLD),
-                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        FrameLayout medal = iconMedallion(Luxury3DIconView.ICON_AI, 36, Luxury3DIconView.PEDESTAL_GOLD);
+        ((Luxury3DIconView) medal.getChildAt(0)).enableSweep(true);
         bar.addView(medal);
 
         LinearLayout titles = new LinearLayout(this);
@@ -5124,7 +5164,7 @@ public final class MainActivity extends Activity {
 
         // editable commercial fields
         LinearLayout edit = whiteCard();
-        edit.addView(sectionLabel("قیمت‌گذاری و موجودی"));
+        edit.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_TAG, "قیمت‌گذاری و موجودی"));
         edit.addView(space(8));
         aiPriceInput = makeInput("قیمت فروش (تومان)", InputType.TYPE_CLASS_NUMBER, true);
         aiPriceInput.setText(PersianFormatter.toAsciiDigits(String.valueOf(d.suggestedPrice)));
@@ -5364,33 +5404,100 @@ public final class MainActivity extends Activity {
         return "\u2066" + value + "\u2069";
     }
 
-    private LinearLayout pageTitle(String title, String subtitle) {
+    /** A standalone 3D medallion, sized in dp — used as a crest beside section titles. */
+    private FrameLayout iconMedallion(int iconType, int sizeDp, int pedestal) {
+        FrameLayout holder = new FrameLayout(this);
+        holder.setLayoutParams(new LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp)));
+        holder.addView(new Luxury3DIconView(this, iconType, pedestal),
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        return holder;
+    }
+
+    /**
+     * v6.3 — every page now opens with a 24K crest medallion instead of a bare headline.
+     * Exactly one icon per screen keeps the composition calm and editorial.
+     */
+    private LinearLayout crestTitle(int iconType, String title, String subtitle) {
         LinearLayout wrap = new LinearLayout(this);
-        wrap.setOrientation(LinearLayout.VERTICAL);
+        wrap.setOrientation(LinearLayout.HORIZONTAL);
+        wrap.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        wrap.setGravity(Gravity.CENTER_VERTICAL);
         wrap.setPadding(dp(2), dp(2), dp(2), 0);
 
-        TextView t = text(title, 20f, COL_TEXT_MAIN, true);
+        FrameLayout crest = iconMedallion(iconType, 52, Luxury3DIconView.PEDESTAL_OBSIDIAN);
+        ((Luxury3DIconView) crest.getChildAt(0)).enableSweep(true);
+
+        LinearLayout texts = new LinearLayout(this);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        texts.setPadding(dp(12), 0, dp(12), 0);
+
+        TextView t = text(title, 18.5f, COL_TEXT_MAIN, true);
         t.setLineSpacing(dp(2), 1f);
-        TextView s = text(subtitle, 10.8f, COL_TEXT_MUTED, false);
+        TextView s = text(subtitle, 10.4f, COL_TEXT_MUTED, false);
         s.setLineSpacing(dp(3), 1f);
-        s.setPadding(0, dp(5), 0, 0);
+        s.setPadding(0, dp(4), 0, 0);
 
-        wrap.addView(t);
-        wrap.addView(s);
+        texts.addView(t);
+        texts.addView(s);
+
+        wrap.addView(crest);
+        wrap.addView(texts, weight(1f));
         return wrap;
     }
 
-    private LinearLayout sectionHeader(String title, String subtitle) {
+    /** Small gold hairline with a diamond in the middle — separates editorial blocks. */
+    private View editorialDivider() {
+        LinearLayout line = new LinearLayout(this);
+        line.setOrientation(LinearLayout.HORIZONTAL);
+        line.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        line.setGravity(Gravity.CENTER);
+        line.setPadding(0, dp(4), 0, dp(4));
+
+        View left = new View(this);
+        left.setBackgroundColor(0x2EC8A46B);
+        line.addView(left, new LinearLayout.LayoutParams(0, dp(1), 1f));
+
+        TextView gem = text("◆", 7f, COL_GOLD_DEEP, false);
+        gem.setPadding(dp(8), 0, dp(8), 0);
+        line.addView(gem);
+
+        View right = new View(this);
+        right.setBackgroundColor(0x2EC8A46B);
+        line.addView(right, new LinearLayout.LayoutParams(0, dp(1), 1f));
+        return line;
+    }
+
+    /** Card heading with a small 3D crest, so every block carries the icon language. */
+    private LinearLayout sectionLabelWithIcon(int iconType, String label) {
+        LinearLayout line = new LinearLayout(this);
+        line.setOrientation(LinearLayout.HORIZONTAL);
+        line.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        line.setGravity(Gravity.CENTER_VERTICAL);
+
+        line.addView(iconMedallion(iconType, 24, Luxury3DIconView.PEDESTAL_GOLD));
+
+        TextView t = text(label, 12.2f, COL_TEXT_MAIN, true);
+        t.setPadding(dp(9), 0, 0, 0);
+        line.addView(t);
+        return line;
+    }
+
+    /** Sub-section heading with a 36dp crest and a supporting line. */
+    private LinearLayout sectionHeader(int iconType, String title, String subtitle) {
         LinearLayout wrap = new LinearLayout(this);
-        wrap.setOrientation(LinearLayout.VERTICAL);
-        wrap.addView(text(title, 15f, COL_TEXT_MAIN, true));
-        wrap.addView(text(subtitle, 10.2f, COL_TEXT_MUTED, false));
-        return wrap;
-    }
+        wrap.setOrientation(LinearLayout.HORIZONTAL);
+        wrap.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        wrap.setGravity(Gravity.CENTER_VERTICAL);
 
-    private TextView sectionLabel(String label) {
-        TextView t = text(label, 12.5f, COL_TEXT_MAIN, true);
-        return t;
+        wrap.addView(iconMedallion(iconType, 36, Luxury3DIconView.PEDESTAL_OBSIDIAN));
+
+        LinearLayout texts = new LinearLayout(this);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        texts.setPadding(dp(10), 0, 0, 0);
+        texts.addView(text(title, 14.5f, COL_TEXT_MAIN, true));
+        texts.addView(text(subtitle, 10f, COL_TEXT_MUTED, false));
+        wrap.addView(texts, weight(1f));
+        return wrap;
     }
 
     private TextView text(String value, float sizeSp, int color, boolean bold) {
