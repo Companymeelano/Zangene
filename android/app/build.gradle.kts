@@ -11,8 +11,8 @@ android {
         applicationId = "com.asiyestore.admin"
         minSdk = 24
         targetSdk = 34
-        versionCode = 700
-        versionName = "7.0.0-ai-studio-connect"
+        versionCode = 701
+        versionName = "7.0.1-direct-ai"
 
         vectorDrawables {
             useSupportLibrary = true
