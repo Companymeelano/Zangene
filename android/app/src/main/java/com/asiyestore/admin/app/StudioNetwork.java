@@ -54,7 +54,7 @@ public final class StudioNetwork {
         } finally { c.disconnect(); }
     }
     /** Contract described in tools/AI_STUDIO_API.md; proxy owns provider credentials. */
-    public static AiProductStudio.Draft generate(String endpoint, String name, String brand, Bitmap photo) throws Exception {
+    public static AiProductStudio.Draft generate(String endpoint, String accessToken, String name, String brand, Bitmap photo) throws Exception {
         JSONObject req = new JSONObject(); req.put("name", name); req.put("brand", brand);
         if (photo != null) {
             ByteArrayOutputStream image = new ByteArrayOutputStream();
@@ -63,8 +63,14 @@ public final class StudioNetwork {
         }
         byte[] body = req.toString().getBytes(StandardCharsets.UTF_8);
         if (body.length > MAX_IMAGE) throw new IllegalArgumentException("Image too large");
+        URL endpointUrl = new URL(endpoint.trim());
+        if (endpointUrl.getQuery() != null || endpointUrl.getRef() != null) throw new IllegalArgumentException("Invalid endpoint");
+        if (accessToken == null || accessToken.length() < 32 || accessToken.contains("\n") || accessToken.contains("\r"))
+            throw new IllegalArgumentException("Invalid studio access token");
         HttpURLConnection c = connect(endpoint);
         try {
+            c.setReadTimeout(80000);
+            c.setRequestProperty("Authorization", "Bearer " + accessToken);
             c.setRequestMethod("POST"); c.setDoOutput(true); c.setRequestProperty("Content-Type", "application/json; charset=utf-8");
             c.setRequestProperty("Accept", "application/json"); c.setFixedLengthStreamingMode(body.length);
             try (java.io.OutputStream out = c.getOutputStream()) { out.write(body); }

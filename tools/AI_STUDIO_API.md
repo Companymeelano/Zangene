@@ -1,7 +1,40 @@
-# Product Studio HTTPS proxy contract
+# راه‌اندازی امن سرویس استودیوی محصول (۷.۰.۰)
 
-The app's local draft is a template, not image recognition. A merchant can configure an HTTPS endpoint in admin settings, then explicitly choose cloud analysis and consent to sending name, brand and the selected photo to that endpoint. No API key should be embedded in the APK or placed in the endpoint URL. Run a proxy under your own control, keeping provider credentials server-side. This client does not currently send an authorization header, so restrict access at the network or proxy layer; do not expose an unprotected paid provider proxy publicly. The APK does not include an AI service or a search engine.
+کد مستقل `backend/ai_proxy/server.py` پراکسی سمت سرور برای Gemini، OpenAI و Groq است. بدون سرور مستقر و پیکربندی‌شده، برنامه همچنان پیش‌نویس محلی می‌سازد و تحلیل ابری فعال نخواهد بود. مدل‌ها ممکن است اشتباه کنند؛ خروجی فقط پیش‌نویس قابل ویرایش است. تصویر انتخابی و نام و برند به اولین ارائه‌دهندهٔ قابل دسترس ارسال می‌شود؛ در صورت خطا به ارائه‌دهندهٔ بعدی نیز ارسال می‌شود. نباید بدون رضایت عکس خصوصی ارسال شود.
 
-POST JSON, UTF-8, no redirect: `{ "name": "چای سیاه", "brand": "ساقدوش", "image_jpeg_base64": "..." }` (image omitted if none). Server sends HTTP 200 with a JSON object containing string fields: `nameFa`, `nameEn`, `category`, `description`, `longDescription`, `benefits`, `ingredients`, `usage`, `country`, `volume`, `keywords`, `seoTitle`, `seoDescription`, `instagramCaption`. `nameFa`, `category` and `description` are mandatory nonempty strings; other missing fields remain blank or neutral. The proxy must prompt its multimodal model not to invent unsupported product facts and to return only this object. All results require merchant review before publication. Price and stock are never inferred or accepted from the service. This is a custom proxy contract, not a direct OpenAI API URL. HTTP errors, malformed data, and timeouts leave the inputs intact; no silent fallback claims success. HTTP, redirects, oversized responses and non-string values are rejected.
+## امنیت ضروری
 
-Online images require a direct HTTPS image URL, HTTP 200 with an image content type, maximum 8 MiB; redirects and HTML search pages are not accepted. Respect image ownership and licensing. Images and cloud payloads can contain private data; use only trusted hosts.
+* کلیدهای ارائه‌شده در گفتگو را در پنل‌های مربوطه **لغو و جایگزین** کنید. هرگز کلید ارائه‌دهنده را در APK، گیت، نشانی URL یا پیام قرار ندهید. صورتحساب، محدودیت مصرف و تاریخچهٔ استفادهٔ هر حساب را بررسی کنید.
+* متغیرهای محیطی `GEMINI_API_KEY`، `OPENAI_API_KEY` و `GROQ_API_KEY` را فقط در محیط امن سرور با کلیدهای جدید تنظیم کنید (حداقل یکی لازم است). مقدارها را در مستندات یا مخزن ننویسید.
+* یک رمز تصادفی مستقل حداقل ۳۲ نویسه‌ای برای `STUDIO_ACCESS_TOKEN` بسازید. این رمز **کلید ارائه‌دهنده نیست**؛ باید در هر درخواست اپ در پنجرهٔ رمز دسترسی سرور وارد شود و در اپ ذخیره نمی‌شود. با خطر دسترسی به سرویس و هزینهٔ API از آن محافظت کنید و در صورت افشا آن را عوض کنید.
+* سرویس فقط روی `127.0.0.1:8787` گوش می‌دهد و به‌تنهایی HTTPS ندارد؛ در محیط عملیاتی حتماً پشت پراکسی معکوس HTTPS معتبر، فایروال، محدودیت اتصال و بدنهٔ درخواست و مدیریت لاگ مستقر شود. دسترسی مستقیم عمومی به این پورت مجاز نیست. برای استفادهٔ تجاری، احراز هویت کاربر، دسترسی مبتنی بر نقش، ابطال نشست و سهمیهٔ هر کاربر نیز باید به درگاه اضافه شود؛ رمز مشترک جایگزین کامل آن نیست.
+
+## تنظیم و اجرا
+
+روی سرور تحت کنترل خود با Python 3.9+ متغیرهای فوق را از سامانهٔ مدیریت اسرار/محیط اجرا تنظیم کنید و فایل را اجرا کنید:
+
+```sh
+python3 backend/ai_proxy/server.py
+```
+
+مدل‌های پیش‌فرض: `gemini-2.5-flash`، `gpt-4o-mini`، `meta-llama/llama-4-scout-17b-16e-instruct`. می‌توان با `GEMINI_MODEL`، `OPENAI_MODEL`، `GROQ_MODEL` مدل‌های سازگار با تصویر و JSON را تنظیم کرد؛ دسترسی و موجود بودن مدل در حساب ارائه‌دهنده باید جداگانه تأیید شود. ترتیب تلاش Gemini ← OpenAI ← Groq است و تنها در صورت خطا یا خروجی نامعتبر به بعدی می‌رود؛ این ممکن است بیش از یک هزینهٔ درخواست ایجاد کند. کلیدهای غیرفعال حذف می‌شوند. timeout هر ارائه‌دهنده ۲۲ ثانیه است.
+
+نمونهٔ پراکسی معکوس Nginx، پس از تهیهٔ گواهی و تعویض نام دامنه:
+
+```nginx
+location = /v1/product-studio {
+    client_max_body_size 8m;
+    proxy_read_timeout 80s;
+    proxy_pass http://127.0.0.1:8787;
+    proxy_set_header Authorization $http_authorization;
+    proxy_set_header Host $host;
+}
+```
+
+در تنظیمات مدیریت اپ آدرس کامل `https://YOUR_DOMAIN/v1/product-studio` را ذخیره کنید. سپس استودیو، نام و برند و عکس را وارد کرده و «تحلیل با سرویس» را بزنید؛ رمز مستقل سرور را در پنجرهٔ تأیید وارد کنید. سرویس باید قبل از آزمون APK روی HTTPS مستقر و قابل دسترسی از گوشی باشد. **کلید یا رمز را در گفتگو ارسال نکنید.**
+
+## قرارداد و آزمون
+
+درخواست POST با Bearer token و JSON شامل `name`، `brand` و `image_jpeg_base64` اختیاری است. فقط JPEG تا ۴ MiB پذیرفته می‌شود. پاسخ شامل رشته‌های `nameFa`، `nameEn`، `category`، `description`، `longDescription`، `benefits`، `ingredients`، `usage`، `country`، `volume`، `keywords`، `seoTitle`، `seoDescription` و `instagramCaption` است. `nameFa`، `category` و `description` الزامی‌اند؛ قیمت و موجودی از مدل پذیرفته نمی‌شوند. برای ورودی یا خروجی نامعتبر خطا بازگردانده می‌شود. فراخوانی‌ها، احراز هویت و مسیر جایگزین با دادهٔ ساختگی تست شده‌اند؛ تست موفق با سرویس واقعی و راه‌اندازی عملیاتی به کلید معتبر، اینترنت سرور و استقرار نیاز دارد.
+
+عکس آنلاین در خود اپ با لینک مستقیم HTTPS تصویر دریافت می‌شود، نه از موتور جست‌وجو. محدودیت ۸ MiB و عدم پذیرش صفحه HTML یا تغییر مسیر اعمال می‌شود؛ رعایت مجوز تصویر بر عهدهٔ کاربر است.

@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.9.9 · PRODUCT STUDIO FIX";
+    private static final String APP_VERSION         = "V7.0.0 · AI STUDIO CONNECT";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -8135,7 +8135,7 @@ public final class MainActivity extends Activity {
         ai.addView(aiHead);
         ai.addView(space(12));
         ai.addView(text("برای تحلیل واقعی تصویر باید سرویس امن سازگار پیکربندی شود. در حالت محلی فقط پیش‌نویس قابل ویرایش ساخته می‌شود.", 10f, COL_TEXT_MUTED, false));
-        ai.addView(settingsText("ai_endpoint", "آدرس HTTPS سرویس تحلیل (اختیاری)", "آدرس سرویس اختصاصی؛ نه لینک مستقیم API", false));
+        ai.addView(settingsText("ai_endpoint", "آدرس HTTPS سرویس تحلیل (اختیاری)", "https://your-server/v1/product-studio", false));
         ai.addView(space(10));
         ai.addView(ghostGoldButton("رفتن به استودیوی هوشمند افزودن کالا", new Runnable() {
             @Override public void run() {
@@ -8819,29 +8819,49 @@ public final class MainActivity extends Activity {
         if (name.length() < 3) { toast("نام محصول را کامل وارد کنید."); return; }
         if (!endpoint.toLowerCase(Locale.US).startsWith("https://")) { toast("ابتدا آدرس HTTPS سرویس سازگار را در تنظیمات مدیریت ثبت کنید."); return; }
         if (aiBusy) { toast("عملیات دیگری در حال انجام است."); return; }
-        new AlertDialog.Builder(this).setTitle("ارسال اطلاعات برای تحلیل")
-                .setMessage("نام، برند و عکس انتخابی به سرویس تنظیم‌شده ارسال می‌شود. سرویس را فقط در صورت اعتماد استفاده کنید؛ نتیجه نیازمند بررسی است.")
-                .setNegativeButton("انصراف", null)
-                .setPositiveButton("ارسال و تحلیل", new android.content.DialogInterface.OnClickListener() {
-                    public void onClick(android.content.DialogInterface dialog, int which) { runCloudAnalysis(endpoint, name, brand); }
-                }).show();
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("تحلیل امن محصول", "نام، برند و عکس به سرویس شما و یکی از ارائه‌دهندگان هوش مصنوعی ارسال می‌شود. خروجی را قبل از انتشار بررسی کنید."));
+        box.addView(text("رمز دسترسی سرور استودیو را وارد کنید؛ کلیدهای ارائه‌دهندگان نباید در برنامه وارد شوند.", 10f, COL_TEXT_MUTED, false));
+        box.addView(space(8));
+        final EditText access = makeInput("رمز دسترسی سرور استودیو", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD, true);
+        access.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        box.addView(access); box.addView(space(10));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ارسال و تحلیل", Luxury3DIconView.ICON_AI, new Runnable() {
+            @Override public void run() {
+                String token = access.getText().toString().trim();
+                if (token.length() < 32) { toast("رمز دسترسی معتبر سرور را وارد کنید."); return; }
+                dialog.dismiss(); runCloudAnalysis(endpoint, token, name, brand);
+            }
+        }));
+        box.addView(space(8));
+        box.addView(ghostButton("انصراف", new Runnable() { public void run() { dialog.dismiss(); } }));
+        showRoundedDialog(dialog);
     }
 
-    private void runCloudAnalysis(final String endpoint, final String name, final String brand) {
+    private void runCloudAnalysis(final String endpoint, final String token, final String name, final String brand) {
         if (aiBusy) return;
         aiBusy = true; final int generation = aiGeneration; final Bitmap photo = aiSourceBitmap;
         final String sourceAtRequest = aiSourcePath;
         toast("در حال تحلیل توسط سرویس…");
         new Thread(new Runnable() { public void run() {
             AiProductStudio.Draft draft = null;
-            try { draft = StudioNetwork.generate(endpoint, name, brand, photo); }
-            catch (Exception e) { android.util.Log.e("ASIYE", "cloud analysis", e); }
-            catch (OutOfMemoryError e) { android.util.Log.e("ASIYE", "cloud image too large", e); }
+            String failure = "اتصال یا پاسخ سرویس ناموفق بود. ورودی‌ها حفظ شدند.";
+            try { draft = StudioNetwork.generate(endpoint, token, name, brand, photo); }
+            catch (Exception e) {
+                String msg = e.getMessage() == null ? "" : e.getMessage();
+                if (msg.equals("AI server HTTP 401") || msg.equals("AI server HTTP 403")) failure = "دسترسی رد شد؛ رمز سرور را بررسی کنید.";
+                else if (msg.equals("AI server HTTP 429")) failure = "تعداد درخواست‌ها زیاد است؛ کمی بعد دوباره تلاش کنید.";
+                else if (msg.equals("AI server HTTP 503")) failure = "سرویس‌های هوش مصنوعی در دسترس نبودند؛ تنظیمات سرور را بررسی کنید.";
+                android.util.Log.e("ASIYE", "cloud analysis failed: " + e.getClass().getSimpleName());
+            }
+            catch (OutOfMemoryError e) { failure = "حافظه برای پردازش عکس کافی نیست؛ تصویر کوچک‌تری انتخاب کنید."; }
             final AiProductStudio.Draft result = draft;
+            final String errorText = failure;
             runOnUiThread(new Runnable() { public void run() {
                 if (generation != aiGeneration || isFinishing()) return;
                 aiBusy = false;
-                if (result == null) { toast("تحلیل ابری ناموفق بود؛ سرویس و اتصال را بررسی کنید. ورودی‌ها حفظ شدند."); return; }
+                if (result == null) { toast(errorText); return; }
                 if (!name.equals(aiName.trim()) || !brand.equals(aiBrand.trim()) || !sourceAtRequest.equals(aiSourcePath) || aiDraft != null) {
                     toast("ورودی‌ها تغییر کردند؛ پاسخ قدیمی اعمال نشد."); return;
                 }
