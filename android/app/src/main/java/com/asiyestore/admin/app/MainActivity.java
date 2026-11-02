@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V7.0.2 · AI DIAGNOSTICS";
+    private static final String APP_VERSION         = "V7.0.3 · API HEALTH";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -8328,6 +8328,10 @@ public final class MainActivity extends Activity {
         try {
             contentContainer.addView(space(12));
             contentContainer.addView(aiStepStrip());
+            contentContainer.addView(space(10));
+            contentContainer.addView(outlineDarkButton("سرویس‌ها و تست سلامت کلیدها", Luxury3DIconView.ICON_AI, new Runnable() {
+                @Override public void run() { showAiServices(); }
+            }));
             contentContainer.addView(space(14));
             if (aiDraft != null) {
                 renderAiDraft();
@@ -8816,6 +8820,87 @@ public final class MainActivity extends Activity {
         showRoundedDialog(dialog);
     }
 
+    private String aiServiceLabel(String id) {
+        return "openai".equals(id) ? "OpenAI" : "groq".equals(id) ? "Groq" : "Gemini";
+    }
+
+    private void showAiServices() {
+        final String current = getSharedPreferences("ai_services", MODE_PRIVATE).getString("preferred", "gemini");
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setBackgroundColor(COL_WHITE);
+        box.setPadding(dp(18), dp(8), dp(18), dp(12));
+        TextView details = text("سرویس اول: " + aiServiceLabel(current) + "؛ در صورت خطا دو سرویس دیگر به ترتیب امتحان می‌شوند. هر سرویس می‌تواند تحلیل تصویر و متن و ساخت پیش‌نویس را انجام دهد؛ خروجی را بررسی کنید.\n\n"
+                + "Gemini · مدل gemini-3.5-flash-lite\nتحلیل چندرسانه‌ای و ساخت پیش‌نویس\n" + DirectAiStudio.GEMINI_URL + "\n\n"
+                + "OpenAI · مدل gpt-4o-mini\nتحلیل تصویر و نگارش متن ساختاریافته / SEO\n" + DirectAiStudio.OPENAI_URL + "\n\n"
+                + "Groq · مدل qwen/qwen3.8-27b\nپردازش سریع متن و تصویر، جایگزین دیگر\n" + DirectAiStudio.GROQ_URL + "\n\n"
+                + "آزمون یک متن نمونهٔ ساختگی می‌فرستد، نه اطلاعات یا عکس محصول؛ ممکن است سهمیه یا هزینه مصرف کند. موفقیت آزمون متنی، سلامت عکس یا سهمیهٔ آینده را تضمین نمی‌کند. کلیدها نمایش داده نمی‌شوند.", 11f, COL_TEXT_MAIN, false);
+        details.setTextIsSelectable(true);
+        details.setLineSpacing(dp(3), 1f);
+        box.addView(details);
+        box.addView(space(10));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setTitle("سرویس‌ها و سلامت کلیدها")
+                .setPositiveButton("بستن", null).create();
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(box);
+        dialog.setView(scroll);
+        box.addView(outlineDarkButton("انتخاب سرویس اول", Luxury3DIconView.ICON_AI, new Runnable() {
+            @Override public void run() { dialog.dismiss(); chooseAiPriority(); }
+        }));
+        box.addView(space(8));
+        box.addView(primaryButton("آزمون هر سه سرویس", Luxury3DIconView.ICON_AI, new Runnable() {
+            @Override public void run() { dialog.dismiss(); startAiProbes(new String[]{"gemini", "openai", "groq"}); }
+        }));
+        for (final String provider : new String[]{"gemini", "openai", "groq"}) {
+            box.addView(space(7));
+            box.addView(ghostButton("فقط آزمون " + aiServiceLabel(provider), new Runnable() {
+                @Override public void run() { dialog.dismiss(); startAiProbes(new String[]{provider}); }
+            }));
+        }
+        dialog.show();
+    }
+
+    private void chooseAiPriority() {
+        final String[] ids = {"gemini", "openai", "groq"};
+        final String current = getSharedPreferences("ai_services", MODE_PRIVATE).getString("preferred", "gemini");
+        int selected = "openai".equals(current) ? 1 : "groq".equals(current) ? 2 : 0;
+        new AlertDialog.Builder(this).setTitle("سرویس اول برای استودیو")
+                .setSingleChoiceItems(new String[]{"Gemini · تصویر و پیش‌نویس", "OpenAI · متن و پیش‌نویس", "Groq · پردازش سریع"}, selected,
+                    new android.content.DialogInterface.OnClickListener() {
+                        @Override public void onClick(android.content.DialogInterface dialog, int which) {
+                            getSharedPreferences("ai_services", MODE_PRIVATE).edit().putString("preferred", ids[which]).apply();
+                            dialog.dismiss(); showAiServices();
+                        }
+                    }).setNegativeButton("انصراف", null).show();
+    }
+
+    private void startAiProbes(String[] providers) {
+        final LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setBackgroundColor(COL_WHITE);
+        box.setPadding(dp(20), dp(12), dp(20), dp(12));
+        TextView hint = text("آزمون متنی با دادهٔ نمونه؛ بدون عکس یا اطلاعات محصول. ممکن است هزینه ایجاد شود.", 11f, COL_TEXT_MUTED, false);
+        box.addView(hint);
+        ScrollView scroll = new ScrollView(this); scroll.addView(box);
+        final AlertDialog dialog = new AlertDialog.Builder(this).setTitle("نتیجهٔ آزمون سرویس‌ها")
+                .setView(scroll).setPositiveButton("بستن", null).create();
+        final Context app = getApplicationContext();
+        final List<Thread> jobs = new ArrayList<>();
+        for (final String provider : providers) {
+            box.addView(space(12));
+            final TextView result = text(aiServiceLabel(provider) + " — در حال اتصال…", 11f, COL_TEXT_MAIN, false);
+            result.setTextIsSelectable(true); result.setLineSpacing(dp(3), 1f); box.addView(result);
+            jobs.add(new Thread(new Runnable() { @Override public void run() {
+                final String value = DirectAiStudio.probe(app, provider);
+                runOnUiThread(new Runnable() { @Override public void run() {
+                    if (!isFinishing() && dialog.isShowing()) result.setText(aiServiceLabel(provider) + " — " + value);
+                }});
+            }}, "ai-probe-" + provider));
+        }
+        dialog.show();
+        for (Thread job : jobs) job.start();
+    }
+
     private void confirmCloudAnalysis() {
         final String name = aiName.trim(), brand = aiBrand.trim();
         if (name.length() < 3) { toast("نام محصول را کامل وارد کنید."); return; }
@@ -8832,12 +8917,13 @@ public final class MainActivity extends Activity {
         if (aiBusy) return;
         aiBusy = true; final int generation = aiGeneration; final Bitmap photo = aiSourceBitmap;
         final String sourceAtRequest = aiSourcePath;
+        final String preferred = getSharedPreferences("ai_services", MODE_PRIVATE).getString("preferred", "gemini");
         toast("در حال تحلیل توسط سرویس…");
         if (aiStudioOpen && adminMode) renderCurrentScreen();
         new Thread(new Runnable() { public void run() {
             AiProductStudio.Draft draft = null;
             String failure = "تحلیل انجام نشد؛ اتصال اینترنت، دسترسی و اعتبار کلیدها یا سهمیهٔ سرویس‌ها را بررسی کنید.";
-            try { draft = DirectAiStudio.generate(MainActivity.this, name, brand, photo); }
+            try { draft = DirectAiStudio.generate(MainActivity.this, name, brand, photo, preferred); }
             catch (DirectAiStudio.ProvidersFailedException e) { failure = e.getMessage(); }
             catch (Exception e) { android.util.Log.e("ASIYE", "direct AI failed: " + e.getClass().getSimpleName()); }
             catch (OutOfMemoryError e) { failure = "حافظه برای پردازش عکس کافی نیست؛ تصویر کوچک‌تری انتخاب کنید."; }

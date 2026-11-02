@@ -11,8 +11,8 @@ android {
         applicationId = "com.asiyestore.admin"
         minSdk = 24
         targetSdk = 34
-        versionCode = 702
-        versionName = "7.0.2-ai-diagnostics"
+        versionCode = 703
+        versionName = "7.0.3-api-health"
 
         vectorDrawables {
             useSupportLibrary = true

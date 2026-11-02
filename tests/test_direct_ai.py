@@ -8,15 +8,31 @@ class DirectStudioTests(unittest.TestCase):
     def test_direct_provider_wiring_and_consent(self):
         direct = (JAVA / 'DirectAiStudio.java').read_text(encoding='utf8')
         activity = (JAVA / 'MainActivity.java').read_text(encoding='utf8')
-        self.assertIn('String[] providers = {"gemini", "openai", "groq"}', direct)
+        self.assertIn('AiProviderOrder.forPreference(preferred)', direct)
         self.assertIn('studio_provider_keys.json', direct)
         self.assertIn('inline_data', direct)
         self.assertIn('data:image/jpeg;base64,', direct)
-        self.assertIn('DirectAiStudio.generate(MainActivity.this, name, brand, photo)', activity)
+        self.assertIn('DirectAiStudio.generate(MainActivity.this, name, brand, photo, preferred)', activity)
         self.assertIn('setPositiveButton("ارسال و تحلیل"', activity)
         self.assertIn('ProvidersFailedException', direct)
         self.assertIn('gemini-3.5-flash-lite', direct)
         self.assertIn('qwen/qwen3.8-27b', direct)
         self.assertNotIn('setRequestProperty("Authorization", key)', direct)
+
+    def test_health_probe_and_service_selection(self):
+        direct = (JAVA / 'DirectAiStudio.java').read_text(encoding='utf8')
+        activity = (JAVA / 'MainActivity.java').read_text(encoding='utf8')
+        probe = direct.split('public static String probe(', 1)[1].split('private static String gemini(', 1)[0]
+        self.assertIn('gemini(key, facts, null, true)', probe)
+        self.assertIn('chat(provider, key, facts, null, true)', probe)
+        self.assertIn('validateOutput(result)', probe)
+        self.assertNotIn('aiSourceBitmap', probe)
+        self.assertIn('DirectAiStudio.probe(app, provider)', activity)
+        self.assertIn('startAiProbes(new String[]{"gemini", "openai", "groq"})', activity)
+        self.assertIn('putString("preferred", ids[which])', activity)
+        self.assertIn('getString("preferred", "gemini")', activity)
+        self.assertIn('DirectAiStudio.GEMINI_URL', activity)
+        self.assertIn('DirectAiStudio.OPENAI_URL', activity)
+        self.assertIn('DirectAiStudio.GROQ_URL', activity)
 
 if __name__ == '__main__': unittest.main()
