@@ -23,11 +23,13 @@ public final class LuxuryImageStudio {
         try {
             File dir = new File(context.getFilesDir(), "product_studio");
             if (!dir.exists()) dir.mkdirs();
-            File out = new File(dir, "studio_" + System.currentTimeMillis() + ".jpg");
-            FileOutputStream fos = new FileOutputStream(out);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 92, fos);
-            fos.flush();
-            fos.close();
+            File out = new File(dir, "studio_" + java.util.UUID.randomUUID().toString() + ".jpg");
+            try (FileOutputStream fos = new FileOutputStream(out)) {
+                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 92, fos)) {
+                    out.delete(); return null;
+                }
+                fos.flush();
+            }
             return out;
         } catch (Exception e) {
             return null;

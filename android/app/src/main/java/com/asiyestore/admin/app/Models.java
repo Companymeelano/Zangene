@@ -17,6 +17,7 @@ public final class Models {
         public int replenishDays;
         public String nameFa;
         public String nameEn;
+        public String brand;
         public String category;
         public String description;
         public String ingredients;

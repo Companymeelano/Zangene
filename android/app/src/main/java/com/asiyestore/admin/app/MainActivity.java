@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V6.9.8 · PINK MAISON";
+    private static final String APP_VERSION         = "V6.9.9 · PRODUCT STUDIO FIX";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -198,6 +198,8 @@ public final class MainActivity extends Activity {
     private String aiBrand = "";
     private Bitmap aiSourceBitmap;
     private String aiStudioPath = "";
+    private String aiSourcePath = "";
+    private int aiGeneration = 0;
     private boolean aiBusy = false;
     private boolean aiStudioOpen = false;
     private EditText aiNameInput;
@@ -241,6 +243,7 @@ public final class MainActivity extends Activity {
 
         db = new AsiyeDatabaseHelper(this);
         loadTheme();
+        restoreStudioDraft();
         briefReminderOn = getSharedPreferences(PREF_THEME, MODE_PRIVATE)
                 .getBoolean("brief_reminder", false);
         profileName = getSharedPreferences(PREF_THEME, MODE_PRIVATE).getString("profile_name", "");
@@ -1309,22 +1312,27 @@ public final class MainActivity extends Activity {
     }
 
     private View categoryChips() {
-        String[][] chips = {
-                {"همه", "همه"},
-                {"پوست", "مراقبت تخصصی پوست"},
-                {"میکاپ", "میکاپ لوکس"},
-                {"مو", "تقویت و درمان مو"},
-                {"منتخب‌ها", "منتخب‌های من"}
-        };
+        java.util.List<String[]> chips = new java.util.ArrayList<>();
+        chips.add(new String[]{"همه", "همه"});
+        chips.add(new String[]{"پوست", "مراقبت تخصصی پوست"});
+        chips.add(new String[]{"میکاپ", "میکاپ لوکس"});
+        chips.add(new String[]{"مو", "تقویت و درمان مو"});
+        chips.add(new String[]{"منتخب‌ها", "منتخب‌های من"});
+        java.util.Set<String> known = new java.util.LinkedHashSet<>();
+        for (String[] c : chips) known.add(c[1]);
+        for (Models.Product product : db.getProducts(true, "همه", "", "newest")) {
+            String category = product.category == null ? "" : product.category.trim();
+            if (!category.isEmpty() && known.add(category)) chips.add(new String[]{category, category});
+        }
         LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.HORIZONTAL);
         panel.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        for (int i = 0; i < chips.length; i++) {
-            final String category = chips[i][1];
+        for (int i = 0; i < chips.size(); i++) {
+            final String category = chips.get(i)[1];
             boolean active = selectedCategory.equals(category);
             TextView chip = new TextView(this);
-            String chipLabel = chips[i][0];
+            String chipLabel = chips.get(i)[0];
             if ("منتخب‌های من".equals(category)) {
                 int wished = db.getWishlistCount();
                 chipLabel = "♥ " + chipLabel + (wished > 0
@@ -1336,7 +1344,7 @@ public final class MainActivity extends Activity {
             chip.setGravity(Gravity.CENTER);
             chip.setTextColor(active ? COL_GOLD_LIGHT : COL_TEXT_MUTED);
             chip.setTypeface(houseTypeface(active));
-            chip.setPadding(dp(6), dp(9), dp(6), dp(9));
+            chip.setPadding(dp(14), dp(9), dp(14), dp(9));
             chip.setBackground(active
                     ? deepCard(dp(18))
                     : roundedShape(COL_WHITE, dp(18), COL_BORDER, dp(1)));
@@ -1347,11 +1355,15 @@ public final class MainActivity extends Activity {
                     renderCurrentScreen();
                 }
             });
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             if (i > 0) lp.setMarginStart(dp(6));
             panel.addView(chip, lp);
         }
-        return panel;
+        android.widget.HorizontalScrollView scroll = new android.widget.HorizontalScrollView(this);
+        scroll.setHorizontalScrollBarEnabled(false);
+        scroll.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        scroll.addView(panel);
+        return scroll;
     }
 
     /** True on tablets and wide foldables — the boutique then reads as a catalogue spread. */
@@ -1479,7 +1491,7 @@ public final class MainActivity extends Activity {
         body.setOrientation(LinearLayout.VERTICAL);
         body.setPadding(dp(16), dp(14), dp(16), dp(16));
 
-        TextView brandLine = text(p.nameEn, 9.5f, COL_GOLD_DEEP, false);
+        TextView brandLine = text(p.brand != null && !p.brand.trim().isEmpty() ? p.brand : p.nameEn, 9.5f, COL_GOLD_DEEP, false);
         tracking(brandLine, 0.06f);
         brandLine.setSingleLine(true);
         brandLine.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -1979,7 +1991,7 @@ public final class MainActivity extends Activity {
         body.setOrientation(LinearLayout.VERTICAL);
         body.setPadding(dp(20), dp(16), dp(20), dp(20));
 
-        body.addView(text(p.nameEn, 10f, COL_GOLD_DEEP, false));
+        body.addView(text(p.brand != null && !p.brand.trim().isEmpty() ? p.brand : p.nameEn, 10f, COL_GOLD_DEEP, false));
         TextView title = text(p.nameFa, 17f, COL_TEXT_MAIN, true);
         title.setPadding(0, dp(6), 0, dp(8));
         title.setLineSpacing(dp(3), 1f);
@@ -5121,7 +5133,8 @@ public final class MainActivity extends Activity {
         thumbWrap.setClipToOutline(true);
         thumbWrap.setBackground(roundedShape(COL_SILK_CREAM, dp(14), 0, 0));
         ImageView thumb = new ImageView(this);
-        thumb.setImageResource(resolveProductImage(p.imageKey));
+        Bitmap thumbBitmap = loadProductBitmap(p);
+        if (thumbBitmap != null) thumb.setImageBitmap(thumbBitmap); else thumb.setImageResource(resolveProductImage(p.imageKey));
         thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
         thumbWrap.addView(thumb, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -5471,7 +5484,8 @@ public final class MainActivity extends Activity {
         thumbWrap.setClipToOutline(true);
         thumbWrap.setBackground(roundedShape(COL_SILK_CREAM, dp(12), 0, 0));
         ImageView thumb = new ImageView(this);
-        thumb.setImageResource(resolveProductImage(item.product.imageKey));
+        Bitmap thumbBitmap = loadProductBitmap(item.product);
+        if (thumbBitmap != null) thumb.setImageBitmap(thumbBitmap); else thumb.setImageResource(resolveProductImage(item.product.imageKey));
         thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
         thumbWrap.addView(thumb, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -6497,7 +6511,6 @@ public final class MainActivity extends Activity {
         contentContainer.addView(primaryButton("افزودن هوشمند کالا با هوش مصنوعی",
                 Luxury3DIconView.ICON_AI, new Runnable() {
                     @Override public void run() {
-                        resetAiStudio();
                         aiStudioOpen = true;
                         adminTab = ADMIN_CATALOG;
                         renderCurrentScreen();
@@ -7525,6 +7538,7 @@ public final class MainActivity extends Activity {
             case "hair_friend":         return R.drawable.img_hair_friend;
             case "ordinary_toner":      return R.drawable.img_ordinary_toner;
             case "moringa_teatree":     return R.drawable.img_moringa_teatree;
+            case "generic":             return R.drawable.img_brand_emblem;
             default:                    return R.drawable.img_gatieau_whitening;
         }
     }
@@ -8120,15 +8134,11 @@ public final class MainActivity extends Activity {
         aiHead.addView(aiTitles, weight(1f));
         ai.addView(aiHead);
         ai.addView(space(12));
-        ai.addView(settingsToggle("ai_auto_caption", "ساخت خودکار کپشن و سئو پس از تشخیص محصول"));
-        ai.addView(settingsText("ai_tone", "لحن نوشتار", "لوکس و تخصصی", false));
-        ai.addView(settingsText("ai_instagram_handle", "شناسه اینستاگرام در کپشن", "asiyeh.store", false));
-        ai.addView(settingsText("ai_seo_city", "شهر برای سئوی محلی", "تهران", false));
-        ai.addView(settingsText("ai_endpoint", "آدرس سرویس ابری هوش مصنوعی (اختیاری)", "خالی = پردازش کاملاً آفلاین", false));
+        ai.addView(text("برای تحلیل واقعی تصویر باید سرویس امن سازگار پیکربندی شود. در حالت محلی فقط پیش‌نویس قابل ویرایش ساخته می‌شود.", 10f, COL_TEXT_MUTED, false));
+        ai.addView(settingsText("ai_endpoint", "آدرس HTTPS سرویس تحلیل (اختیاری)", "آدرس سرویس اختصاصی؛ نه لینک مستقیم API", false));
         ai.addView(space(10));
         ai.addView(ghostGoldButton("رفتن به استودیوی هوشمند افزودن کالا", new Runnable() {
             @Override public void run() {
-                resetAiStudio();
                 aiStudioOpen = true;
                 adminTab = ADMIN_CATALOG;
                 renderCurrentScreen();
@@ -8215,11 +8225,62 @@ public final class MainActivity extends Activity {
     // ══════════════════════════════════════════════════════════════════════
     //  ADMIN · AI PRODUCT STUDIO  (3 inputs → full luxury listing)
     // ══════════════════════════════════════════════════════════════════════
+    private static final String PREF_STUDIO = "studio_draft_v1";
+
     private void resetAiStudio() {
-        aiAnalysis = null;
-        aiDraft = null;
-        aiStudioPath = "";
-        aiBusy = false;
+        aiGeneration++;
+        aiAnalysis = null; aiDraft = null; aiStudioPath = ""; aiSourcePath = "";
+        aiSourceBitmap = null; aiName = ""; aiBrand = ""; aiBusy = false;
+        getSharedPreferences(PREF_STUDIO, MODE_PRIVATE).edit().clear().apply();
+    }
+
+    private void persistStudioDraft() {
+        android.content.SharedPreferences.Editor editor = getSharedPreferences(PREF_STUDIO, MODE_PRIVATE).edit();
+        editor.putString("name", aiName).putString("brand", aiBrand)
+                .putString("source", aiSourcePath).putString("studio", aiStudioPath);
+        if (aiDraft == null) editor.remove("draft");
+        else {
+            org.json.JSONObject obj = new org.json.JSONObject();
+            try {
+                for (java.lang.reflect.Field f : AiProductStudio.Draft.class.getFields()) {
+                    if (!java.lang.reflect.Modifier.isStatic(f.getModifiers())) obj.put(f.getName(), f.get(aiDraft));
+                }
+                editor.putString("draft", obj.toString());
+            } catch (Exception e) { android.util.Log.e("ASIYE", "draft save", e); }
+        }
+        editor.apply();
+    }
+
+    private void restoreStudioDraft() {
+        android.content.SharedPreferences prefs = getSharedPreferences(PREF_STUDIO, MODE_PRIVATE);
+        aiName = prefs.getString("name", ""); aiBrand = prefs.getString("brand", "");
+        aiSourcePath = prefs.getString("source", ""); aiStudioPath = prefs.getString("studio", "");
+        aiSourceBitmap = decodeSampled(aiSourcePath, 1200);
+        if (aiSourceBitmap == null) aiSourcePath = "";
+        String json = prefs.getString("draft", "");
+        if (!json.isEmpty()) try {
+            org.json.JSONObject obj = new org.json.JSONObject(json);
+            AiProductStudio.Draft draft = new AiProductStudio.Draft();
+            for (java.lang.reflect.Field f : AiProductStudio.Draft.class.getFields()) {
+                if (!obj.has(f.getName()) || java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
+                if (f.getType() == String.class) f.set(draft, obj.optString(f.getName(), ""));
+                else if (f.getType() == long.class) f.setLong(draft, obj.optLong(f.getName(), 0));
+                else if (f.getType() == int.class) f.setInt(draft, obj.optInt(f.getName(), 0));
+            }
+            aiDraft = draft;
+            aiAnalysis = AiProductStudio.analyze(aiName, aiBrand, null);
+        } catch (Exception e) { android.util.Log.e("ASIYE", "draft restore", e); }
+    }
+
+    private void observeStudioInput(EditText input, final boolean name) {
+        input.addTextChangedListener(new TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (name) aiName = s.toString(); else aiBrand = s.toString();
+                persistStudioDraft();
+            }
+            public void afterTextChanged(Editable e) { }
+        });
     }
 
     /**
@@ -8248,7 +8309,7 @@ public final class MainActivity extends Activity {
         titles.setOrientation(LinearLayout.VERTICAL);
         titles.setPadding(dp(10), 0, dp(10), 0);
         titles.addView(text("استودیوی هوشمند محصول", 13.5f, TEXT_ON_DARK, true));
-        titles.addView(text("نام، برند و یک عکس؛ بقیه مسیر خودکار است", 9.4f, TEXT_ON_DARK_FAINT, false));
+        titles.addView(text("پیش‌نویس قابل بررسی و ویرایش", 9.4f, TEXT_ON_DARK_FAINT, false));
         bar.addView(titles, weight(1f));
 
         TextView close = text("بستن", 10f, COL_GOLD_LIGHT, true);
@@ -8277,6 +8338,7 @@ public final class MainActivity extends Activity {
                 renderAiInputs();
             }
         } catch (Throwable t) {
+            android.util.Log.e("ASIYE", "studio render failure", t);
             stage.removeAllViews();
             stage.addView(aiBarFallback(bar));
             stage.addView(aiFallbackCard());
@@ -8315,18 +8377,14 @@ public final class MainActivity extends Activity {
     /** Never a blank screen: explains the recovery and offers a clean restart. */
     private View aiFallbackCard() {
         LinearLayout card = whiteCard();
-        card.addView(text("استودیو به‌صورت ایمن بازنشانی شد", 13f, COL_TEXT_MAIN, true));
+        card.addView(text("نمایش استودیو با مشکل روبه‌رو شد", 13f, COL_TEXT_MAIN, true));
         card.addView(space(6));
-        TextView body = text("برای جلوگیری از نمایش ناقص، حافظه استودیو پاک شد. دوباره نام و برند محصول را وارد کنید؛"
-                + " اگر مشکل تکرار شد، عکس محصول را با حجم کمتر انتخاب کنید.", 10.4f, COL_TEXT_MUTED, false);
+        TextView body = text("اطلاعات ذخیره‌شده پاک نشده‌اند. دوباره تلاش کنید؛ اگر مشکل تکرار شد، گزارش خطا را برای پشتیبانی ارسال کنید.", 10.4f, COL_TEXT_MUTED, false);
         body.setLineSpacing(dp(3), 1f);
         card.addView(body);
         card.addView(space(12));
-        card.addView(primaryButton("شروع دوباره استودیو", Luxury3DIconView.ICON_AI, new Runnable() {
-            @Override public void run() {
-                resetAiStudio();
-                renderCurrentScreen();
-            }
+        card.addView(primaryButton("تلاش دوباره", Luxury3DIconView.ICON_AI, new Runnable() {
+            @Override public void run() { renderCurrentScreen(); }
         }));
         return card;
     }
@@ -8334,6 +8392,7 @@ public final class MainActivity extends Activity {
     /** Best-effort brand token from a catalog product (used by the quick-start chips). */
     private String extractBrand(Models.Product p) {
         if (p == null) return "";
+        if (p.brand != null && !p.brand.trim().isEmpty()) return p.brand.trim();
         if (p.nameEn != null && p.nameEn.contains(" ")) {
             String[] parts = p.nameEn.trim().split("\\s+");
             if (parts.length > 0) return parts[0];
@@ -8372,6 +8431,7 @@ public final class MainActivity extends Activity {
         card.addView(space(6));
         aiNameInput = makeInput("مثال: کرم روشن‌کننده گاتیو", InputType.TYPE_CLASS_TEXT, false);
         aiNameInput.setText(aiName);
+        observeStudioInput(aiNameInput, true);
         card.addView(aiNameInput);
         card.addView(space(12));
 
@@ -8379,6 +8439,7 @@ public final class MainActivity extends Activity {
         card.addView(space(6));
         aiBrandInput = makeInput("مثال: گاتیو / Gatieau", InputType.TYPE_CLASS_TEXT, false);
         aiBrandInput.setText(aiBrand);
+        observeStudioInput(aiBrandInput, false);
         card.addView(aiBrandInput);
         card.addView(space(12));
 
@@ -8404,6 +8465,10 @@ public final class MainActivity extends Activity {
                 Luxury3DIconView.ICON_CAMERA, new Runnable() {
                     @Override public void run() { pickProductPhoto(); }
                 }));
+        card.addView(space(8));
+        card.addView(ghostButton("وارد کردن لینک مستقیم عکس آنلاین (HTTPS)", new Runnable() {
+            @Override public void run() { showOnlineImageDialog(); }
+        }));
         contentContainer.addView(card);
         contentContainer.addView(space(14));
 
@@ -8428,7 +8493,8 @@ public final class MainActivity extends Activity {
                     @Override public void onClick(View v) {
                         aiName = qp.nameFa;
                         aiBrand = extractBrand(qp);
-                        aiAnalysis = AiProductStudio.analyze(aiName, aiBrand, aiSourceBitmap);
+                        persistStudioDraft();
+                        aiAnalysis = AiProductStudio.analyze(aiName, aiBrand, null);
                         renderCurrentScreen();
                     }
                 });
@@ -8447,7 +8513,7 @@ public final class MainActivity extends Activity {
             contentContainer.addView(space(12));
         }
 
-        contentContainer.addView(primaryButton("تحلیل هوشمند و تشخیص محصول", Luxury3DIconView.ICON_AI, new Runnable() {
+        contentContainer.addView(primaryButton("ساخت پیش‌نویس بر اساس نام و برند", Luxury3DIconView.ICON_AI, new Runnable() {
             @Override public void run() {
                 aiName = aiNameInput == null ? "" : aiNameInput.getText().toString().trim();
                 aiBrand = aiBrandInput == null ? "" : aiBrandInput.getText().toString().trim();
@@ -8455,26 +8521,17 @@ public final class MainActivity extends Activity {
                     toast("نام محصول را کامل‌تر وارد کنید.");
                     return;
                 }
-                try {
-                    aiAnalysis = AiProductStudio.analyze(aiName, aiBrand, aiSourceBitmap);
-                } catch (Throwable t) {
-                    aiSourceBitmap = null;
-                    try {
-                        aiAnalysis = AiProductStudio.analyze(aiName, aiBrand, null);
-                    } catch (Throwable ignored) {
-                        aiAnalysis = null;
-                    }
-                    toast("عکس قابل پردازش نبود؛ تحلیل بدون عکس انجام شد.");
-                }
-                if (aiAnalysis == null) {
-                    toast("تحلیل انجام نشد؛ دوباره تلاش کنید.");
-                    return;
-                }
+                aiAnalysis = AiProductStudio.analyze(aiName, aiBrand, null);
+                persistStudioDraft();
                 renderCurrentScreen();
             }
         }));
+        contentContainer.addView(space(8));
+        contentContainer.addView(outlineDarkButton("تحلیل با سرویس هوش مصنوعی پیکربندی‌شده", Luxury3DIconView.ICON_AI, new Runnable() {
+            @Override public void run() { confirmCloudAnalysis(); }
+        }));
         contentContainer.addView(space(10));
-        TextView hint = text("پردازش روی گوشی و بدون نیاز به اینترنت انجام می‌شود؛ هیچ اطلاعاتی از فروشگاه شما خارج نمی‌گردد.",
+        TextView hint = text("حالت محلی عکس را شناسایی نمی‌کند و از اینترنت جست‌وجو نمی‌کند. مشخصات محصول را پیش از انتشار بررسی و تکمیل کنید.",
                 9.4f, COL_TEXT_FAINT, false);
         hint.setLineSpacing(dp(3), 1f);
         contentContainer.addView(hint);
@@ -8493,25 +8550,9 @@ public final class MainActivity extends Activity {
         icon.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_AI, false),
                 new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         head.addView(icon);
-        head.addView(text("تشخیص هوش مصنوعی", 12.5f, TEXT_ON_DARK, true), weight(1f));
-        TextView conf = text(PersianFormatter.toPersianDigits(String.valueOf(aiAnalysis.confidence)) + "٪ اطمینان",
-                9.5f, COL_GOLD_LIGHT, true);
-        head.addView(conf);
+        head.addView(text("بررسی اطلاعات واردشده", 12.5f, TEXT_ON_DARK, true), weight(1f));
         card.addView(head);
         card.addView(space(12));
-
-        // confidence bar
-        LinearLayout bar = new LinearLayout(this);
-        bar.setOrientation(LinearLayout.HORIZONTAL);
-        bar.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-        bar.setBackgroundColor(lineGold(0x22));
-        View fill = new View(this);
-        fill.setBackgroundColor(COL_GOLD);
-        bar.addView(fill, new LinearLayout.LayoutParams(0, dp(4), Math.max(0.12f, aiAnalysis.confidence / 100f)));
-        View rest = new View(this);
-        bar.addView(rest, new LinearLayout.LayoutParams(0, dp(4), Math.max(0.02f, 1f - aiAnalysis.confidence / 100f)));
-        card.addView(bar);
-        card.addView(space(14));
 
         card.addView(text(aiAnalysis.detectedTitle, 15f, TEXT_ON_DARK, true));
         card.addView(space(6));
@@ -8532,16 +8573,14 @@ public final class MainActivity extends Activity {
         contentContainer.addView(card);
         contentContainer.addView(space(12));
 
-        contentContainer.addView(valuationCard(aiAnalysis));
-        contentContainer.addView(space(14));
-
-        contentContainer.addView(text("آیا این محصول را درست تشخیص داده‌ام؟", 11.5f, COL_TEXT_MAIN, true));
+        contentContainer.addView(text("آیا نام و برند برای ساخت پیش‌نویس درست است؟", 11.5f, COL_TEXT_MAIN, true));
         contentContainer.addView(space(8));
-        contentContainer.addView(primaryButton("بله، درست است — همه بخش‌ها را بساز", Luxury3DIconView.ICON_CHECK,
+        contentContainer.addView(primaryButton("ادامه و ویرایش مشخصات", Luxury3DIconView.ICON_CHECK,
                 new Runnable() {
                     @Override public void run() {
                         try {
                             aiDraft = AiProductStudio.compose(aiAnalysis, aiName, aiBrand);
+                            persistStudioDraft();
                         } catch (Throwable t) {
                             toast("ساخت متن ممکن نشد؛ ورودی‌ها را ساده‌تر کنید.");
                             return;
@@ -8553,115 +8592,15 @@ public final class MainActivity extends Activity {
         contentContainer.addView(ghostButton("خیر، ورودی‌ها را اصلاح می‌کنم", new Runnable() {
             @Override public void run() {
                 aiAnalysis = null;
+                aiDraft = null;
+                persistStudioDraft();
                 renderCurrentScreen();
             }
         }));
 
-        if (!aiAnalysis.alternativesFa.isEmpty()) {
-            contentContainer.addView(space(12));
-            contentContainer.addView(text("یا یکی از این گزینه‌ها را انتخاب کنید:", 10f, COL_TEXT_MUTED, false));
-            contentContainer.addView(space(6));
-            for (final String alt : aiAnalysis.alternativesFa) {
-                TextView chip = text(alt, 10f, COL_TEXT_MAIN, false);
-                chip.setPadding(dp(10), dp(9), dp(10), dp(9));
-                chip.setBackground(roundedShape(COL_WHITE, dp(12), COL_BORDER, dp(1)));
-                chip.setOnClickListener(new View.OnClickListener() {
-                    @Override public void onClick(View v) {
-                        aiAnalysis.detectedTitle = alt;
-                        try {
-                            aiDraft = AiProductStudio.compose(aiAnalysis, aiName, aiBrand);
-                        } catch (Throwable t) {
-                            toast("ساخت متن ممکن نشد.");
-                            return;
-                        }
-                        renderCurrentScreen();
-                    }
-                });
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                lp.setMargins(0, 0, 0, dp(6));
-                contentContainer.addView(chip, lp);
-            }
-        }
     }
 
     // ── STEP 3 ───────────────────────────────────────────────────────────
-    /** Self-proposed: quotes the AI price against the real catalog so the merchant never mis-prices. */
-    private View valuationCard(AiProductStudio.Analysis analysis) {
-        List<Models.Product> all = db.getProducts(true, "همه", "", "newest");
-        long sum = 0;
-        int count = 0;
-        long min = Long.MAX_VALUE;
-        long max = 0;
-        for (Models.Product p : all) {
-            if (p.salePrice <= 0) continue;
-            if (p.category != null && analysis.category != null
-                    && !p.category.equals(analysis.category) && count > 0) continue;
-            sum += p.salePrice;
-            min = Math.min(min, p.salePrice);
-            max = Math.max(max, p.salePrice);
-            count++;
-        }
-        if (count == 0) {
-            for (Models.Product p : all) {
-                if (p.salePrice <= 0) continue;
-                sum += p.salePrice;
-                min = Math.min(min, p.salePrice);
-                max = Math.max(max, p.salePrice);
-                count++;
-            }
-        }
-        if (count == 0) return new View(this);
-
-        final long average = sum / count;
-        long suggested = analysis.suggestedPrice;
-        String positionFa;
-        int tint;
-        if (suggested < average * 0.85f) {
-            positionFa = "اقتصادی‌تر از میانگین مجموعه";
-            tint = 0xFF3E7A57;
-        } else if (suggested > average * 1.15f) {
-            positionFa = "پریمیوم‌تر از میانگین مجموعه";
-            tint = 0xFF8A6A2E;
-        } else {
-            positionFa = "هم‌تراز با میانگین مجموعه";
-            tint = 0xFF3E7A57;
-        }
-
-        LinearLayout card = whiteCard();
-        LinearLayout head = row(Gravity.CENTER_VERTICAL);
-        FrameLayout icon = new FrameLayout(this);
-        icon.setLayoutParams(new LinearLayout.LayoutParams(dp(22), dp(22)));
-        icon.addView(new Luxury3DIconView(this, Luxury3DIconView.ICON_CHART, Luxury3DIconView.PEDESTAL_IVORY),
-                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        head.addView(icon);
-        TextView title = text("ارزش‌گذاری سریع", 11.5f, COL_TEXT_MAIN, true);
-        title.setPadding(dp(7), 0, 0, 0);
-        head.addView(title, weight(1f));
-        head.addView(statusChip(positionFa, tint, SURF_CHIP));
-        card.addView(head);
-        card.addView(space(11));
-
-        LinearLayout stats = row(Gravity.CENTER_VERTICAL);
-        stats.addView(statCell("قیمت پیشنهادی", PersianFormatter.formatToman(suggested), COL_TEXT_MAIN), weight(1f));
-        stats.addView(statCell("میانگین کاتالوگ", PersianFormatter.formatToman(average), COL_TEXT_MUTED), weight(1f));
-        card.addView(stats);
-        card.addView(space(10));
-        card.addView(text("بازه کالاهای موجود: " + PersianFormatter.formatToman(min) + " تا " + PersianFormatter.formatToman(max)
-                + "  •  در " + PersianFormatter.toPersianDigits(String.valueOf(count)) + " کالای منتشرشده",
-                9.2f, COL_TEXT_MUTED, false));
-        return card;
-    }
-
-    private View statCell(String caption, String value, int valueColor) {
-        LinearLayout cell = new LinearLayout(this);
-        cell.setOrientation(LinearLayout.VERTICAL);
-        cell.addView(text(caption, 9f, COL_TEXT_MUTED, false));
-        cell.addView(space(3));
-        cell.addView(text(value, 12f, valueColor, true));
-        return cell;
-    }
-
     private void renderAiDraft() {
         final AiProductStudio.Draft d = aiDraft;
 
@@ -8676,6 +8615,8 @@ public final class MainActivity extends Activity {
             Bitmap bmp = decodeSampled(aiStudioPath, 900);
             if (bmp != null) heroImg.setImageBitmap(bmp);
             else heroImg.setImageResource(resolveProductImage(d.imageKey));
+        } else if (aiSourceBitmap != null) {
+            heroImg.setImageBitmap(aiSourceBitmap);
         } else {
             heroImg.setImageResource(resolveProductImage(d.imageKey));
         }
@@ -8704,6 +8645,20 @@ public final class MainActivity extends Activity {
                 Luxury3DIconView.ICON_CAMERA, new Runnable() {
                     @Override public void run() { generateStudioImage(); }
                 }));
+        card.addView(space(8));
+        card.addView(ghostButton("انتخاب یا تغییر عکس از گالری", new Runnable() {
+            @Override public void run() { pickProductPhoto(); }
+        }));
+        card.addView(space(8));
+        card.addView(ghostButton("دریافت عکس از لینک اینترنتی", new Runnable() {
+            @Override public void run() { showOnlineImageDialog(); }
+        }));
+        if (!aiStudioPath.isEmpty() && !aiSourcePath.isEmpty()) {
+            card.addView(space(8));
+            card.addView(ghostButton("استفاده از عکس اصلی", new Runnable() {
+                @Override public void run() { aiStudioPath = ""; persistStudioDraft(); renderCurrentScreen(); }
+            }));
+        }
         contentContainer.addView(card);
         contentContainer.addView(space(12));
 
@@ -8716,7 +8671,10 @@ public final class MainActivity extends Activity {
         aiOldPriceInput = makeInput("قیمت پیش از تخفیف (تومان)", InputType.TYPE_CLASS_NUMBER, true);
         aiOldPriceInput.setText(PersianFormatter.toAsciiDigits(String.valueOf(d.suggestedOldPrice)));
         aiStockInput = makeInput("موجودی انبار", InputType.TYPE_CLASS_NUMBER, true);
-        aiStockInput.setText("12");
+        aiStockInput.setText(String.valueOf(d.stock));
+        observeDraftNumber(aiPriceInput, "suggestedPrice");
+        observeDraftNumber(aiOldPriceInput, "suggestedOldPrice");
+        observeDraftNumber(aiStockInput, "stock");
         edit.addView(aiPriceInput);
         edit.addView(space(8));
         edit.addView(aiOldPriceInput);
@@ -8725,21 +8683,23 @@ public final class MainActivity extends Activity {
         contentContainer.addView(edit);
         contentContainer.addView(space(12));
 
-        contentContainer.addView(aiCopyBlock("توضیح کوتاه ویترین", d.description, true));
+        contentContainer.addView(text("همهٔ مشخصات را قبل از انتشار بررسی و ویرایش کنید.", 10.5f, COL_TEXT_MUTED, false));
         contentContainer.addView(space(10));
-        contentContainer.addView(aiCopyBlock("معرفی کامل و ترغیب‌کننده", d.longDescription, false));
-        contentContainer.addView(space(10));
-        contentContainer.addView(aiCopyBlock("مزیت‌های کلیدی", d.benefits, false));
-        contentContainer.addView(space(10));
-        contentContainer.addView(aiCopyBlock("ترکیبات و روش مصرف", d.ingredients + "\n\n" + d.usage, false));
-        contentContainer.addView(space(10));
-        contentContainer.addView(aiCopyBlock("کلمات کلیدی سئو", d.keywords, false));
-        contentContainer.addView(space(10));
-        contentContainer.addView(aiCopyBlock("عنوان سئو (SEO Title)", d.seoTitle, false));
-        contentContainer.addView(space(10));
-        contentContainer.addView(aiCopyBlock("توضیح متا (SEO Description)", d.seoDescription, false));
-        contentContainer.addView(space(10));
-        contentContainer.addView(aiCopyBlock("کپشن آماده اینستاگرام", d.instagramCaption, false));
+        contentContainer.addView(aiEditableField("نام محصول", "nameFa", false));
+        contentContainer.addView(aiEditableField("برند", "brand", false));
+        contentContainer.addView(aiEditableField("نام لاتین (اختیاری)", "nameEn", false));
+        contentContainer.addView(aiEditableField("دسته‌بندی", "category", false));
+        contentContainer.addView(aiEditableField("حجم یا وزن", "volume", false));
+        contentContainer.addView(aiEditableField("کشور سازنده", "country", false));
+        contentContainer.addView(aiEditableField("توضیح کوتاه", "description", true));
+        contentContainer.addView(aiEditableField("معرفی کامل", "longDescription", true));
+        contentContainer.addView(aiEditableField("مزیت‌ها (فقط موارد تأییدشده)", "benefits", true));
+        contentContainer.addView(aiEditableField("ترکیبات", "ingredients", true));
+        contentContainer.addView(aiEditableField("روش مصرف", "usage", true));
+        contentContainer.addView(aiEditableField("کلمات کلیدی", "keywords", true));
+        contentContainer.addView(aiEditableField("عنوان سئو", "seoTitle", false));
+        contentContainer.addView(aiEditableField("توضیح سئو", "seoDescription", true));
+        contentContainer.addView(aiEditableField("کپشن اینستاگرام", "instagramCaption", true));
         contentContainer.addView(space(16));
 
         contentContainer.addView(primaryButton("ذخیره کالا در ویترین فروشگاه", Luxury3DIconView.ICON_CHECK, new Runnable() {
@@ -8751,9 +8711,13 @@ public final class MainActivity extends Activity {
                     toast("قیمت فروش را وارد کنید.");
                     return;
                 }
-                String error = db.saveAiProduct(null, null, d.nameFa, d.nameEn, d.category,
+                if (d.nameFa.trim().isEmpty() || d.category.trim().isEmpty()) {
+                    toast("نام و دسته‌بندی محصول را وارد کنید."); return;
+                }
+                String savedImagePath = !aiStudioPath.isEmpty() ? aiStudioPath : aiSourcePath;
+                String error = db.saveAiProduct(null, null, d.nameFa, d.nameEn, d.brand, d.category,
                         d.description, d.longDescription, d.benefits, d.ingredients, d.usage,
-                        d.country, d.volume, old, price, stock, true, d.imageKey, aiStudioPath,
+                        d.country, d.volume, old, price, stock, true, d.imageKey, savedImagePath,
                         d.seoTitle, d.seoDescription, d.keywords, d.instagramCaption);
                 if (error == null) {
                     toast("کالا با موفقیت به ویترین اضافه شد.");
@@ -8775,30 +8739,122 @@ public final class MainActivity extends Activity {
         }));
     }
 
-    private View aiCopyBlock(final String title, final String body, boolean highlight) {
+    private View aiEditableField(final String label, final String fieldName, boolean multiline) {
         LinearLayout card = whiteCard();
-        LinearLayout head = row(Gravity.CENTER_VERTICAL);
-        head.addView(text(title, 10.5f, highlight ? COL_GOLD_DEEP : COL_TEXT_MUTED, true), weight(1f));
-        TextView copy = text("کپی", 9f, COL_GOLD_DEEP, true);
-        copy.setPadding(dp(8), dp(3), dp(8), dp(3));
-        copy.setBackground(roundedShape(SURF_CHIP, dp(9), SURF_GOLD_LINE, dp(1)));
-        copy.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                copyToClipboard(body);
-                toast("متن کپی شد.");
+        card.addView(text(label, 10.5f, COL_TEXT_MUTED, true));
+        card.addView(space(6));
+        final EditText input = makeInput(label, InputType.TYPE_CLASS_TEXT | (multiline ? InputType.TYPE_TEXT_FLAG_MULTI_LINE : 0), false);
+        try { Object value = AiProductStudio.Draft.class.getField(fieldName).get(aiDraft); input.setText(value == null ? "" : value.toString()); }
+        catch (Exception e) { android.util.Log.e("ASIYE", "draft field", e); }
+        if (multiline) { input.setSingleLine(false); input.setMinLines(2); input.setGravity(Gravity.TOP | Gravity.START); }
+        input.addTextChangedListener(new TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (aiDraft == null) return;
+                try { AiProductStudio.Draft.class.getField(fieldName).set(aiDraft, s.toString()); persistStudioDraft(); }
+                catch (Exception e) { android.util.Log.e("ASIYE", "draft edit", e); }
             }
+            public void afterTextChanged(Editable e) { }
         });
-        head.addView(copy);
-        card.addView(head);
-        card.addView(space(8));
-        TextView content = text(body, highlight ? 11.5f : 10.5f,
-                highlight ? COL_TEXT_MAIN : COL_TEXT_MUTED, false);
-        content.setLineSpacing(dp(4), 1f);
-        card.addView(content);
-        return card;
+        card.addView(input);
+        LinearLayout wrapper = new LinearLayout(this); wrapper.setOrientation(LinearLayout.VERTICAL);
+        wrapper.addView(card); wrapper.addView(space(8)); return wrapper;
+    }
+
+    private void observeDraftNumber(EditText input, final String fieldName) {
+        input.addTextChangedListener(new TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (aiDraft == null) return;
+                long value = parseLong(s.toString());
+                if ("stock".equals(fieldName)) aiDraft.stock = (int) Math.min(9999L, value);
+                else if ("suggestedPrice".equals(fieldName)) aiDraft.suggestedPrice = value;
+                else aiDraft.suggestedOldPrice = value;
+                persistStudioDraft();
+            }
+            public void afterTextChanged(Editable e) { }
+        });
+    }
+
+    private void showOnlineImageDialog() {
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("عکس از اینترنت", "لینک مستقیم HTTPS یک تصویر را وارد کنید؛ صفحهٔ جست‌وجو یا لینک اشتراک پذیرفته نمی‌شود."));
+        final EditText url = makeInput("https://example.com/photo.jpg", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI, true);
+        box.addView(url); box.addView(space(8));
+        box.addView(text("تصویر از سایت مربوط دریافت می‌شود؛ از مجوز استفاده از آن اطمینان حاصل کنید.", 10f, COL_TEXT_MUTED, false));
+        box.addView(space(8));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("دریافت عکس", Luxury3DIconView.ICON_CAMERA, new Runnable() {
+            @Override public void run() {
+                final String link = url.getText().toString().trim();
+                if (!link.toLowerCase(Locale.US).startsWith("https://")) { toast("لینک مستقیم HTTPS وارد کنید."); return; }
+                if (aiBusy) { toast("عملیات دیگری در حال انجام است."); return; }
+                dialog.dismiss(); aiBusy = true; final int generation = aiGeneration;
+                toast("در حال دریافت عکس…");
+                new Thread(new Runnable() { public void run() {
+                    Bitmap bitmap = null; String path = "";
+                    try {
+                        bitmap = StudioNetwork.downloadImage(link);
+                        java.io.File f = LuxuryImageStudio.saveToPrivateStorage(MainActivity.this, bitmap);
+                        if (f != null) path = f.getAbsolutePath();
+                    } catch (Exception e) { android.util.Log.w("ASIYE", "online image", e); }
+                      catch (OutOfMemoryError e) { android.util.Log.w("ASIYE", "online image too large", e); }
+                    final Bitmap result = bitmap; final String savedPath = path;
+                    runOnUiThread(new Runnable() { public void run() {
+                        if (generation != aiGeneration || isFinishing()) return;
+                        aiBusy = false;
+                        if (result == null || savedPath.isEmpty()) { toast("دریافت عکس ناموفق بود؛ لینک مستقیم، نوع تصویر و اتصال را بررسی کنید."); return; }
+                        aiSourceBitmap = result; aiSourcePath = savedPath; aiStudioPath = ""; persistStudioDraft();
+                        toast("عکس آنلاین دریافت شد."); if (aiStudioOpen && adminMode) renderCurrentScreen();
+                    }});
+                }}).start();
+            }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    private void confirmCloudAnalysis() {
+        final String endpoint = db.getSetting("ai_endpoint", "").trim();
+        final String name = aiName.trim(), brand = aiBrand.trim();
+        if (name.length() < 3) { toast("نام محصول را کامل وارد کنید."); return; }
+        if (!endpoint.toLowerCase(Locale.US).startsWith("https://")) { toast("ابتدا آدرس HTTPS سرویس سازگار را در تنظیمات مدیریت ثبت کنید."); return; }
+        if (aiBusy) { toast("عملیات دیگری در حال انجام است."); return; }
+        new AlertDialog.Builder(this).setTitle("ارسال اطلاعات برای تحلیل")
+                .setMessage("نام، برند و عکس انتخابی به سرویس تنظیم‌شده ارسال می‌شود. سرویس را فقط در صورت اعتماد استفاده کنید؛ نتیجه نیازمند بررسی است.")
+                .setNegativeButton("انصراف", null)
+                .setPositiveButton("ارسال و تحلیل", new android.content.DialogInterface.OnClickListener() {
+                    public void onClick(android.content.DialogInterface dialog, int which) { runCloudAnalysis(endpoint, name, brand); }
+                }).show();
+    }
+
+    private void runCloudAnalysis(final String endpoint, final String name, final String brand) {
+        if (aiBusy) return;
+        aiBusy = true; final int generation = aiGeneration; final Bitmap photo = aiSourceBitmap;
+        final String sourceAtRequest = aiSourcePath;
+        toast("در حال تحلیل توسط سرویس…");
+        new Thread(new Runnable() { public void run() {
+            AiProductStudio.Draft draft = null;
+            try { draft = StudioNetwork.generate(endpoint, name, brand, photo); }
+            catch (Exception e) { android.util.Log.e("ASIYE", "cloud analysis", e); }
+            catch (OutOfMemoryError e) { android.util.Log.e("ASIYE", "cloud image too large", e); }
+            final AiProductStudio.Draft result = draft;
+            runOnUiThread(new Runnable() { public void run() {
+                if (generation != aiGeneration || isFinishing()) return;
+                aiBusy = false;
+                if (result == null) { toast("تحلیل ابری ناموفق بود؛ سرویس و اتصال را بررسی کنید. ورودی‌ها حفظ شدند."); return; }
+                if (!name.equals(aiName.trim()) || !brand.equals(aiBrand.trim()) || !sourceAtRequest.equals(aiSourcePath) || aiDraft != null) {
+                    toast("ورودی‌ها تغییر کردند؛ پاسخ قدیمی اعمال نشد."); return;
+                }
+                aiAnalysis = AiProductStudio.analyze(name, brand, null); aiDraft = result;
+                persistStudioDraft(); toast("پیش‌نویس دریافت شد؛ تمام اطلاعات را بررسی کنید.");
+                if (aiStudioOpen && adminMode) renderCurrentScreen();
+            }});
+        }}).start();
     }
 
     private void pickProductPhoto() {
+        if (aiBusy) { toast("عملیات دیگری در حال انجام است."); return; }
+        persistStudioDraft();
         try {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("image/*");
@@ -8812,36 +8868,62 @@ public final class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQ_PICK_PHOTO && resultCode == RESULT_OK && data != null && data.getData() != null) {
+        if (requestCode != REQ_PICK_PHOTO || resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        final android.net.Uri uri = data.getData();
+        final int generation = aiGeneration;
+        aiBusy = true;
+        new Thread(new Runnable() { public void run() {
+            Bitmap bitmap = null; String path = "";
             try {
-                BitmapFactory.Options bounds = new BitmapFactory.Options();
-                bounds.inJustDecodeBounds = true;
-                java.io.InputStream s1 = getContentResolver().openInputStream(data.getData());
-                BitmapFactory.decodeStream(s1, null, bounds);
-                if (s1 != null) s1.close();
-
-                int sample = 1;
-                int maxSide = Math.max(bounds.outWidth, bounds.outHeight);
-                while (maxSide / sample > 1400) sample *= 2;
-
-                BitmapFactory.Options opts = new BitmapFactory.Options();
-                opts.inSampleSize = sample;
-                java.io.InputStream s2 = getContentResolver().openInputStream(data.getData());
-                Bitmap bmp = BitmapFactory.decodeStream(s2, null, opts);
-                if (s2 != null) s2.close();
-
-                if (bmp != null) {
-                    aiSourceBitmap = bmp;
-                    aiStudioPath = "";
-                    toast("عکس محصول بارگذاری شد.");
-                    renderCurrentScreen();
-                } else {
-                    toast("خواندن تصویر ممکن نشد.");
+                BitmapFactory.Options bounds = new BitmapFactory.Options(); bounds.inJustDecodeBounds = true;
+                try (java.io.InputStream stream = getContentResolver().openInputStream(uri)) {
+                    if (stream == null) throw new java.io.IOException("empty image stream");
+                    BitmapFactory.decodeStream(stream, null, bounds);
                 }
-            } catch (Exception e) {
-                toast("خواندن تصویر از گالری ممکن نشد.");
-            }
-        }
+                int maxSide = Math.max(bounds.outWidth, bounds.outHeight);
+                if (bounds.outWidth <= 0 || bounds.outHeight <= 0 || maxSide > 20000) throw new java.io.IOException("invalid image dimensions");
+                BitmapFactory.Options opts = new BitmapFactory.Options(); opts.inSampleSize = 1;
+                while (maxSide / opts.inSampleSize > 1200) opts.inSampleSize *= 2;
+                try (java.io.InputStream stream = getContentResolver().openInputStream(uri)) {
+                    if (stream == null) throw new java.io.IOException("empty image stream");
+                    bitmap = BitmapFactory.decodeStream(stream, null, opts);
+                }
+                if (bitmap != null) {
+                    // Gallery/camera JPEGs often store orientation in EXIF rather than pixel order.
+                    try (java.io.InputStream metadata = getContentResolver().openInputStream(uri)) {
+                        if (metadata != null) {
+                            android.media.ExifInterface exif = new android.media.ExifInterface(metadata);
+                            int orientation = exif.getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION,
+                                    android.media.ExifInterface.ORIENTATION_NORMAL);
+                            android.graphics.Matrix transform = new android.graphics.Matrix();
+                            switch (orientation) {
+                                case android.media.ExifInterface.ORIENTATION_ROTATE_90: transform.postRotate(90); break;
+                                case android.media.ExifInterface.ORIENTATION_ROTATE_180: transform.postRotate(180); break;
+                                case android.media.ExifInterface.ORIENTATION_ROTATE_270: transform.postRotate(270); break;
+                                case android.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL: transform.postScale(-1, 1); break;
+                                case android.media.ExifInterface.ORIENTATION_FLIP_VERTICAL: transform.postScale(1, -1); break;
+                                case android.media.ExifInterface.ORIENTATION_TRANSPOSE: transform.postRotate(90); transform.postScale(-1, 1); break;
+                                case android.media.ExifInterface.ORIENTATION_TRANSVERSE: transform.postRotate(270); transform.postScale(-1, 1); break;
+                                default: break;
+                            }
+                            if (!transform.isIdentity()) bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), transform, true);
+                        }
+                    } catch (Exception ignored) { /* Non-JPEG or no metadata: retain decoded pixels. */ }
+                    java.io.File stored = LuxuryImageStudio.saveToPrivateStorage(MainActivity.this, bitmap);
+                    if (stored != null) path = stored.getAbsolutePath();
+                }
+            } catch (Exception e) { android.util.Log.w("ASIYE", "gallery image", e); }
+              catch (OutOfMemoryError e) { android.util.Log.w("ASIYE", "gallery image too large", e); }
+            final Bitmap result = bitmap; final String storedPath = path;
+            runOnUiThread(new Runnable() { public void run() {
+                if (generation != aiGeneration || isFinishing()) return;
+                aiBusy = false;
+                if (result == null || storedPath.isEmpty()) { toast("خواندن یا ذخیره عکس ممکن نشد؛ تصویر دیگری انتخاب کنید."); return; }
+                aiSourceBitmap = result; aiSourcePath = storedPath; aiStudioPath = "";
+                persistStudioDraft(); toast("عکس محصول ذخیره شد.");
+                if (aiStudioOpen && adminMode) renderCurrentScreen();
+            }});
+        }}).start();
     }
 
     private void generateStudioImage() {
@@ -8859,6 +8941,7 @@ public final class MainActivity extends Activity {
         aiBusy = true;
         toast("در حال ساخت تصویر استودیویی ابسیدین–طلایی…");
         final Bitmap src = aiSourceBitmap;
+        final int generation = aiGeneration;
         final String brandLine = aiBrand == null || aiBrand.trim().isEmpty() ? "ASIYE STORE" : aiBrand.trim();
         final String productLine = aiAnalysis == null ? "" : aiAnalysis.formFactorFa;
         new Thread(new Runnable() {
@@ -8871,15 +8954,17 @@ public final class MainActivity extends Activity {
                     if (file != null) path = file.getAbsolutePath();
                 } catch (Throwable ignored) { }
                 final String finalPath = path;
-                aiBusy = false;
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
+                        if (generation != aiGeneration || isFinishing()) return;
+                        aiBusy = false;
                         if (finalPath.isEmpty()) {
                             toast("ساخت تصویر ممکن نشد؛ از عکس اصلی استفاده می‌شود.");
                         } else {
                             aiStudioPath = finalPath;
+                            persistStudioDraft();
                             toast("تصویر استودیویی اختصاصی ساخته شد.");
-                            renderCurrentScreen();
+                            if (aiStudioOpen && adminMode) renderCurrentScreen();
                         }
                     }
                 });

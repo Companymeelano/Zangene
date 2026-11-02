@@ -20,7 +20,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public static final long STANDARD_SHIPPING_COST  = 65_000L;
 
     private static final String DB_NAME = "asiye_royal_v5.db";
-    private static final int DB_VERSION = 7;
+    private static final int DB_VERSION = 8;
 
     public AsiyeDatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -38,6 +38,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "replenish_days INTEGER NOT NULL DEFAULT 45," +
                 "name_fa TEXT NOT NULL," +
                 "name_en TEXT NOT NULL," +
+                "brand TEXT NOT NULL DEFAULT ''," +
                 "category TEXT NOT NULL," +
                 "description TEXT NOT NULL," +
                 "ingredients TEXT," +
@@ -913,6 +914,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         alterAdd(db, "orders", "certificate_code", "TEXT");
         alterAdd(db, "orders", "vip_gift_box", "INTEGER NOT NULL DEFAULT 1");
         alterAdd(db, "orders", "cold_chain", "INTEGER NOT NULL DEFAULT 0");
+        alterAdd(db, "products", "brand", "TEXT NOT NULL DEFAULT ''");
         alterAdd(db, "products", "wishlisted", "INTEGER NOT NULL DEFAULT 0");
         alterAdd(db, "products", "image_key", "TEXT NOT NULL DEFAULT 'gatieau_whitening'");
         createReviewsTable(db);
@@ -1274,8 +1276,8 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         }
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             String q = "%" + searchQuery.trim() + "%";
-            sql.append(" AND (name_fa LIKE ? OR name_en LIKE ? OR sku LIKE ? OR description LIKE ?)");
-            args.add(q); args.add(q); args.add(q); args.add(q);
+            sql.append(" AND (name_fa LIKE ? OR name_en LIKE ? OR sku LIKE ? OR description LIKE ? OR brand LIKE ?)");
+            args.add(q); args.add(q); args.add(q); args.add(q); args.add(q);
         }
         if ("price_asc".equals(sortMode)) {
             sql.append(" ORDER BY sale_price ASC");
@@ -1321,7 +1323,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
      * Returns null on success or a Persian error message.
      */
     public String saveAiProduct(Long existingId, String sku, String nameFa, String nameEn,
-                                String category, String description, String longDescription,
+                                String brand, String category, String description, String longDescription,
                                 String benefits, String ingredients, String usage, String country,
                                 String volume, long origPrice, long salePrice, int stock,
                                 boolean published, String imageKey, String imagePath,
@@ -1332,13 +1334,14 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         if (origPrice < salePrice) origPrice = salePrice;
         int disc = origPrice > 0 ? (int) Math.round(((origPrice - salePrice) * 100.0) / origPrice) : 0;
         String normSku = (sku == null || sku.trim().isEmpty())
-                ? ("AS-AI-" + (100 + new Random().nextInt(8999)))
+                ? ("AS-AI-" + java.util.UUID.randomUUID().toString().substring(0, 12).toUpperCase(Locale.US))
                 : sku.trim().toUpperCase(Locale.US);
 
         ContentValues cv = new ContentValues();
         cv.put("sku", normSku);
         cv.put("name_fa", nameFa.trim());
         cv.put("name_en", nameEn);
+        cv.put("brand", brand == null ? "" : brand.trim());
         cv.put("category", category);
         cv.put("description", description);
         cv.put("long_description", longDescription);
@@ -1361,11 +1364,13 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         cv.put("ai_generated", 1);
 
         SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
         try {
             if (existingId == null) {
-                cv.put("ttac_serial", normSku);
-                cv.put("batch_code", "LOT-AI-" + (100 + new Random().nextInt(899)));
-                cv.put("expiry_label", "۱۴۰۹/۰۳");
+                // These are unknown until supplied by the merchant, never fabricate authenticity or expiry.
+                cv.put("ttac_serial", "");
+                cv.put("batch_code", "");
+                cv.put("expiry_label", "");
                 cv.put("low_stock_threshold", 5);
                 long id = db.insertOrThrow("products", null, cv);
                 insertMovementInternal(db, id, nameFa.trim(), Math.max(0, stock), "in",
@@ -1373,9 +1378,13 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
             } else {
                 db.update("products", cv, "id = ?", new String[]{String.valueOf(existingId)});
             }
+            db.setTransactionSuccessful();
             return null;
         } catch (Exception e) {
-            return "کد کالا تکراری است؛ کد دیگری انتخاب کنید.";
+            android.util.Log.e("ASIYE", "Could not save studio product", e);
+            return "ذخیره کالا انجام نشد؛ دوباره تلاش کنید.";
+        } finally {
+            db.endTransaction();
         }
     }
 
@@ -1427,6 +1436,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         p.replenishDays = c.getInt(c.getColumnIndexOrThrow("replenish_days"));
         p.nameFa = c.getString(c.getColumnIndexOrThrow("name_fa"));
         p.nameEn = c.getString(c.getColumnIndexOrThrow("name_en"));
+        p.brand = safeString(c, "brand");
         p.category = c.getString(c.getColumnIndexOrThrow("category"));
         p.description = c.getString(c.getColumnIndexOrThrow("description"));
         p.ingredients = c.getString(c.getColumnIndexOrThrow("ingredients"));
