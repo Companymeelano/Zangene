@@ -62,13 +62,17 @@ public final class DirectAiStudio {
         String[] providers = AiProviderOrder.forPreference(preferred);
         StringBuilder failures = new StringBuilder();
         for (String provider : providers) {
+            if (image != null && !AiProviderOrder.supportsImage(provider)) {
+                failures.append(AiProviderOrder.label(provider)).append(" — مدل انتخابی ورودی عکس ندارد؛ به سرویس بعدی می‌رویم.\n");
+                continue;
+            }
             String key = keys.optString(provider, "").trim();
             if (key.isEmpty()) {
                 failures.append(AiProviderError.message(provider, 0, "missing" )).append("\n");
                 continue;
             }
             try {
-                String result = provider.equals("gemini") ? gemini(key, facts, image, false) : chat(provider, key, facts, image, false);
+                String result = request(provider, key, keys, facts, image, false);
                 JSONObject obj = validateOutput(result);
                 AiProductStudio.Draft draft = AiProductStudio.compose(AiProductStudio.analyze(name, brand, null), name, brand);
                 for (String field : new String[]{"nameFa", "nameEn", "category", "description", "longDescription", "benefits", "ingredients", "usage", "country", "volume", "keywords", "seoTitle", "seoDescription", "instagramCaption"}) {
@@ -106,15 +110,18 @@ public final class DirectAiStudio {
 
     /** Sends synthetic text only; never sends a real product or photo. */
     public static String probe(Context context, String provider) {
-        if (!"gemini".equals(provider) && !"openai".equals(provider) && !"groq".equals(provider)) return "سرویس ناشناخته است.";
-        String key;
+        boolean known = false;
+        for (String id : AiProviderOrder.IDS) if (id.equals(provider)) known = true;
+        if (!known) return "سرویس ناشناخته است.";
+        String key; JSONObject keys;
         try (InputStream input = context.getAssets().open("studio_provider_keys.json")) {
-            key = new JSONObject(new String(read(input, 8192), StandardCharsets.UTF_8)).optString(provider, "").trim();
+            keys = new JSONObject(new String(read(input, 8192), StandardCharsets.UTF_8));
+            key = keys.optString(provider, "").trim();
         } catch (Exception e) { return "فایل کلیدها قابل خواندن نیست."; }
         if (key.isEmpty()) return AiProviderError.message(provider, 0, "missing");
         try {
             JSONObject facts = new JSONObject().put("product_name", "چای نمونه آزمایشی").put("brand", "");
-            String result = "gemini".equals(provider) ? gemini(key, facts, null, true) : chat(provider, key, facts, null, true);
+            String result = request(provider, key, keys, facts, null, true);
             validateOutput(result);
             return "موفق: احراز هویت و تولید متن ساختاریافته با مدل فعلی انجام شد. عکس و سقف سهمیه آزمایش نشد.";
         } catch (Exception failure) {
@@ -122,6 +129,22 @@ public final class DirectAiStudio {
             String kind = failure instanceof java.net.SocketTimeoutException ? "timeout" : failure instanceof java.io.IOException ? "network" : "response";
             return AiProviderError.message(provider, status, kind);
         }
+    }
+
+    private static String request(String provider, String key, JSONObject keys, JSONObject facts, String image, boolean probe) throws Exception {
+        if ("gemini".equals(provider)) return gemini(key, facts, image, probe);
+        if ("cloudflare".equals(provider)) {
+            String account = keys.optString("cloudflare_account", "");
+            if (!account.matches("[a-fA-F0-9]{32}")) throw new IllegalArgumentException("account");
+            JSONObject body = new JSONObject().put("messages", new JSONArray()
+                    .put(new JSONObject().put("role", "system").put("content", PROMPT))
+                    .put(new JSONObject().put("role", "user").put("content", "Product data: " + facts.toString())))
+                    .put("max_tokens", probe ? 1500 : 3000);
+            JSONObject response = call("https://api.cloudflare.com/client/v4/accounts/" + account + "/ai/run/@cf/meta/llama-3.1-8b-instruct", "Authorization", "Bearer " + key, body);
+            if (!response.optBoolean("success", false)) throw new IllegalArgumentException("provider failure");
+            return response.getJSONObject("result").getString("response");
+        }
+        return chat(provider, key, facts, image, probe);
     }
 
     private static String gemini(String key, JSONObject facts, String image, boolean probe) throws Exception {
@@ -140,9 +163,18 @@ public final class DirectAiStudio {
     }
 
     private static String chat(String provider, String key, JSONObject facts, String image, boolean probe) throws Exception {
-        boolean openai = provider.equals("openai");
-        String url = openai ? OPENAI_URL : GROQ_URL;
-        String model = openai ? "gpt-4o-mini" : "qwen/qwen3.8-27b";
+        String url, model;
+        switch (provider) {
+            case "openai": url = OPENAI_URL; model = "gpt-4o-mini"; break;
+            case "groq": url = GROQ_URL; model = "qwen/qwen3.8-27b"; break;
+            case "gapgpt": url = "https://api.gapgpt.app/v1/chat/completions"; model = "gpt-4o"; break;
+            case "deepseek": url = "https://api.deepseek.com/chat/completions"; model = "deepseek-flash"; break;
+            case "openrouter": url = "https://openrouter.ai/api/v1/chat/completions"; model = "openai/gpt-4o-mini"; break;
+            case "cerebras": url = "https://api.cerebras.ai/v1/chat/completions"; model = "qwen-3.8-27b"; break;
+            case "huggingface": url = "https://router.huggingface.co/v1/chat/completions"; model = "Qwen/Qwen3.8-27B:cerebras"; break;
+            case "maxrouter": url = "https://api.maxrouter.ai/v1/chat/completions"; model = "gemini-2.5-flash"; break;
+            default: throw new IllegalArgumentException("unknown provider");
+        }
         JSONArray content = new JSONArray().put(new JSONObject().put("type", "text").put("text", "Product data: " + facts.toString()));
         if (image != null) content.put(new JSONObject().put("type", "image_url").put("image_url", new JSONObject().put("url", "data:image/jpeg;base64," + image)));
         JSONArray messages = new JSONArray().put(new JSONObject().put("role", "system").put("content", PROMPT))

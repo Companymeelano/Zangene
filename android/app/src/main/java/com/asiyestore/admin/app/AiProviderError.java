@@ -4,7 +4,7 @@ package com.asiyestore.admin.app;
 public final class AiProviderError {
     private AiProviderError() { }
     public static String message(String provider, int status, String kind) {
-        String label = "gemini".equals(provider) ? "Gemini" : "openai".equals(provider) ? "OpenAI" : "Groq";
+        String label = AiProviderOrder.label(provider);
         String reason;
         switch (status) {
             case 400: reason = "درخواست یا عکس پذیرفته نشد (HTTP 400)."; break;

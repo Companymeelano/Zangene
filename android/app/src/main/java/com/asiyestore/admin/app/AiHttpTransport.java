@@ -10,9 +10,12 @@ import java.nio.charset.StandardCharsets;
 public final class AiHttpTransport {
     private AiHttpTransport() { }
     public static String post(String url, String header, String credential, String body, int limit) throws Exception {
+        return post(url, header, credential, body, limit, 35000);
+    }
+    public static String post(String url, String header, String credential, String body, int limit, int readTimeout) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         try {
-            c.setInstanceFollowRedirects(false); c.setConnectTimeout(15000); c.setReadTimeout(35000);
+            c.setInstanceFollowRedirects(false); c.setConnectTimeout(15000); c.setReadTimeout(readTimeout);
             c.setRequestMethod("POST"); c.setDoOutput(true);
             c.setRequestProperty("Content-Type", "application/json; charset=utf-8");
             c.setRequestProperty("Accept", "application/json");

@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V7.0.3 · API HEALTH";
+    private static final String APP_VERSION         = "V7.1 · AI SERVICES";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -8653,6 +8653,14 @@ public final class MainActivity extends Activity {
                     @Override public void run() { generateStudioImage(); }
                 }));
         card.addView(space(8));
+        card.addView(ghostButton("ساخت تصویر تبلیغاتی با هوش مصنوعی", new Runnable() {
+            @Override public void run() { chooseMediaProvider(); }
+        }));
+        card.addView(space(8));
+        card.addView(ghostButton("ساخت و پیگیری ویدئوی تبلیغاتی", new Runnable() {
+            @Override public void run() { showVideoMenu(); }
+        }));
+        card.addView(space(8));
         card.addView(ghostButton("انتخاب یا تغییر عکس از گالری", new Runnable() {
             @Override public void run() { pickProductPhoto(); }
         }));
@@ -8821,7 +8829,7 @@ public final class MainActivity extends Activity {
     }
 
     private String aiServiceLabel(String id) {
-        return "openai".equals(id) ? "OpenAI" : "groq".equals(id) ? "Groq" : "Gemini";
+        return AiProviderOrder.label(id);
     }
 
     private void showAiServices() {
@@ -8830,10 +8838,24 @@ public final class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         box.setBackgroundColor(COL_WHITE);
         box.setPadding(dp(18), dp(8), dp(18), dp(12));
-        TextView details = text("سرویس اول: " + aiServiceLabel(current) + "؛ در صورت خطا دو سرویس دیگر به ترتیب امتحان می‌شوند. هر سرویس می‌تواند تحلیل تصویر و متن و ساخت پیش‌نویس را انجام دهد؛ خروجی را بررسی کنید.\n\n"
+        TextView details = text("سرویس اول: " + aiServiceLabel(current) + "؛ در صورت خطا سرویس‌های تصویری جایگزین می‌شوند. سرویس‌های صرفاً متنی برای عکس به کار نمی‌روند. خروجی را بررسی کنید.\n\n"
                 + "Gemini · مدل gemini-3.5-flash-lite\nتحلیل چندرسانه‌ای و ساخت پیش‌نویس\n" + DirectAiStudio.GEMINI_URL + "\n\n"
                 + "OpenAI · مدل gpt-4o-mini\nتحلیل تصویر و نگارش متن ساختاریافته / SEO\n" + DirectAiStudio.OPENAI_URL + "\n\n"
                 + "Groq · مدل qwen/qwen3.8-27b\nپردازش سریع متن و تصویر، جایگزین دیگر\n" + DirectAiStudio.GROQ_URL + "\n\n"
+                + "GapGPT · متن\nhttps://api.gapgpt.app/v1/chat/completions\n\n"
+                + "DeepSeek · متن\nhttps://api.deepseek.com/chat/completions\n\n"
+                + "MaxRouter · متن\nhttps://api.maxrouter.ai/v1/chat/completions\n\n"
+                + "OpenRouter · متن و تصویر\nhttps://openrouter.ai/api/v1/chat/completions\n\n"
+                + "Cerebras · متن و تصویر\nhttps://api.cerebras.ai/v1/chat/completions\n\n"
+                + "Hugging Face · متن و تصویر\nhttps://router.huggingface.co/v1/chat/completions\n\n"
+                + "Cloudflare Workers AI · متن\nhttps://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3.1-8b-instruct\n\n"
+                + "Stability · تصویر\nhttps://api.stability.ai/v2beta/stable-image/generate/core\n\n"
+                + "DeepAI · تصویر\nhttps://api.deepai.org/api/text2img\n\n"
+                + "fal · تصویر\nhttps://fal.run/fal-ai/flux/dev\n\n"
+                + "BytePlus · تصویر\nhttps://ark.ap-southeast.bytepluses.com/api/v3/images/generations\n\n"
+                + "Kling · ویدئو\nhttps://api-singapore.klingai.com/text-to-video/kling-3.0\n\n"
+                + "PiAPI · ویدئو\nhttps://api.piapi.ai/api/v1/task\n\n"
+                + "آزمون سرویس‌های تصویر و ویدئو از بخش پیش‌نویس با درخواست تولید هزینه‌دار انجام می‌شود؛ نتیجه باید بازبینی شود.\n\n"
                 + "آزمون یک متن نمونهٔ ساختگی می‌فرستد، نه اطلاعات یا عکس محصول؛ ممکن است سهمیه یا هزینه مصرف کند. موفقیت آزمون متنی، سلامت عکس یا سهمیهٔ آینده را تضمین نمی‌کند. کلیدها نمایش داده نمی‌شوند.", 11f, COL_TEXT_MAIN, false);
         details.setTextIsSelectable(true);
         details.setLineSpacing(dp(3), 1f);
@@ -8848,24 +8870,34 @@ public final class MainActivity extends Activity {
             @Override public void run() { dialog.dismiss(); chooseAiPriority(); }
         }));
         box.addView(space(8));
-        box.addView(primaryButton("آزمون هر سه سرویس", Luxury3DIconView.ICON_AI, new Runnable() {
-            @Override public void run() { dialog.dismiss(); startAiProbes(new String[]{"gemini", "openai", "groq"}); }
+        box.addView(primaryButton("آزمون همهٔ سرویس‌های متنی", Luxury3DIconView.ICON_AI, new Runnable() {
+            @Override public void run() { dialog.dismiss(); startAiProbes(AiProviderOrder.IDS); }
         }));
-        for (final String provider : new String[]{"gemini", "openai", "groq"}) {
-            box.addView(space(7));
-            box.addView(ghostButton("فقط آزمون " + aiServiceLabel(provider), new Runnable() {
-                @Override public void run() { dialog.dismiss(); startAiProbes(new String[]{provider}); }
-            }));
-        }
+        box.addView(space(8));
+        box.addView(ghostButton("آزمون یک سرویس متنی", new Runnable() {
+            @Override public void run() { dialog.dismiss(); chooseSingleProbe(); }
+        }));
         dialog.show();
     }
 
+    private void chooseSingleProbe() {
+        final String[] ids = AiProviderOrder.IDS;
+        String[] labels = new String[ids.length];
+        for (int i = 0; i < ids.length; i++) labels[i] = AiProviderOrder.label(ids[i]);
+        new AlertDialog.Builder(this).setTitle("آزمون یک سرویس")
+            .setItems(labels, new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int which) { startAiProbes(new String[]{ids[which]}); }
+            }).setNegativeButton("انصراف", null).show();
+    }
+
     private void chooseAiPriority() {
-        final String[] ids = {"gemini", "openai", "groq"};
+        final String[] ids = AiProviderOrder.IDS;
+        final String[] labels = new String[ids.length];
         final String current = getSharedPreferences("ai_services", MODE_PRIVATE).getString("preferred", "gemini");
-        int selected = "openai".equals(current) ? 1 : "groq".equals(current) ? 2 : 0;
+        int selected = 0;
+        for (int i = 0; i < ids.length; i++) { labels[i] = AiProviderOrder.label(ids[i]) + (AiProviderOrder.supportsImage(ids[i]) ? " · متن و تصویر" : " · فقط متن"); if (ids[i].equals(current)) selected = i; }
         new AlertDialog.Builder(this).setTitle("سرویس اول برای استودیو")
-                .setSingleChoiceItems(new String[]{"Gemini · تصویر و پیش‌نویس", "OpenAI · متن و پیش‌نویس", "Groq · پردازش سریع"}, selected,
+                .setSingleChoiceItems(labels, selected,
                     new android.content.DialogInterface.OnClickListener() {
                         @Override public void onClick(android.content.DialogInterface dialog, int which) {
                             getSharedPreferences("ai_services", MODE_PRIVATE).edit().putString("preferred", ids[which]).apply();
@@ -8906,7 +8938,7 @@ public final class MainActivity extends Activity {
         if (name.length() < 3) { toast("نام محصول را کامل وارد کنید."); return; }
         if (aiBusy) { toast("عملیات دیگری در حال انجام است."); return; }
         new AlertDialog.Builder(this).setTitle("ارسال اطلاعات برای تحلیل")
-                .setMessage("نام، برند و عکس انتخابی مستقیماً به سرویس‌های هوش مصنوعی ارسال می‌شوند. در صورت خطا ممکن است به سرویس بعدی نیز ارسال شوند و هزینه ایجاد کنند. خروجی را پیش از انتشار بررسی کنید.")
+                .setMessage("نام، برند و عکس انتخابی مستقیماً به سرویس انتخابی یا سرویس‌های جایگزین ارسال می‌شوند. مدل‌های صرفاً متنی در صورت وجود عکس رد می‌شوند. هر درخواست ممکن است هزینه ایجاد کند. خروجی را پیش از انتشار بررسی کنید.")
                 .setNegativeButton("انصراف", null)
                 .setPositiveButton("ارسال و تحلیل", new android.content.DialogInterface.OnClickListener() {
                     public void onClick(android.content.DialogInterface dialog, int which) { runCloudAnalysis(name, brand); }
@@ -9025,6 +9057,135 @@ public final class MainActivity extends Activity {
                 if (aiStudioOpen && adminMode) renderCurrentScreen();
             }});
         }}).start();
+    }
+
+    private void showVideoMenu() {
+        final String[] providers = {"kling", "piapi", "kling", "piapi"};
+        new AlertDialog.Builder(this).setTitle("ویدئوی تبلیغاتی")
+            .setItems(new String[]{"ثبت ویدئو · Kling", "ثبت ویدئو · PiAPI", "پیگیری آخرین ویدئو · Kling", "پیگیری آخرین ویدئو · PiAPI"},
+                new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface d, int which) {
+                    if (which < 2) videoPrompt(providers[which]); else checkVideo(providers[which]);
+                }}).setNegativeButton("بستن", null).show();
+    }
+
+    private void videoPrompt(final String provider) {
+        if (aiBusy) { toast("عملیات دیگری در حال انجام است."); return; }
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("ثبت ویدئو", "درخواست تولید ویدئو هزینه دارد و ممکن است با محصول واقعی متفاوت باشد. هر ثبت جدید شناسهٔ قبلی همین سرویس را جایگزین می‌کند."));
+        final EditText prompt = makeInput("شرح ویدئو", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE, false);
+        prompt.setSingleLine(false); prompt.setMinLines(3); box.addView(prompt); box.addView(space(8));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ثبت درخواست هزینه‌دار", Luxury3DIconView.ICON_AI, new Runnable() { @Override public void run() {
+            final String value = prompt.getText().toString().trim();
+            if (value.isEmpty() || value.length() > 1000) { toast("شرح ویدئو را بین ۱ تا ۱۰۰۰ نویسه وارد کنید."); return; }
+            if (aiBusy) return; dialog.dismiss(); aiBusy = true; toast("در حال ثبت درخواست…");
+            final Context app = getApplicationContext();
+            new Thread(new Runnable() { @Override public void run() {
+                String task = ""; String error = "ثبت ناموفق بود؛ ممکن است درخواست هزینه داشته باشد. پیش از تکرار، پنل سرویس را بررسی کنید.";
+                try { task = AiVideo.submit(app, provider, value); app.getSharedPreferences("ai_video", MODE_PRIVATE).edit().putString(provider, task).apply(); }
+                catch (DirectAiStudio.ProviderHttpException e) { error = "HTTP " + e.status + "؛ دسترسی، سهمیه یا حساب را بررسی کنید."; }
+                catch (Exception ignored) { }
+                final String id = task; final String message = error;
+                runOnUiThread(new Runnable() { @Override public void run() {
+                    aiBusy = false; if (isFinishing()) return;
+                    new AlertDialog.Builder(MainActivity.this).setTitle(id.isEmpty() ? "ثبت ناموفق" : "درخواست ثبت شد")
+                        .setMessage(id.isEmpty() ? message : "شناسهٔ درخواست ذخیره شد. پس از چند دقیقه از بخش پیگیری وضعیت را بررسی کنید.\n" + id)
+                        .setPositiveButton("بستن", null).show();
+                }});
+            }}, "video-submit").start();
+        }})); showRoundedDialog(dialog);
+    }
+
+    private void checkVideo(final String provider) {
+        if (aiBusy) { toast("عملیات دیگری در حال انجام است."); return; }
+        final Context app = getApplicationContext();
+        final String task = app.getSharedPreferences("ai_video", MODE_PRIVATE).getString(provider, "");
+        if (task.isEmpty()) { toast("درخواستی برای این سرویس ذخیره نشده است."); return; }
+        aiBusy = true; toast("در حال بررسی وضعیت…");
+        new Thread(new Runnable() { @Override public void run() {
+            String[] state = null; String error = "وضعیت دریافت نشد؛ مجوز، اتصال و سهمیه را بررسی کنید.";
+            try { state = AiVideo.status(app, provider, task); }
+            catch (DirectAiStudio.ProviderHttpException e) { error = "HTTP " + e.status + "؛ اتصال یا دسترسی حساب را بررسی کنید."; }
+            catch (Exception ignored) { }
+            final String[] result = state; final String failure = error;
+            runOnUiThread(new Runnable() { @Override public void run() {
+                aiBusy = false; if (isFinishing()) return;
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this).setTitle("وضعیت ویدئو")
+                    .setMessage(result == null ? failure : "وضعیت: " + result[0] + "\nشناسه: " + task + (result[1].isEmpty() ? "\nهنوز لینک ویدئو در پاسخ نیست." : "\nبرای مشاهده و ذخیره، لینک را باز کنید."))
+                    .setNegativeButton("بستن", null);
+                if (result != null && !result[1].isEmpty()) builder.setPositiveButton("باز کردن ویدئو", new android.content.DialogInterface.OnClickListener() {
+                    @Override public void onClick(android.content.DialogInterface d, int w) { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(result[1]))); } catch (Exception e) { toast("باز کردن ویدئو ممکن نشد."); } }
+                });
+                builder.show();
+            }});
+        }}, "video-status").start();
+    }
+
+    private void chooseMediaProvider() {
+        if (aiBusy || aiDraft == null) { toast("عملیات دیگری در حال انجام است."); return; }
+        final String[] ids = {"fal", "deepai", "byteplus", "stability"};
+        new AlertDialog.Builder(this).setTitle("سرویس تصویر تبلیغاتی")
+            .setItems(new String[]{"fal · FLUX", "DeepAI · text2img", "BytePlus · Seedream", "Stability · Stable Image"}, new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int which) { confirmMediaGeneration(ids[which]); }
+            }).setNegativeButton("انصراف", null).show();
+    }
+
+    private void confirmMediaGeneration(final String provider) {
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("تصویر تبلیغاتی", "این عکس از متن ساخته می‌شود و تصویر واقعی کالا نیست؛ ممکن است با محصول متفاوت باشد. درخواست هزینه دارد."));
+        final EditText prompt = makeInput("شرح تصویر تبلیغاتی", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE, false);
+        prompt.setSingleLine(false); prompt.setMinLines(3);
+        prompt.setText("A refined luxury product advertising background, warm studio lighting, no labels, no text, no people.");
+        box.addView(prompt); box.addView(space(8));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ارسال و ساخت تصویر", Luxury3DIconView.ICON_CAMERA, new Runnable() {
+            @Override public void run() {
+                final String text = prompt.getText().toString().trim();
+                if (text.isEmpty() || text.length() > 2000) { toast("شرح تصویر را بین ۱ تا ۲۰۰۰ نویسه وارد کنید."); return; }
+                if (aiBusy) return;
+                dialog.dismiss(); aiBusy = true; final int generation = aiGeneration;
+                toast("در حال ساخت تصویر تبلیغاتی…");
+                new Thread(new Runnable() { @Override public void run() {
+                    Bitmap bitmap = null; String failure = "خطا در دریافت تصویر؛ حساب، مدل و اینترنت را بررسی کنید.";
+                    try {
+                        bitmap = AiMedia.generateImage(getApplicationContext(), provider, text);
+                    } catch (DirectAiStudio.ProviderHttpException e) { failure = "خطای سرویس HTTP " + e.status + "; اعتبار، سهمیه یا دسترسی مدل را بررسی کنید."; }
+                      catch (java.net.SocketTimeoutException e) { failure = "زمان انتظار به پایان رسید؛ ممکن است درخواست هزینه داشته باشد. پیش از تکرار حساب را بررسی کنید."; }
+                      catch (Exception e) { failure = "پاسخ یا اتصال سرویس قابل استفاده نبود؛ درخواست ممکن است هزینه داشته باشد."; }
+                      catch (OutOfMemoryError e) { failure = "حافظه برای تصویر کافی نبود."; }
+                    final Bitmap result = bitmap; final String error = failure;
+                    runOnUiThread(new Runnable() { @Override public void run() {
+                        if (generation != aiGeneration || isFinishing()) return;
+                        aiBusy = false;
+                        if (result == null) { new AlertDialog.Builder(MainActivity.this).setTitle("تصویر ساخته نشد").setMessage(error).setPositiveButton("بستن", null).show(); return; }
+                        if (!aiStudioOpen || !adminMode || aiDraft == null) { toast("تصویر دریافت شد اما استودیو بسته است؛ چیزی اعمال نشد."); return; }
+                        previewMediaImage(result, generation);
+                    }});
+                }}, "media-generation").start();
+            }
+        }));
+        showRoundedDialog(dialog);
+    }
+
+    private void previewMediaImage(final Bitmap result, final int generation) {
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("بازبینی تصویر ساختگی", "تصویر تولیدشده ممکن است محصول واقعی را نشان ندهد. فقط در صورت مناسب بودن از آن استفاده کنید."));
+        ImageView preview = new ImageView(this); preview.setImageBitmap(result); preview.setAdjustViewBounds(true);
+        preview.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        box.addView(preview, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(220)));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("استفاده از این تصویر", Luxury3DIconView.ICON_CAMERA, new Runnable() {
+            @Override public void run() {
+                if (generation != aiGeneration || aiDraft == null) { dialog.dismiss(); return; }
+                try {
+                    java.io.File f = LuxuryImageStudio.saveToPrivateStorage(MainActivity.this, result);
+                    if (f == null) throw new IllegalStateException();
+                    aiStudioPath = f.getAbsolutePath(); persistStudioDraft(); dialog.dismiss(); renderCurrentScreen();
+                } catch (Exception e) { toast("ذخیرهٔ تصویر ممکن نشد."); }
+            }
+        }));
+        box.addView(ghostButton("انصراف", new Runnable() { @Override public void run() { dialog.dismiss(); } }));
+        showRoundedDialog(dialog);
     }
 
     private void generateStudioImage() {
