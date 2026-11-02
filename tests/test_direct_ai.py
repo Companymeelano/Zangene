@@ -14,7 +14,9 @@ class DirectStudioTests(unittest.TestCase):
         self.assertIn('data:image/jpeg;base64,', direct)
         self.assertIn('DirectAiStudio.generate(MainActivity.this, name, brand, photo)', activity)
         self.assertIn('setPositiveButton("ارسال و تحلیل"', activity)
-        self.assertIn('all providers unavailable', direct)
+        self.assertIn('ProvidersFailedException', direct)
+        self.assertIn('gemini-3.5-flash-lite', direct)
+        self.assertIn('qwen/qwen3.8-27b', direct)
         self.assertNotIn('setRequestProperty("Authorization", key)', direct)
 
 if __name__ == '__main__': unittest.main()

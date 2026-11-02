@@ -93,7 +93,7 @@ def provider_request(provider, name, brand, image, environ):
     facts = json.dumps({'product_name': name, 'brand': brand}, ensure_ascii=False)
     if provider == 'gemini':
         key = environ.get('GEMINI_API_KEY', '')
-        model = safe_model(environ.get('GEMINI_MODEL', 'gemini-2.5-flash'))
+        model = safe_model(environ.get('GEMINI_MODEL', 'gemini-3.5-flash-lite'))
         parts = [{'text': PROMPT + '\nProduct data: ' + facts}]
         if image:
             parts.append({'inline_data': {'mime_type': 'image/jpeg', 'data': image}})
@@ -105,7 +105,7 @@ def provider_request(provider, name, brand, image, environ):
     if provider in ('openai', 'groq'):
         prefix = 'OPENAI' if provider == 'openai' else 'GROQ'
         key = environ.get(prefix + '_API_KEY', '')
-        default_model = 'gpt-4o-mini' if provider == 'openai' else 'meta-llama/llama-4-scout-17b-16e-instruct'
+        default_model = 'gpt-4o-mini' if provider == 'openai' else 'qwen/qwen3.8-27b'
         model = safe_model(environ.get(prefix + '_MODEL', default_model))
         content = [{'type': 'text', 'text': 'Product data: ' + facts}]
         if image:

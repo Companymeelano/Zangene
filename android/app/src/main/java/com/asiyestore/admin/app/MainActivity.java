@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V7.0.1 · DIRECT AI";
+    private static final String APP_VERSION         = "V7.0.2 · AI DIAGNOSTICS";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -8526,9 +8526,13 @@ public final class MainActivity extends Activity {
             }
         }));
         contentContainer.addView(space(8));
-        contentContainer.addView(outlineDarkButton("تحلیل مستقیم با هوش مصنوعی", Luxury3DIconView.ICON_AI, new Runnable() {
+        contentContainer.addView(outlineDarkButton(aiBusy ? "در حال تحلیل؛ لطفاً صبر کنید" : "تحلیل مستقیم با هوش مصنوعی", Luxury3DIconView.ICON_AI, new Runnable() {
             @Override public void run() { confirmCloudAnalysis(); }
         }));
+        if (aiBusy) {
+            contentContainer.addView(space(6));
+            contentContainer.addView(text("در حال بررسی سرویس‌ها؛ در صورت خطا، علت هر سرویس نمایش داده می‌شود.", 10f, COL_TEXT_MUTED, false));
+        }
         contentContainer.addView(space(10));
         TextView hint = text("حالت محلی عکس را شناسایی نمی‌کند و از اینترنت جست‌وجو نمی‌کند. مشخصات محصول را پیش از انتشار بررسی و تکمیل کنید.",
                 9.4f, COL_TEXT_FAINT, false);
@@ -8829,10 +8833,12 @@ public final class MainActivity extends Activity {
         aiBusy = true; final int generation = aiGeneration; final Bitmap photo = aiSourceBitmap;
         final String sourceAtRequest = aiSourcePath;
         toast("در حال تحلیل توسط سرویس…");
+        if (aiStudioOpen && adminMode) renderCurrentScreen();
         new Thread(new Runnable() { public void run() {
             AiProductStudio.Draft draft = null;
             String failure = "تحلیل انجام نشد؛ اتصال اینترنت، دسترسی و اعتبار کلیدها یا سهمیهٔ سرویس‌ها را بررسی کنید.";
             try { draft = DirectAiStudio.generate(MainActivity.this, name, brand, photo); }
+            catch (DirectAiStudio.ProvidersFailedException e) { failure = e.getMessage(); }
             catch (Exception e) { android.util.Log.e("ASIYE", "direct AI failed: " + e.getClass().getSimpleName()); }
             catch (OutOfMemoryError e) { failure = "حافظه برای پردازش عکس کافی نیست؛ تصویر کوچک‌تری انتخاب کنید."; }
             final AiProductStudio.Draft result = draft;
@@ -8840,9 +8846,19 @@ public final class MainActivity extends Activity {
             runOnUiThread(new Runnable() { public void run() {
                 if (generation != aiGeneration || isFinishing()) return;
                 aiBusy = false;
-                if (result == null) { toast(errorText); return; }
+                if (result == null) {
+                    if (aiStudioOpen && adminMode) {
+                        renderCurrentScreen();
+                        new AlertDialog.Builder(MainActivity.this).setTitle("جزئیات خطای سرویس‌ها")
+                                .setMessage(errorText + "\n\nکلید یا عکس در این گزارش نمایش داده نمی‌شود. تنظیمات، سهمیه و دسترسی حساب را بررسی کنید.")
+                                .setPositiveButton("متوجه شدم", null).show();
+                    } else toast("تحلیل انجام نشد؛ دوباره به استودیو مراجعه کنید.");
+                    return;
+                }
                 if (!name.equals(aiName.trim()) || !brand.equals(aiBrand.trim()) || !sourceAtRequest.equals(aiSourcePath) || aiDraft != null) {
-                    toast("ورودی‌ها تغییر کردند؛ پاسخ قدیمی اعمال نشد."); return;
+                    toast("ورودی‌ها تغییر کردند؛ پاسخ قدیمی اعمال نشد.");
+                    if (aiStudioOpen && adminMode) renderCurrentScreen();
+                    return;
                 }
                 aiAnalysis = AiProductStudio.analyze(name, brand, null); aiDraft = result;
                 persistStudioDraft(); toast("پیش‌نویس دریافت شد؛ تمام اطلاعات را بررسی کنید.");
