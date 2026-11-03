@@ -9,7 +9,7 @@ class DirectStudioTests(unittest.TestCase):
         direct = (JAVA / 'DirectAiStudio.java').read_text(encoding='utf8')
         activity = (JAVA / 'MainActivity.java').read_text(encoding='utf8')
         self.assertIn('AiProviderOrder.forPreference(preferred)', direct)
-        self.assertIn('StudioCredentials.get(context, provider)', direct)
+        self.assertIn('StudioCredentials.get(context, "openrouter_free".equals(provider) ? "openrouter" : provider)', direct)
         self.assertIn('inline_data', direct)
         self.assertIn('data:image/jpeg;base64,', direct)
         self.assertIn('DirectAiStudio.generate(MainActivity.this, name, brand, photo, preferred, new DirectAiStudio.Cancellation()', activity)

@@ -5,7 +5,7 @@ public class PipelineRegression {
     private static void check(boolean ok) { if (!ok) throw new AssertionError(); }
     private static void reset(String success) {
         AiHttpTransport.URLS.clear(); AiHttpTransport.BODIES.clear(); AiHttpTransport.KEYS.clear();
-        StudioCredentials.VALUES.clear(); AiHttpTransport.successful = success;
+        StudioCredentials.VALUES.clear(); AiHttpTransport.successful = success; AiHttpTransport.paidFails = false;
         AiHttpTransport.content = "{\"nameFa\":\"Test\",\"category\":\"Tea\",\"description\":\"Draft\"}";
     }
     public static void main(String[] args) throws Exception {
@@ -16,16 +16,34 @@ public class PipelineRegression {
         check("Tea".equals(d.category));
         check(AiHttpTransport.URLS.size() == 4 && AiHttpTransport.URLS.get(3).contains("gapgpt"));
         check(AiHttpTransport.KEYS.get(3).equals("Bearer replacement"));
-        reset("openrouter.ai");
+        reset("api.deepseek.com");
         d = DirectAiStudio.generate(ctx, "Tea", "Brand", new Bitmap(), "deepseek");
         check("Draft".equals(d.description));
-        check(AiHttpTransport.URLS.size() == 4);
-        for (String u : AiHttpTransport.URLS) check(!u.contains("deepseek") && !u.contains("gapgpt"));
-        check(AiHttpTransport.BODIES.get(3).contains("data:image/jpeg;base64,"));
+        check(AiHttpTransport.URLS.size() == 1 && AiHttpTransport.URLS.get(0).contains("deepseek"));
+        check(AiHttpTransport.BODIES.get(0).contains("data:image/jpeg;base64,"));
+        reset("openrouter.ai"); AiHttpTransport.paidFails = true;
+        StudioCredentials.VALUES.put("openrouter", "replacement-router");
+        d = DirectAiStudio.generate(ctx, "Tea", "Brand", new Bitmap(), "openrouter");
+        check("Draft".equals(d.description));
+        check(AiHttpTransport.URLS.size() >= 2);
+        int last = AiHttpTransport.URLS.size() - 1;
+        check(new org.json.JSONObject(AiHttpTransport.BODIES.get(last)).getString("model").equals("openrouter/free"));
+        check(AiHttpTransport.KEYS.get(last).equals("Bearer replacement-router"));
+        check(AiHttpTransport.BODIES.get(last).contains("data:image/jpeg;base64,"));
+        reset("api.cloudflare.com");
+        StudioCredentials.VALUES.put("cloudflare_account", "0123456789abcdef0123456789abcdef");
+        d = DirectAiStudio.generate(ctx, "Tea", "Brand", new Bitmap(), "cloudflare");
+        check("Draft".equals(d.description));
+        check(AiHttpTransport.URLS.get(0).contains("llama-3.2-11b-vision-instruct"));
+        check(AiHttpTransport.BODIES.get(0).contains("data:image/jpeg;base64,"));
+        reset("api.deepseek.com");
+        AiHttpTransport.content = "```json\n{\"nameFa\":\"Test\",\"category\":\"Tea\",\"description\":\"Draft\"}\n```";
+        d = DirectAiStudio.generate(ctx, "Tea", "Brand", new Bitmap(), "deepseek");
+        check("Tea".equals(d.category));
         reset("openrouter.ai");
         StudioCredentials.VALUES.put("gemini", "bad-storage");
         d = DirectAiStudio.generate(ctx, "Tea", "", new Bitmap(), "gemini");
-        check(AiHttpTransport.URLS.size() == 3 && !AiHttpTransport.URLS.get(0).contains("googleapis"));
+        check(!AiHttpTransport.URLS.get(0).contains("googleapis"));
         reset("");
         try { DirectAiStudio.generate(ctx, "Tea", "", new Bitmap(), "gemini"); throw new AssertionError(); }
         catch (DirectAiStudio.ProvidersFailedException e) {

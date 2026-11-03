@@ -8,6 +8,7 @@ public final class AiProviderError {
         String reason;
         switch (status) {
             case 400: reason = "درخواست یا عکس پذیرفته نشد (HTTP 400)."; break;
+            case 402: reason = "پرداخت یا اعتبار کافی در دسترس نیست؛ موجودی، سقف کلید و صورتحساب را در پنل بررسی کنید (HTTP 402)."; break;
             case 401: reason = "احراز هویت رد شد؛ اعتبار کلید را در پنل سرویس بررسی کنید (HTTP 401)."; break;
             case 403: reason = "دسترسی رد شد؛ مجوز پروژه، کلید و محدودیت منطقه را بررسی کنید (HTTP 403)."; break;
             case 404: reason = "مدل یا مسیر در این حساب در دسترس نیست (HTTP 404)."; break;

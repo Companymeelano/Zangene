@@ -3,7 +3,7 @@ package com.asiyestore.admin.app;
 /** Preferred provider first, followed by all other configured providers. */
 public final class AiProviderOrder {
     private AiProviderOrder() { }
-    public static final String[] IDS = {"gemini", "openai", "groq", "gapgpt", "deepseek", "openrouter", "cerebras", "huggingface", "cloudflare", "maxrouter"};
+    public static final String[] IDS = {"gemini", "openai", "groq", "gapgpt", "deepseek", "openrouter", "openrouter_free", "cerebras", "huggingface", "cloudflare", "maxrouter"};
     public static String[] forPreference(String preferred) {
         String[] result = new String[IDS.length];
         boolean found = false;
@@ -15,7 +15,7 @@ public final class AiProviderOrder {
         return result;
     }
     public static boolean supportsImage(String id) {
-        return "gemini".equals(id) || "openai".equals(id) || "groq".equals(id) || "openrouter".equals(id) || "cerebras".equals(id) || "huggingface".equals(id);
+        return "gemini".equals(id) || "openai".equals(id) || "groq".equals(id) || "deepseek".equals(id) || "openrouter".equals(id) || "openrouter_free".equals(id) || "cerebras".equals(id) || "huggingface".equals(id) || "cloudflare".equals(id);
     }
     public static String label(String id) {
         if ("gemini".equals(id)) return "Gemini";
@@ -24,6 +24,7 @@ public final class AiProviderOrder {
         if ("gapgpt".equals(id)) return "GapGPT";
         if ("deepseek".equals(id)) return "DeepSeek";
         if ("openrouter".equals(id)) return "OpenRouter";
+        if ("openrouter_free".equals(id)) return "OpenRouter (رایگان)";
         if ("cerebras".equals(id)) return "Cerebras";
         if ("huggingface".equals(id)) return "Hugging Face";
         if ("cloudflare".equals(id)) return "Cloudflare Workers AI";

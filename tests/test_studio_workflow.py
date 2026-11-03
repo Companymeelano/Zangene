@@ -18,5 +18,9 @@ class WorkflowTest(unittest.TestCase):
         self.assertIn('cancelCloudAnalysis()', inputs)
         self.assertIn('درخواست آغازشده ممکن است همچنان هزینه داشته باشد', activity)
         self.assertIn('generation != aiGeneration', activity)
+        self.assertIn('final Bitmap photo = textOnly ? null : aiSourceBitmap', activity)
+        self.assertIn('setPositiveButton("ارسال فقط متن"', activity)
+        self.assertIn('عکس تحلیل نشد', activity)
+        self.assertIn('سیاست نگهداری دادهٔ آن‌ها متفاوت است', activity)
 
 if __name__ == '__main__': unittest.main()

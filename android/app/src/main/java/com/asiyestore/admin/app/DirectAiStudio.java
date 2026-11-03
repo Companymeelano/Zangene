@@ -66,7 +66,7 @@ public final class DirectAiStudio {
                 continue;
             }
             String key;
-            try { key = StudioCredentials.get(context, provider); }
+            try { key = StudioCredentials.get(context, "openrouter_free".equals(provider) ? "openrouter" : provider); }
             catch (Exception failure) { failures.append(AiProviderOrder.label(provider)).append(" — کلید محلی قابل خواندن نیست؛ دوباره وارد کنید.\n"); continue; }
             if (key.isEmpty()) {
                 failures.append(AiProviderError.message(provider, 0, "missing" )).append("\n");
@@ -98,7 +98,10 @@ public final class DirectAiStudio {
     }
 
     private static JSONObject validateOutput(String result) throws Exception {
-        JSONObject obj = new JSONObject(result);
+        String text = result == null ? "" : result.trim();
+        if (text.startsWith("```json\n") && text.endsWith("```")) text = text.substring(8, text.length() - 3).trim();
+        else if (text.startsWith("```\n") && text.endsWith("```")) text = text.substring(4, text.length() - 3).trim();
+        JSONObject obj = new JSONObject(text);
         for (String required : new String[]{"nameFa", "category", "description"}) {
             Object value = obj.opt(required);
             if (!(value instanceof String) || ((String) value).trim().isEmpty()) throw new IllegalArgumentException("missing output");
@@ -117,7 +120,7 @@ public final class DirectAiStudio {
         for (String id : AiProviderOrder.IDS) if (id.equals(provider)) known = true;
         if (!known) return "سرویس ناشناخته است.";
         String key;
-        try { key = StudioCredentials.get(context, provider); }
+        try { key = StudioCredentials.get(context, "openrouter_free".equals(provider) ? "openrouter" : provider); }
         catch (Exception e) { return AiProviderOrder.label(provider) + " — کلید محلی یا فایل بسته قابل خواندن نیست؛ کلید را دوباره وارد کنید."; }
         if (key.isEmpty()) return AiProviderError.message(provider, 0, "missing");
         try {
@@ -141,7 +144,9 @@ public final class DirectAiStudio {
                     .put(new JSONObject().put("role", "system").put("content", PROMPT))
                     .put(new JSONObject().put("role", "user").put("content", "Product data: " + facts.toString())))
                     .put("max_tokens", probe ? 1500 : 3000);
-            JSONObject response = call("https://api.cloudflare.com/client/v4/accounts/" + account + "/ai/run/@cf/meta/llama-3.1-8b-instruct", "Authorization", "Bearer " + key, body);
+            String model = image == null ? "@cf/meta/llama-3.1-8b-instruct" : "@cf/meta/llama-3.2-11b-vision-instruct";
+            if (image != null) body.put("image", "data:image/jpeg;base64," + image);
+            JSONObject response = call("https://api.cloudflare.com/client/v4/accounts/" + account + "/ai/run/" + model, "Authorization", "Bearer " + key, body);
             if (!response.optBoolean("success", false)) throw new IllegalArgumentException("provider failure");
             return response.getJSONObject("result").getString("response");
         }
@@ -171,6 +176,7 @@ public final class DirectAiStudio {
             case "gapgpt": url = "https://api.gapgpt.app/v1/chat/completions"; model = "gpt-4o"; break;
             case "deepseek": url = "https://api.deepseek.com/chat/completions"; model = "deepseek-flash"; break;
             case "openrouter": url = "https://openrouter.ai/api/v1/chat/completions"; model = "openai/gpt-4o-mini"; break;
+            case "openrouter_free": url = "https://openrouter.ai/api/v1/chat/completions"; model = "openrouter/free"; break;
             case "cerebras": url = "https://api.cerebras.ai/v1/chat/completions"; model = "qwen-3.8-27b"; break;
             case "huggingface": url = "https://router.huggingface.co/v1/chat/completions"; model = "Qwen/Qwen3.8-27B:cerebras"; break;
             case "maxrouter": url = "https://api.maxrouter.ai/v1/chat/completions"; model = "gemini-2.5-flash"; break;

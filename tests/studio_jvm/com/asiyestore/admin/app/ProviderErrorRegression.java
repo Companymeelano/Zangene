@@ -3,6 +3,7 @@ public class ProviderErrorRegression {
     private static void check(boolean value, String msg) { if (!value) throw new AssertionError(msg); }
     public static void main(String[] args) {
         check(AiProviderError.message("gemini", 401, "response").contains("401"), "401 missing");
+        check(AiProviderError.message("openrouter", 402, "response").contains("اعتبار") && AiProviderError.message("openrouter", 402, "response").contains("402"), "402 billing missing");
         check(AiProviderError.message("openai", 429, "response").contains("429"), "429 missing");
         check(AiProviderError.message("groq", 404, "response").contains("404"), "404 missing");
         check(AiProviderError.message("groq", 0, "network").contains("شبکه"), "network missing");

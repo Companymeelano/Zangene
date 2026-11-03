@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V7.1.2 · PRODUCT FIRST";
+    private static final String APP_VERSION         = "V7.1.3 · AI VISION";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -8843,12 +8843,12 @@ public final class MainActivity extends Activity {
                 + "OpenAI · مدل gpt-4o-mini\nتحلیل تصویر و نگارش متن ساختاریافته / SEO\n" + DirectAiStudio.OPENAI_URL + "\n\n"
                 + "Groq · مدل qwen/qwen3.8-27b\nپردازش سریع متن و تصویر، جایگزین دیگر\n" + DirectAiStudio.GROQ_URL + "\n\n"
                 + "GapGPT · متن\nhttps://api.gapgpt.app/v1/chat/completions\n\n"
-                + "DeepSeek · متن\nhttps://api.deepseek.com/chat/completions\n\n"
+                + "DeepSeek · متن و تصویر (مدل Flash)\nhttps://api.deepseek.com/chat/completions\n\n"
                 + "MaxRouter · متن\nhttps://api.maxrouter.ai/v1/chat/completions\n\n"
-                + "OpenRouter · متن و تصویر\nhttps://openrouter.ai/api/v1/chat/completions\n\n"
+                + "OpenRouter · متن و تصویر؛ مدل پولی و مدل رایگان جایگزین\nhttps://openrouter.ai/api/v1/chat/completions\n\n"
                 + "Cerebras · متن و تصویر\nhttps://api.cerebras.ai/v1/chat/completions\n\n"
                 + "Hugging Face · متن و تصویر\nhttps://router.huggingface.co/v1/chat/completions\n\n"
-                + "Cloudflare Workers AI · متن\nhttps://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3.1-8b-instruct\n\n"
+                + "Cloudflare Workers AI · متن و تصویر؛ مدل تصویری ممکن است نیاز به پذیرش مجوز مدل در پنل داشته باشد\nhttps://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct\n\n"
                 + "Stability · تصویر\nhttps://api.stability.ai/v2beta/stable-image/generate/core\n\n"
                 + "DeepAI · تصویر\nhttps://api.deepai.org/api/text2img\n\n"
                 + "fal · تصویر\nhttps://fal.run/fal-ai/flux/dev\n\n"
@@ -9011,16 +9011,32 @@ public final class MainActivity extends Activity {
         if (name.length() < 3) { toast("نام محصول را کامل وارد کنید."); return; }
         if (aiBusy) { toast("عملیات دیگری در حال انجام است."); return; }
         new AlertDialog.Builder(this).setTitle("ارسال اطلاعات برای تحلیل")
-                .setMessage("نام، برند و عکس انتخابی مستقیماً به سرویس انتخابی ارسال می‌شوند. در صورت خطا ممکن است به سایر سرویس‌های سازگار نیز ارسال شوند: Gemini، OpenAI، Groq، OpenRouter، Cerebras و Hugging Face برای عکس؛ و برای متن GapGPT، DeepSeek، Cloudflare و MaxRouter نیز ممکن است استفاده شوند. هر درخواست ممکن است هزینه ایجاد کند و روند چند دقیقه طول بکشد. خروجی را پیش از انتشار بررسی کنید.")
+                .setMessage("نام، برند و عکس انتخابی به سرویس انتخابی و در صورت خطا به سایر سرویس‌های سازگار فرستاده می‌شوند: Gemini، OpenAI، Groq، DeepSeek، OpenRouter، Cerebras، Hugging Face و Cloudflare برای عکس؛ GapGPT و MaxRouter نیز برای متن. OpenRouter ممکن است از مدل رایگان و ارائه‌دهندهٔ ثالث استفاده کند؛ سیاست نگهداری دادهٔ آن‌ها متفاوت است. درخواست‌ها ممکن است هزینه داشته باشند و چند دقیقه طول بکشند. خروجی را پیش از انتشار بررسی کنید.")
                 .setNegativeButton("انصراف", null)
                 .setPositiveButton("ارسال و تحلیل", new android.content.DialogInterface.OnClickListener() {
                     public void onClick(android.content.DialogInterface dialog, int which) { runCloudAnalysis(name, brand); }
                 }).show();
     }
 
+    private void confirmTextOnlyAnalysis(final String name, final String brand) {
+        if (aiBusy || aiDraft != null || !name.equals(aiName.trim()) || !brand.equals(aiBrand.trim())) {
+            toast("ورودی تغییر کرده است؛ دوباره تحلیل را آغاز کنید."); return;
+        }
+        new AlertDialog.Builder(this).setTitle("تحلیل فقط نام و برند؟")
+                .setMessage("عکس فعلی حفظ می‌شود ولی در این تلاش ارسال یا تحلیل نمی‌شود. نام و برند به سرویس‌های انتخابی و جایگزین ارسال می‌شوند؛ ممکن است هزینه داشته باشند. نتیجه فقط یک پیش‌نویس نیازمند بازبینی است.")
+                .setNegativeButton("انصراف", null)
+                .setPositiveButton("ارسال فقط متن", new android.content.DialogInterface.OnClickListener() {
+                    @Override public void onClick(android.content.DialogInterface dialog, int which) { runCloudAnalysis(name, brand, true); }
+                }).show();
+    }
+
     private void runCloudAnalysis(final String name, final String brand) {
+        runCloudAnalysis(name, brand, false);
+    }
+
+    private void runCloudAnalysis(final String name, final String brand, final boolean textOnly) {
         if (aiBusy) return;
-        aiBusy = true; aiAnalysisRunning = true; final int generation = aiGeneration; final Bitmap photo = aiSourceBitmap;
+        aiBusy = true; aiAnalysisRunning = true; final int generation = aiGeneration; final Bitmap photo = textOnly ? null : aiSourceBitmap;
         final String sourceAtRequest = aiSourcePath;
         final String preferred = getSharedPreferences("ai_services", MODE_PRIVATE).getString("preferred", "gemini");
         toast("در حال تحلیل توسط سرویس…");
@@ -9042,9 +9058,15 @@ public final class MainActivity extends Activity {
                 if (result == null) {
                     if (aiStudioOpen && adminMode) {
                         renderCurrentScreen();
-                        new AlertDialog.Builder(MainActivity.this).setTitle("جزئیات خطای سرویس‌ها")
-                                .setMessage(errorText + "\n\nکلید یا عکس در این گزارش نمایش داده نمی‌شود. تنظیمات، سهمیه و دسترسی حساب را بررسی کنید.")
-                                .setPositiveButton("متوجه شدم", null).show();
+                        AlertDialog.Builder errorDialog = new AlertDialog.Builder(MainActivity.this).setTitle("جزئیات خطای سرویس‌ها")
+                                .setMessage(errorText + "\n\nکلید یا عکس در این گزارش نمایش داده نمی‌شود. اعتبار، موجودی و دسترسی حساب را بررسی کنید.")
+                                .setPositiveButton("متوجه شدم", null);
+                        if (photo != null && name.equals(aiName.trim()) && brand.equals(aiBrand.trim()) && sourceAtRequest.equals(aiSourcePath)) {
+                            errorDialog.setNeutralButton("آزمون فقط با نام و برند", new android.content.DialogInterface.OnClickListener() {
+                                @Override public void onClick(android.content.DialogInterface dialog, int which) { confirmTextOnlyAnalysis(name, brand); }
+                            });
+                        }
+                        errorDialog.show();
                     } else toast("تحلیل انجام نشد؛ دوباره به استودیو مراجعه کنید.");
                     return;
                 }
@@ -9054,8 +9076,13 @@ public final class MainActivity extends Activity {
                     return;
                 }
                 aiAnalysis = AiProductStudio.analyze(name, brand, null); aiDraft = result;
-                persistStudioDraft(); toast("پیش‌نویس دریافت شد؛ تمام اطلاعات را بررسی کنید.");
-                if (aiStudioOpen && adminMode) renderCurrentScreen();
+                persistStudioDraft(); toast(textOnly ? "پیش‌نویس فقط از نام و برند ساخته شد؛ عکس تحلیل نشد." : "پیش‌نویس دریافت شد؛ تمام اطلاعات را بررسی کنید.");
+                if (aiStudioOpen && adminMode) {
+                    renderCurrentScreen();
+                    if (textOnly) new AlertDialog.Builder(MainActivity.this).setTitle("پیش‌نویس بدون تحلیل عکس")
+                            .setMessage("این پیش‌نویس فقط بر اساس نام و برند ساخته شده است. عکس انتخابی نگه داشته شده اما به هوش مصنوعی ارسال و تحلیل نشده؛ تمام مشخصات را بررسی کنید.")
+                            .setPositiveButton("متوجه شدم", null).show();
+                }
             }});
         }}).start();
     }
