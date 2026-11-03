@@ -32,6 +32,14 @@ public class PipelineRegression {
             check(e.getMessage().contains("403") && e.getMessage().contains("401"));
             check(!e.getMessage().contains("test-key"));
         }
+        reset("openrouter.ai");
+        try {
+            DirectAiStudio.generate(ctx, "Tea", "", new Bitmap(), "gemini", new DirectAiStudio.Cancellation() {
+                int checks = 0;
+                public boolean isCancelled() { return ++checks > 1; }
+            });
+            throw new AssertionError();
+        } catch (java.util.concurrent.CancellationException expected) { check(AiHttpTransport.URLS.size() == 1); }
         reset("api.gapgpt.app");
         check(DirectAiStudio.probe(ctx, "gapgpt").contains("موفق"));
         AiHttpTransport.content = "{}";

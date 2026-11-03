@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V7.1.1 · AI RECOVERY";
+    private static final String APP_VERSION         = "V7.1.2 · PRODUCT FIRST";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -199,8 +199,9 @@ public final class MainActivity extends Activity {
     private Bitmap aiSourceBitmap;
     private String aiStudioPath = "";
     private String aiSourcePath = "";
-    private int aiGeneration = 0;
+    private volatile int aiGeneration = 0;
     private boolean aiBusy = false;
+    private boolean aiAnalysisRunning = false;
     private boolean aiStudioOpen = false;
     private EditText aiNameInput;
     private EditText aiBrandInput;
@@ -8229,7 +8230,7 @@ public final class MainActivity extends Activity {
     private void resetAiStudio() {
         aiGeneration++;
         aiAnalysis = null; aiDraft = null; aiStudioPath = ""; aiSourcePath = "";
-        aiSourceBitmap = null; aiName = ""; aiBrand = ""; aiBusy = false;
+        aiSourceBitmap = null; aiName = ""; aiBrand = ""; aiBusy = false; aiAnalysisRunning = false;
         getSharedPreferences(PREF_STUDIO, MODE_PRIVATE).edit().clear().apply();
     }
 
@@ -8497,7 +8498,7 @@ public final class MainActivity extends Activity {
                         aiName = qp.nameFa;
                         aiBrand = extractBrand(qp);
                         persistStudioDraft();
-                        aiAnalysis = AiProductStudio.analyze(aiName, aiBrand, null);
+                        aiAnalysis = null;
                         renderCurrentScreen();
                     }
                 });
@@ -8516,27 +8517,28 @@ public final class MainActivity extends Activity {
             contentContainer.addView(space(12));
         }
 
-        contentContainer.addView(primaryButton("ساخت پیش‌نویس بر اساس نام و برند", Luxury3DIconView.ICON_AI, new Runnable() {
-            @Override public void run() {
-                aiName = aiNameInput == null ? "" : aiNameInput.getText().toString().trim();
-                aiBrand = aiBrandInput == null ? "" : aiBrandInput.getText().toString().trim();
-                if (aiName.length() < 3) {
-                    toast("نام محصول را کامل‌تر وارد کنید.");
-                    return;
-                }
-                aiAnalysis = AiProductStudio.analyze(aiName, aiBrand, null);
-                persistStudioDraft();
-                renderCurrentScreen();
-            }
-        }));
-        contentContainer.addView(space(8));
-        contentContainer.addView(outlineDarkButton(aiBusy ? "در حال تحلیل؛ لطفاً صبر کنید" : "تحلیل مستقیم با هوش مصنوعی", Luxury3DIconView.ICON_AI, new Runnable() {
+        contentContainer.addView(primaryButton(aiAnalysisRunning ? "در حال تحلیل؛ لطفاً صبر کنید" : "تحلیل و تکمیل مشخصات با هوش مصنوعی", Luxury3DIconView.ICON_AI, new Runnable() {
             @Override public void run() { confirmCloudAnalysis(); }
         }));
-        if (aiBusy) {
+        if (aiAnalysisRunning) {
             contentContainer.addView(space(6));
-            contentContainer.addView(text("در حال بررسی سرویس‌ها؛ در صورت خطا، علت هر سرویس نمایش داده می‌شود.", 10f, COL_TEXT_MUTED, false));
+            contentContainer.addView(text("در حال بررسی سرویس‌ها؛ ساخت تصویر انجام نمی‌شود. در صورت خطا، علت هر سرویس نمایش داده می‌شود.", 10f, COL_TEXT_MUTED, false));
+            contentContainer.addView(space(6));
+            contentContainer.addView(ghostButton("لغو انتظار برای تحلیل", new Runnable() {
+                @Override public void run() { cancelCloudAnalysis(); }
+            }));
         }
+        contentContainer.addView(space(8));
+        contentContainer.addView(outlineDarkButton("پیش‌نویس محلی بدون تحلیل عکس", Luxury3DIconView.ICON_AI, new Runnable() {
+            @Override public void run() {
+                if (aiBusy) { toast("ابتدا تحلیل در حال اجرا را لغو کنید یا منتظر بمانید."); return; }
+                aiName = aiNameInput == null ? "" : aiNameInput.getText().toString().trim();
+                aiBrand = aiBrandInput == null ? "" : aiBrandInput.getText().toString().trim();
+                if (aiName.length() < 3) { toast("نام محصول را کامل‌تر وارد کنید."); return; }
+                aiAnalysis = AiProductStudio.analyze(aiName, aiBrand, null);
+                persistStudioDraft(); renderCurrentScreen();
+            }
+        }));
         contentContainer.addView(space(10));
         TextView hint = text("حالت محلی عکس را شناسایی نمی‌کند و از اینترنت جست‌وجو نمی‌کند. مشخصات محصول را پیش از انتشار بررسی و تکمیل کنید.",
                 9.4f, COL_TEXT_FAINT, false);
@@ -8648,19 +8650,6 @@ public final class MainActivity extends Activity {
         tracking(nameEnView, 0.04f);
         card.addView(nameEnView);
         card.addView(space(10));
-        card.addView(outlineDarkButton(aiStudioPath.isEmpty() ? "ساخت تصویر استودیویی اختصاصی" : "بازسازی تصویر استودیویی",
-                Luxury3DIconView.ICON_CAMERA, new Runnable() {
-                    @Override public void run() { generateStudioImage(); }
-                }));
-        card.addView(space(8));
-        card.addView(ghostButton("ساخت تصویر تبلیغاتی با هوش مصنوعی", new Runnable() {
-            @Override public void run() { chooseMediaProvider(); }
-        }));
-        card.addView(space(8));
-        card.addView(ghostButton("ساخت و پیگیری ویدئوی تبلیغاتی", new Runnable() {
-            @Override public void run() { showVideoMenu(); }
-        }));
-        card.addView(space(8));
         card.addView(ghostButton("انتخاب یا تغییر عکس از گالری", new Runnable() {
             @Override public void run() { pickProductPhoto(); }
         }));
@@ -8716,6 +8705,17 @@ public final class MainActivity extends Activity {
         contentContainer.addView(aiEditableField("توضیح سئو", "seoDescription", true));
         contentContainer.addView(aiEditableField("کپشن اینستاگرام", "instagramCaption", true));
         contentContainer.addView(space(16));
+
+        LinearLayout optionalMedia = whiteCard();
+        optionalMedia.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_CAMERA, "مرحلهٔ پایانی · تصویرسازی اختیاری"));
+        optionalMedia.addView(space(6));
+        optionalMedia.addView(text("پس از بررسی مشخصات، در صورت تمایل تصویر یا ویدئوی تبلیغاتی بسازید. برای ذخیرهٔ کالا این مرحله الزامی نیست.", 10f, COL_TEXT_MUTED, false));
+        optionalMedia.addView(space(8));
+        optionalMedia.addView(outlineDarkButton("گزینه‌های تصویر و ویدئو", Luxury3DIconView.ICON_CAMERA, new Runnable() {
+            @Override public void run() { showFinalMediaOptions(); }
+        }));
+        contentContainer.addView(optionalMedia);
+        contentContainer.addView(space(12));
 
         contentContainer.addView(primaryButton("ذخیره کالا در ویترین فروشگاه", Luxury3DIconView.ICON_CHECK, new Runnable() {
             @Override public void run() {
@@ -8986,6 +8986,26 @@ public final class MainActivity extends Activity {
         for (Thread job : jobs) job.start();
     }
 
+    private void showFinalMediaOptions() {
+        if (aiBusy || aiDraft == null) { toast("عملیات دیگری در حال انجام است."); return; }
+        new AlertDialog.Builder(this).setTitle("تصویرسازی اختیاری")
+                .setItems(new String[]{"ساخت تصویر استودیویی از عکس اصلی", "ساخت تصویر تبلیغاتی با هوش مصنوعی", "ساخت و پیگیری ویدئوی تبلیغاتی"},
+                        new android.content.DialogInterface.OnClickListener() {
+                            @Override public void onClick(android.content.DialogInterface dialog, int which) {
+                                if (which == 0) generateStudioImage();
+                                else if (which == 1) chooseMediaProvider();
+                                else showVideoMenu();
+                            }
+                        }).setNegativeButton("بستن", null).show();
+    }
+
+    private void cancelCloudAnalysis() {
+        if (!aiAnalysisRunning) return;
+        aiGeneration++; aiAnalysisRunning = false; aiBusy = false;
+        toast("انتظار لغو شد؛ درخواست آغازشده ممکن است همچنان هزینه داشته باشد.");
+        if (aiStudioOpen && adminMode) renderCurrentScreen();
+    }
+
     private void confirmCloudAnalysis() {
         final String name = aiName.trim(), brand = aiBrand.trim();
         if (name.length() < 3) { toast("نام محصول را کامل وارد کنید."); return; }
@@ -9000,7 +9020,7 @@ public final class MainActivity extends Activity {
 
     private void runCloudAnalysis(final String name, final String brand) {
         if (aiBusy) return;
-        aiBusy = true; final int generation = aiGeneration; final Bitmap photo = aiSourceBitmap;
+        aiBusy = true; aiAnalysisRunning = true; final int generation = aiGeneration; final Bitmap photo = aiSourceBitmap;
         final String sourceAtRequest = aiSourcePath;
         final String preferred = getSharedPreferences("ai_services", MODE_PRIVATE).getString("preferred", "gemini");
         toast("در حال تحلیل توسط سرویس…");
@@ -9008,7 +9028,9 @@ public final class MainActivity extends Activity {
         new Thread(new Runnable() { public void run() {
             AiProductStudio.Draft draft = null;
             String failure = "تحلیل انجام نشد؛ اتصال اینترنت، دسترسی و اعتبار کلیدها یا سهمیهٔ سرویس‌ها را بررسی کنید.";
-            try { draft = DirectAiStudio.generate(MainActivity.this, name, brand, photo, preferred); }
+            try { draft = DirectAiStudio.generate(MainActivity.this, name, brand, photo, preferred, new DirectAiStudio.Cancellation() {
+                @Override public boolean isCancelled() { return generation != aiGeneration; }
+            }); }
             catch (DirectAiStudio.ProvidersFailedException e) { failure = e.getMessage(); }
             catch (Exception e) { android.util.Log.e("ASIYE", "direct AI failed: " + e.getClass().getSimpleName()); }
             catch (OutOfMemoryError e) { failure = "حافظه برای پردازش عکس کافی نیست؛ تصویر کوچک‌تری انتخاب کنید."; }
@@ -9016,7 +9038,7 @@ public final class MainActivity extends Activity {
             final String errorText = failure;
             runOnUiThread(new Runnable() { public void run() {
                 if (generation != aiGeneration || isFinishing()) return;
-                aiBusy = false;
+                aiBusy = false; aiAnalysisRunning = false;
                 if (result == null) {
                     if (aiStudioOpen && adminMode) {
                         renderCurrentScreen();

@@ -44,7 +44,11 @@ public final class DirectAiStudio {
         return new JSONObject(AiHttpTransport.post(url, header, key, body.toString(), LIMIT));
     }
 
+    public interface Cancellation { boolean isCancelled(); }
     public static AiProductStudio.Draft generate(Context context, String name, String brand, Bitmap photo, String preferred) throws Exception {
+        return generate(context, name, brand, photo, preferred, null);
+    }
+    public static AiProductStudio.Draft generate(Context context, String name, String brand, Bitmap photo, String preferred, Cancellation cancellation) throws Exception {
         String image = null;
         if (photo != null) {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -56,6 +60,7 @@ public final class DirectAiStudio {
         String[] providers = AiProviderOrder.forPreference(preferred);
         StringBuilder failures = new StringBuilder();
         for (String provider : providers) {
+            if (cancellation != null && cancellation.isCancelled()) throw new java.util.concurrent.CancellationException();
             if (image != null && !AiProviderOrder.supportsImage(provider)) {
                 failures.append(AiProviderOrder.label(provider)).append(" — مدل انتخابی ورودی عکس ندارد؛ به سرویس بعدی می‌رویم.\n");
                 continue;
@@ -69,6 +74,7 @@ public final class DirectAiStudio {
             }
             try {
                 String result = request(context, provider, key, facts, image, false);
+                if (cancellation != null && cancellation.isCancelled()) throw new java.util.concurrent.CancellationException();
                 JSONObject obj = validateOutput(result);
                 AiProductStudio.Draft draft = AiProductStudio.compose(AiProductStudio.analyze(name, brand, null), name, brand);
                 for (String field : new String[]{"nameFa", "nameEn", "category", "description", "longDescription", "benefits", "ingredients", "usage", "country", "volume", "keywords", "seoTitle", "seoDescription", "instagramCaption"}) {
@@ -79,6 +85,7 @@ public final class DirectAiStudio {
                 }
                 return draft;
             } catch (Exception failure) {
+                if (failure instanceof java.util.concurrent.CancellationException) throw failure;
                 // Never log credentials, provider response bodies or user photo. Try next provider.
                 int status = failure instanceof ProviderHttpException ? ((ProviderHttpException) failure).status : 0;
                 String kind = failure instanceof java.net.SocketTimeoutException ? "timeout"

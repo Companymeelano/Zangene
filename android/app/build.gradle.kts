@@ -11,8 +11,8 @@ android {
         applicationId = "com.asiyestore.admin"
         minSdk = 24
         targetSdk = 34
-        versionCode = 711
-        versionName = "7.1.1-ai-recovery"
+        versionCode = 712
+        versionName = "7.1.2-product-first"
 
         vectorDrawables {
             useSupportLibrary = true

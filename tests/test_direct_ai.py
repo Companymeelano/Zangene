@@ -12,7 +12,7 @@ class DirectStudioTests(unittest.TestCase):
         self.assertIn('StudioCredentials.get(context, provider)', direct)
         self.assertIn('inline_data', direct)
         self.assertIn('data:image/jpeg;base64,', direct)
-        self.assertIn('DirectAiStudio.generate(MainActivity.this, name, brand, photo, preferred)', activity)
+        self.assertIn('DirectAiStudio.generate(MainActivity.this, name, brand, photo, preferred, new DirectAiStudio.Cancellation()', activity)
         self.assertIn('setPositiveButton("ارسال و تحلیل"', activity)
         self.assertIn('ProvidersFailedException', direct)
         self.assertIn('gemini-3.5-flash-lite', direct)
