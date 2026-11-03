@@ -7,9 +7,15 @@ import java.util.Arrays;
 public class TransportRegression {
     static void check(boolean ok) { if (!ok) throw new AssertionError(); }
     public static void main(String[] args) throws Exception {
-        check(Arrays.equals(AiProviderOrder.forPreference("openai"), new String[]{"openai", "gemini", "groq"}));
-        check(Arrays.equals(AiProviderOrder.forPreference("groq"), new String[]{"groq", "gemini", "openai"}));
-        check(Arrays.equals(AiProviderOrder.forPreference("unknown"), new String[]{"gemini", "openai", "groq"}));
+        for (String preferred : AiProviderOrder.IDS) {
+            String[] order = AiProviderOrder.forPreference(preferred);
+            check(order.length == AiProviderOrder.IDS.length && order[0].equals(preferred));
+            check(new java.util.HashSet<String>(Arrays.asList(order)).size() == AiProviderOrder.IDS.length);
+            check(new java.util.HashSet<String>(Arrays.asList(order)).containsAll(Arrays.asList(AiProviderOrder.IDS)));
+        }
+        check(AiProviderOrder.forPreference("unknown")[0].equals("gemini"));
+        check(!AiProviderOrder.supportsImage("deepseek") && !AiProviderOrder.supportsImage("maxrouter"));
+        check(AiProviderOrder.supportsImage("gemini") && AiProviderOrder.supportsImage("openrouter"));
         ServerSocket server = new ServerSocket(0, 10, InetAddress.getByName("127.0.0.1"));
         final String[] requests = new String[4];
         Thread worker = new Thread(new Runnable() { public void run() {

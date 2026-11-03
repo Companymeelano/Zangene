@@ -1,16 +1,18 @@
 package com.asiyestore.admin.app;
 
-/** Explicit primary with the three established vision-capable fallbacks. */
+/** Preferred provider first, followed by all other configured providers. */
 public final class AiProviderOrder {
     private AiProviderOrder() { }
     public static final String[] IDS = {"gemini", "openai", "groq", "gapgpt", "deepseek", "openrouter", "cerebras", "huggingface", "cloudflare", "maxrouter"};
     public static String[] forPreference(String preferred) {
-        if ("openai".equals(preferred)) return new String[]{"openai", "gemini", "groq"};
-        if ("groq".equals(preferred)) return new String[]{"groq", "gemini", "openai"};
-        for (String id : IDS) {
-            if (id.equals(preferred) && !"gemini".equals(id)) return new String[]{id, "gemini", "openai", "groq"};
-        }
-        return new String[]{"gemini", "openai", "groq"};
+        String[] result = new String[IDS.length];
+        boolean found = false;
+        for (String id : IDS) if (id.equals(preferred)) found = true;
+        String first = found ? preferred : "gemini";
+        result[0] = first;
+        int pos = 1;
+        for (String id : IDS) if (!id.equals(first)) result[pos++] = id;
+        return result;
     }
     public static boolean supportsImage(String id) {
         return "gemini".equals(id) || "openai".equals(id) || "groq".equals(id) || "openrouter".equals(id) || "cerebras".equals(id) || "huggingface".equals(id);

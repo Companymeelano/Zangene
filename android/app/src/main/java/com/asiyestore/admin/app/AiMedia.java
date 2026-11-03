@@ -10,13 +10,9 @@ import java.nio.charset.StandardCharsets;
 public final class AiMedia {
     private AiMedia() { }
     static String key(Context context, String id) throws Exception {
-        try (InputStream in = context.getAssets().open("studio_provider_keys.json"); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] b = new byte[4096]; int n, total = 0;
-            while ((n = in.read(b)) != -1) { total += n; if (total > 16384) throw new IllegalArgumentException("keys too large"); out.write(b, 0, n); }
-            String k = new JSONObject(new String(out.toByteArray(), StandardCharsets.UTF_8)).optString(id, "").trim();
-            if (k.isEmpty()) throw new IllegalArgumentException("missing key");
-            return k;
-        }
+        String k = StudioCredentials.get(context, id);
+        if (k.isEmpty()) throw new IllegalArgumentException("missing key");
+        return k;
     }
     public static android.graphics.Bitmap generateImage(Context context, String provider, String prompt) throws Exception {
         if ("stability".equals(provider)) return stability(context, prompt);

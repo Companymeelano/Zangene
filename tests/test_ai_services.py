@@ -19,7 +19,7 @@ class ServiceCoverage(unittest.TestCase):
         for provider in ['kling','piapi']:
             self.assertIn('"'+provider+'"', video)
         self.assertIn('image != null && !AiProviderOrder.supportsImage(provider)', direct)
-        self.assertIn('request(provider, key, keys, facts, null, true)', direct)
+        self.assertIn('request(context, provider, key, facts, null, true)', direct)
         self.assertIn('تصویر تولیدشده ممکن است محصول واقعی را نشان ندهد', activity)
         self.assertIn('ثبت درخواست هزینه‌دار', activity)
         self.assertIn('setInstanceFollowRedirects(false)', video)

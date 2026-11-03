@@ -9,7 +9,7 @@ class DirectStudioTests(unittest.TestCase):
         direct = (JAVA / 'DirectAiStudio.java').read_text(encoding='utf8')
         activity = (JAVA / 'MainActivity.java').read_text(encoding='utf8')
         self.assertIn('AiProviderOrder.forPreference(preferred)', direct)
-        self.assertIn('studio_provider_keys.json', direct)
+        self.assertIn('StudioCredentials.get(context, provider)', direct)
         self.assertIn('inline_data', direct)
         self.assertIn('data:image/jpeg;base64,', direct)
         self.assertIn('DirectAiStudio.generate(MainActivity.this, name, brand, photo, preferred)', activity)
@@ -23,7 +23,7 @@ class DirectStudioTests(unittest.TestCase):
         direct = (JAVA / 'DirectAiStudio.java').read_text(encoding='utf8')
         activity = (JAVA / 'MainActivity.java').read_text(encoding='utf8')
         probe = direct.split('public static String probe(', 1)[1].split('private static String gemini(', 1)[0]
-        self.assertIn('request(provider, key, keys, facts, null, true)', probe)
+        self.assertIn('request(context, provider, key, facts, null, true)', probe)
         self.assertIn('validateOutput(result)', probe)
         self.assertIn('validateOutput(result)', probe)
         self.assertNotIn('aiSourceBitmap', probe)

@@ -45,12 +45,6 @@ public final class DirectAiStudio {
     }
 
     public static AiProductStudio.Draft generate(Context context, String name, String brand, Bitmap photo, String preferred) throws Exception {
-        JSONObject keys;
-        try (InputStream input = context.getAssets().open("studio_provider_keys.json")) {
-            keys = new JSONObject(new String(read(input, 8192), StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            throw new ProvidersFailedException("فایل تنظیمات کلید در بسته موجود یا قابل خواندن نیست.");
-        }
         String image = null;
         if (photo != null) {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -66,13 +60,15 @@ public final class DirectAiStudio {
                 failures.append(AiProviderOrder.label(provider)).append(" — مدل انتخابی ورودی عکس ندارد؛ به سرویس بعدی می‌رویم.\n");
                 continue;
             }
-            String key = keys.optString(provider, "").trim();
+            String key;
+            try { key = StudioCredentials.get(context, provider); }
+            catch (Exception failure) { failures.append(AiProviderOrder.label(provider)).append(" — کلید محلی قابل خواندن نیست؛ دوباره وارد کنید.\n"); continue; }
             if (key.isEmpty()) {
                 failures.append(AiProviderError.message(provider, 0, "missing" )).append("\n");
                 continue;
             }
             try {
-                String result = request(provider, key, keys, facts, image, false);
+                String result = request(context, provider, key, facts, image, false);
                 JSONObject obj = validateOutput(result);
                 AiProductStudio.Draft draft = AiProductStudio.compose(AiProductStudio.analyze(name, brand, null), name, brand);
                 for (String field : new String[]{"nameFa", "nameEn", "category", "description", "longDescription", "benefits", "ingredients", "usage", "country", "volume", "keywords", "seoTitle", "seoDescription", "instagramCaption"}) {
@@ -113,15 +109,13 @@ public final class DirectAiStudio {
         boolean known = false;
         for (String id : AiProviderOrder.IDS) if (id.equals(provider)) known = true;
         if (!known) return "سرویس ناشناخته است.";
-        String key; JSONObject keys;
-        try (InputStream input = context.getAssets().open("studio_provider_keys.json")) {
-            keys = new JSONObject(new String(read(input, 8192), StandardCharsets.UTF_8));
-            key = keys.optString(provider, "").trim();
-        } catch (Exception e) { return "فایل کلیدها قابل خواندن نیست."; }
+        String key;
+        try { key = StudioCredentials.get(context, provider); }
+        catch (Exception e) { return AiProviderOrder.label(provider) + " — کلید محلی یا فایل بسته قابل خواندن نیست؛ کلید را دوباره وارد کنید."; }
         if (key.isEmpty()) return AiProviderError.message(provider, 0, "missing");
         try {
             JSONObject facts = new JSONObject().put("product_name", "چای نمونه آزمایشی").put("brand", "");
-            String result = request(provider, key, keys, facts, null, true);
+            String result = request(context, provider, key, facts, null, true);
             validateOutput(result);
             return "موفق: احراز هویت و تولید متن ساختاریافته با مدل فعلی انجام شد. عکس و سقف سهمیه آزمایش نشد.";
         } catch (Exception failure) {
@@ -131,10 +125,10 @@ public final class DirectAiStudio {
         }
     }
 
-    private static String request(String provider, String key, JSONObject keys, JSONObject facts, String image, boolean probe) throws Exception {
+    private static String request(Context context, String provider, String key, JSONObject facts, String image, boolean probe) throws Exception {
         if ("gemini".equals(provider)) return gemini(key, facts, image, probe);
         if ("cloudflare".equals(provider)) {
-            String account = keys.optString("cloudflare_account", "");
+            String account = StudioCredentials.get(context, "cloudflare_account");
             if (!account.matches("[a-fA-F0-9]{32}")) throw new IllegalArgumentException("account");
             JSONObject body = new JSONObject().put("messages", new JSONArray()
                     .put(new JSONObject().put("role", "system").put("content", PROMPT))
