@@ -13,6 +13,11 @@ public class StudioRegression {
         check(d.instagramCaption.contains("ساقدوش") && !d.instagramCaption.contains("پوست"), "wrong caption");
         check(d.ingredients.isEmpty() && d.country.isEmpty() && d.volume.isEmpty(), "fabricated facts");
         check(d.suggestedPrice == 0 && d.stock == 0 && d.imageKey.equals("generic"), "fabricated commercial info");
+        d.longDescription = ""; d.keywords = ""; d.seoTitle = ""; d.seoDescription = ""; d.instagramCaption = "";
+        d.description = "متن ویرایش‌شده"; d.ingredients = "تأیید شده";
+        AiProductStudio.fillEmptyCopy(d);
+        check(!d.longDescription.isEmpty() && !d.keywords.isEmpty() && !d.seoTitle.isEmpty() && !d.seoDescription.isEmpty() && !d.instagramCaption.isEmpty(), "empty neutral copy");
+        check(d.description.equals("متن ویرایش‌شده") && d.ingredients.equals("تأیید شده") && d.volume.isEmpty() && d.country.isEmpty(), "overwritten or fabricated facts");
         a = AiProductStudio.analyze("چای سبز", "گاتیو", null);
         check(!a.category.contains("پوست"), "brand confused with category");
         a = AiProductStudio.analyze("unknown thing", "unknown brand", null);

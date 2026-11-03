@@ -8,12 +8,14 @@ public final class AiProviderError {
         String reason;
         switch (status) {
             case 400: reason = "درخواست یا عکس پذیرفته نشد (HTTP 400)."; break;
-            case 402: reason = "پرداخت یا اعتبار کافی در دسترس نیست؛ موجودی، سقف کلید و صورتحساب را در پنل بررسی کنید (HTTP 402)."; break;
-            case 401: reason = "احراز هویت رد شد؛ اعتبار کلید را در پنل سرویس بررسی کنید (HTTP 401)."; break;
-            case 403: reason = "دسترسی رد شد؛ مجوز پروژه، کلید و محدودیت منطقه را بررسی کنید (HTTP 403)."; break;
+            case 402: reason = "اعتبار یا پرداخت: موجودی و سقف حساب را بررسی کنید (HTTP 402)."; break;
+            case 401: reason = "کلید پذیرفته نشد؛ در پنل بررسی کنید (HTTP 401)."; break;
+            case 403: reason = "cloudflare".equals(provider)
+                    ? "دسترسی رد شد؛ مجوز Workers AI، کلید و مجوز مدل را بررسی کنید (HTTP 403)."
+                    : "دسترسی رد شد؛ مجوز حساب و محدودیت منطقه را بررسی کنید (HTTP 403)."; break;
             case 404: reason = "مدل یا مسیر در این حساب در دسترس نیست (HTTP 404)."; break;
             case 413: reason = "حجم عکس بیش از حد مجاز سرویس است (HTTP 413)."; break;
-            case 429: reason = "محدودیت درخواست یا سهمیه؛ وضعیت حساب را بررسی کنید (HTTP 429)."; break;
+            case 429: reason = "سقف درخواست یا سهمیه؛ بعداً دوباره بررسی کنید (HTTP 429)."; break;
             default:
                 if (status >= 500) reason = "سرویس ارائه‌دهنده در دسترس نبود (HTTP " + status + ").";
                 else if (status > 0) reason = "پاسخ سرویس HTTP " + status + ".";

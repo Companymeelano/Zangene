@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V7.1.3 · AI VISION";
+    private static final String APP_VERSION         = "V7.1.4 · STUDIO REFINED";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -8629,10 +8629,10 @@ public final class MainActivity extends Activity {
         } else {
             heroImg.setImageResource(resolveProductImage(d.imageKey));
         }
-        heroImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        heroImg.setScaleType(ImageView.ScaleType.FIT_CENTER);
         hero.addView(heroImg, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        TextView tag = text(aiStudioPath.isEmpty() ? "PREVIEW" : "AI STUDIO", 8.5f, COL_GOLD_LIGHT, true);
+        TextView tag = text(!aiStudioPath.isEmpty() ? "تصویر ساختگی" : aiSourceBitmap != null ? "عکس اصلی" : "تصویر پیش‌فرض", 8.5f, COL_GOLD_LIGHT, true);
         tag.setPadding(dp(8), dp(4), dp(8), dp(4));
         tag.setBackground(roundedShape(scrim(0xCC), dp(9), lineGold(0x55), dp(1)));
         FrameLayout.LayoutParams tagLp = new FrameLayout.LayoutParams(
@@ -8665,45 +8665,75 @@ public final class MainActivity extends Activity {
         }
         contentContainer.addView(card);
         contentContainer.addView(space(12));
+        LinearLayout review = whiteCard();
+        review.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_AI, "راهنمای بازبینی"));
+        review.addView(space(6));
+        review.addView(text(d.provenance.isEmpty() ? "منبع تحلیل این پیش‌نویس ثبت نشده است؛ مشخصات و عکس را بررسی کنید." : d.provenance, 10f, COL_TEXT_MUTED, false));
+        review.addView(space(5));
+        review.addView(text("متن‌های پیشنهادی ممکن است محلی و کلی باشند. اطلاعات نامشخص مانند ترکیبات، وزن و کشور را از بسته‌بندی وارد کنید.", 10f, COL_TEXT_MUTED, false));
+        review.addView(space(8));
+        review.addView(ghostButton("تکمیل متن‌های خالی با پیشنهاد محلی", new Runnable() {
+            @Override public void run() {
+                AiProductStudio.fillEmptyCopy(d); persistStudioDraft(); renderCurrentScreen();
+                toast("فقط متن‌های خالی تکمیل شدند؛ بازبینی کنید.");
+            }
+        }));
+        contentContainer.addView(review);
+        contentContainer.addView(space(12));
 
         // editable commercial fields
         LinearLayout edit = whiteCard();
         edit.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_TAG, "قیمت‌گذاری و موجودی"));
         edit.addView(space(8));
         aiPriceInput = makeInput("قیمت فروش (تومان)", InputType.TYPE_CLASS_NUMBER, true);
-        aiPriceInput.setText(PersianFormatter.toAsciiDigits(String.valueOf(d.suggestedPrice)));
+        aiPriceInput.setText(d.suggestedPrice > 0 ? PersianFormatter.toAsciiDigits(String.valueOf(d.suggestedPrice)) : "");
         aiOldPriceInput = makeInput("قیمت پیش از تخفیف (تومان)", InputType.TYPE_CLASS_NUMBER, true);
-        aiOldPriceInput.setText(PersianFormatter.toAsciiDigits(String.valueOf(d.suggestedOldPrice)));
+        aiOldPriceInput.setText(d.suggestedOldPrice > 0 ? PersianFormatter.toAsciiDigits(String.valueOf(d.suggestedOldPrice)) : "");
         aiStockInput = makeInput("موجودی انبار", InputType.TYPE_CLASS_NUMBER, true);
         aiStockInput.setText(String.valueOf(d.stock));
         observeDraftNumber(aiPriceInput, "suggestedPrice");
         observeDraftNumber(aiOldPriceInput, "suggestedOldPrice");
         observeDraftNumber(aiStockInput, "stock");
-        edit.addView(aiPriceInput);
-        edit.addView(space(8));
-        edit.addView(aiOldPriceInput);
-        edit.addView(space(8));
-        edit.addView(aiStockInput);
+        edit.addView(text("قیمت فروش · تومان (الزامی)", 10.5f, COL_TEXT_MUTED, true));
+        edit.addView(space(5)); edit.addView(aiPriceInput);
+        edit.addView(space(10));
+        edit.addView(text("قیمت پیش از تخفیف · تومان (اختیاری)", 10.5f, COL_TEXT_MUTED, true));
+        edit.addView(space(5)); edit.addView(aiOldPriceInput);
+        edit.addView(space(10));
+        edit.addView(text("تعداد موجود در انبار", 10.5f, COL_TEXT_MUTED, true));
+        edit.addView(space(5)); edit.addView(aiStockInput);
         contentContainer.addView(edit);
         contentContainer.addView(space(12));
 
         contentContainer.addView(text("همهٔ مشخصات را قبل از انتشار بررسی و ویرایش کنید.", 10.5f, COL_TEXT_MUTED, false));
         contentContainer.addView(space(10));
-        contentContainer.addView(aiEditableField("نام محصول", "nameFa", false));
-        contentContainer.addView(aiEditableField("برند", "brand", false));
-        contentContainer.addView(aiEditableField("نام لاتین (اختیاری)", "nameEn", false));
-        contentContainer.addView(aiEditableField("دسته‌بندی", "category", false));
-        contentContainer.addView(aiEditableField("حجم یا وزن", "volume", false));
-        contentContainer.addView(aiEditableField("کشور سازنده", "country", false));
-        contentContainer.addView(aiEditableField("توضیح کوتاه", "description", true));
-        contentContainer.addView(aiEditableField("معرفی کامل", "longDescription", true));
-        contentContainer.addView(aiEditableField("مزیت‌ها (فقط موارد تأییدشده)", "benefits", true));
-        contentContainer.addView(aiEditableField("ترکیبات", "ingredients", true));
-        contentContainer.addView(aiEditableField("روش مصرف", "usage", true));
-        contentContainer.addView(aiEditableField("کلمات کلیدی", "keywords", true));
-        contentContainer.addView(aiEditableField("عنوان سئو", "seoTitle", false));
-        contentContainer.addView(aiEditableField("توضیح سئو", "seoDescription", true));
-        contentContainer.addView(aiEditableField("کپشن اینستاگرام", "instagramCaption", true));
+        LinearLayout details = whiteCard();
+        details.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_TAG, "مشخصات کالا"));
+        details.addView(space(8));
+        details.addView(aiEditableField("نام محصول", "nameFa", false));
+        details.addView(aiEditableField("برند", "brand", false));
+        details.addView(aiEditableField("نام لاتین (اختیاری)", "nameEn", false));
+        details.addView(aiEditableField("دسته‌بندی", "category", false));
+        details.addView(aiEditableField("حجم یا وزن", "volume", false));
+        details.addView(aiEditableField("کشور سازنده", "country", false));
+        contentContainer.addView(details); contentContainer.addView(space(12));
+        LinearLayout copy = whiteCard();
+        copy.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_AI, "معرفی و اطلاعات محصول"));
+        copy.addView(space(8));
+        copy.addView(aiEditableField("توضیح کوتاه", "description", true));
+        copy.addView(aiEditableField("معرفی کامل", "longDescription", true));
+        copy.addView(aiEditableField("مزیت‌ها (فقط موارد تأییدشده)", "benefits", true));
+        copy.addView(aiEditableField("ترکیبات", "ingredients", true));
+        copy.addView(aiEditableField("روش مصرف", "usage", true));
+        contentContainer.addView(copy); contentContainer.addView(space(12));
+        LinearLayout seo = whiteCard();
+        seo.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_AI, "معرفی و نمایش آنلاین"));
+        seo.addView(space(8));
+        seo.addView(aiEditableField("کلمات کلیدی", "keywords", true));
+        seo.addView(aiEditableField("عنوان سئو", "seoTitle", false));
+        seo.addView(aiEditableField("توضیح سئو", "seoDescription", true));
+        seo.addView(aiEditableField("کپشن اینستاگرام", "instagramCaption", true));
+        contentContainer.addView(seo);
         contentContainer.addView(space(16));
 
         LinearLayout optionalMedia = whiteCard();
@@ -8755,7 +8785,8 @@ public final class MainActivity extends Activity {
     }
 
     private View aiEditableField(final String label, final String fieldName, boolean multiline) {
-        LinearLayout card = whiteCard();
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
         card.addView(text(label, 10.5f, COL_TEXT_MUTED, true));
         card.addView(space(6));
         final EditText input = makeInput(label, InputType.TYPE_CLASS_TEXT | (multiline ? InputType.TYPE_TEXT_FLAG_MULTI_LINE : 0), false);
@@ -9076,6 +9107,7 @@ public final class MainActivity extends Activity {
                     return;
                 }
                 aiAnalysis = AiProductStudio.analyze(name, brand, null); aiDraft = result;
+                aiDraft.provenance = photo == null ? "تحلیل فقط بر اساس نام و برند؛ عکس بررسی نشده است." : "در درخواست اولیه عکس ارسال شده است؛ تطابق عکس و مشخصات را بررسی کنید.";
                 persistStudioDraft(); toast(textOnly ? "پیش‌نویس فقط از نام و برند ساخته شد؛ عکس تحلیل نشد." : "پیش‌نویس دریافت شد؛ تمام اطلاعات را بررسی کنید.");
                 if (aiStudioOpen && adminMode) {
                     renderCurrentScreen();

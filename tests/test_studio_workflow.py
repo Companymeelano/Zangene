@@ -22,5 +22,10 @@ class WorkflowTest(unittest.TestCase):
         self.assertIn('setPositiveButton("ارسال فقط متن"', activity)
         self.assertIn('عکس تحلیل نشد', activity)
         self.assertIn('سیاست نگهداری دادهٔ آن‌ها متفاوت است', activity)
+        self.assertIn('AiProductStudio.fillEmptyCopy(d)', draft)
+        self.assertIn('قیمت فروش · تومان (الزامی)', draft)
+        self.assertIn('تعداد موجود در انبار', draft)
+        self.assertIn('ScaleType.FIT_CENTER', draft)
+        self.assertIn('d.provenance', draft)
 
 if __name__ == '__main__': unittest.main()

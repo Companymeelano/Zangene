@@ -27,6 +27,7 @@ public final class DirectAiStudio {
             + "Read the image only if supplied. Never invent ingredients, benefits, health claims, origin, weight, certifications, authenticity, expiry, stock or price. "
             + "Leave unsupported fields blank. Preserve name and brand; categorize the actual product rather than assuming cosmetics. "
             + "Return a single JSON object of strings with keys nameFa, nameEn, category, description, longDescription, benefits, ingredients, usage, country, volume, keywords, seoTitle, seoDescription, instagramCaption. "
+            + "Write useful editable longDescription, keywords, seoTitle, seoDescription and instagramCaption using only supplied facts; never make product claims. Leave unknown factual attributes empty. "
             + "nameFa, category and description must be nonempty. No markdown. Persian copy must be factual and require review.";
 
     private static byte[] read(InputStream input, int limit) throws Exception {
@@ -62,7 +63,7 @@ public final class DirectAiStudio {
         for (String provider : providers) {
             if (cancellation != null && cancellation.isCancelled()) throw new java.util.concurrent.CancellationException();
             if (image != null && !AiProviderOrder.supportsImage(provider)) {
-                failures.append(AiProviderOrder.label(provider)).append(" — مدل انتخابی ورودی عکس ندارد؛ به سرویس بعدی می‌رویم.\n");
+                failures.append(AiProviderOrder.label(provider)).append(" — مدل انتخابی فقط متنی است؛ برای عکس استفاده نشد.\n");
                 continue;
             }
             String key;
@@ -81,7 +82,8 @@ public final class DirectAiStudio {
                     Object value = obj.opt(field);
                     if (value == null || value == JSONObject.NULL) continue;
                     if (!(value instanceof String) || ((String) value).length() > 12000) throw new IllegalArgumentException("invalid output");
-                    AiProductStudio.Draft.class.getField(field).set(draft, ((String) value).trim());
+                    String cleaned = ((String) value).trim();
+                    if (!cleaned.isEmpty()) AiProductStudio.Draft.class.getField(field).set(draft, cleaned);
                 }
                 return draft;
             } catch (Exception failure) {

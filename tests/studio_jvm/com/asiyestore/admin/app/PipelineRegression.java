@@ -10,6 +10,10 @@ public class PipelineRegression {
     }
     public static void main(String[] args) throws Exception {
         Context ctx = new Context();
+        reset("api.deepseek.com");
+        AiHttpTransport.content = new org.json.JSONObject().put("nameFa", "Test").put("category", "Tea").put("description", "Draft").put("longDescription", "  ").put("seoTitle", "").toString();
+        AiProductStudio.Draft partial = DirectAiStudio.generate(ctx, "Tea", "Brand", null, "deepseek");
+        check("neutral".equals(partial.longDescription) && "neutral title".equals(partial.seoTitle));
         reset("api.gapgpt.app");
         StudioCredentials.VALUES.put("gapgpt", "replacement");
         AiProductStudio.Draft d = DirectAiStudio.generate(ctx, "Tea", "Brand", null, "gemini");
