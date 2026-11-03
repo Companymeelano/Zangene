@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V7.1.4 · STUDIO REFINED";
+    private static final String APP_VERSION         = "V7.1.5 · SAFE FALLBACK";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -9205,7 +9205,7 @@ public final class MainActivity extends Activity {
     private void videoPrompt(final String provider) {
         if (aiBusy) { toast("عملیات دیگری در حال انجام است."); return; }
         LinearLayout box = dialogBox();
-        box.addView(dialogTitle("ثبت ویدئو", "درخواست تولید ویدئو هزینه دارد و ممکن است با محصول واقعی متفاوت باشد. هر ثبت جدید شناسهٔ قبلی همین سرویس را جایگزین می‌کند."));
+        box.addView(dialogTitle("ثبت ویدئو", "درخواست هزینه‌دار است و ممکن است با محصول واقعی متفاوت باشد. ابتدا سرویس انتخابی و در صورت رد قطعی، سرویس دیگر (Kling یا PiAPI) امتحان می‌شود و شرح شما به هر دو ممکن است ارسال شود. با قطعی یا پاسخ نامعلوم تلاش بعدی متوقف می‌شود؛ قبل از تکرار پنل را بررسی کنید. هر ثبت جدید شناسهٔ قبلی همان سرویس را جایگزین می‌کند."));
         final EditText prompt = makeInput("شرح ویدئو", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE, false);
         prompt.setSingleLine(false); prompt.setMinLines(3); box.addView(prompt); box.addView(space(8));
         final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
@@ -9215,15 +9215,20 @@ public final class MainActivity extends Activity {
             if (aiBusy) return; dialog.dismiss(); aiBusy = true; toast("در حال ثبت درخواست…");
             final Context app = getApplicationContext();
             new Thread(new Runnable() { @Override public void run() {
-                String task = ""; String error = "ثبت ناموفق بود؛ ممکن است درخواست هزینه داشته باشد. پیش از تکرار، پنل سرویس را بررسی کنید.";
-                try { task = AiVideo.submit(app, provider, value); app.getSharedPreferences("ai_video", MODE_PRIVATE).edit().putString(provider, task).apply(); }
-                catch (DirectAiStudio.ProviderHttpException e) { error = "HTTP " + e.status + "؛ دسترسی، سهمیه یا حساب را بررسی کنید."; }
-                catch (Exception ignored) { }
-                final String id = task; final String message = error;
+                String task = "", used = ""; String error = "ثبت ناموفق بود؛ پیش از تکرار پنل سرویس را بررسی کنید.";
+                try {
+                    CreationFallback.Result<String> outcome = CreationFallback.run(CreationFallback.preferredFirst(provider, new String[]{"kling", "piapi"}),
+                            new CreationFallback.Attempt<String>() { @Override public String run(String id) throws Exception { return AiVideo.submit(app, id, value); } }, null);
+                    task = outcome.value; used = outcome.provider;
+                    app.getSharedPreferences("ai_video", MODE_PRIVATE).edit().putString(used, task).apply();
+                } catch (CreationFallback.Failed e) {
+                    error = e.uncertain ? "نتیجهٔ " + e.provider + " نامعلوم است و ممکن است درخواست ثبت یا هزینه شده باشد. سرویس بعدی خودکار اجرا نشد؛ پیش از تکرار پنل را بررسی کنید." : "سرویس‌ها درخواست را رد کردند؛ اعتبار و سهمیه را بررسی کنید.\n" + e.attempts;
+                } catch (Exception ignored) { }
+                final String id = task; final String message = error; final String usedProvider = used;
                 runOnUiThread(new Runnable() { @Override public void run() {
                     aiBusy = false; if (isFinishing()) return;
                     new AlertDialog.Builder(MainActivity.this).setTitle(id.isEmpty() ? "ثبت ناموفق" : "درخواست ثبت شد")
-                        .setMessage(id.isEmpty() ? message : "شناسهٔ درخواست ذخیره شد. پس از چند دقیقه از بخش پیگیری وضعیت را بررسی کنید.\n" + id)
+                        .setMessage(id.isEmpty() ? message : "سرویس: " + usedProvider + "\nشناسهٔ درخواست ذخیره شد. از بخش پیگیری همان سرویس وضعیت را بررسی کنید.\n" + id)
                         .setPositiveButton("بستن", null).show();
                 }});
             }}, "video-submit").start();
@@ -9266,7 +9271,7 @@ public final class MainActivity extends Activity {
 
     private void confirmMediaGeneration(final String provider) {
         LinearLayout box = dialogBox();
-        box.addView(dialogTitle("تصویر تبلیغاتی", "این عکس از متن ساخته می‌شود و تصویر واقعی کالا نیست؛ ممکن است با محصول متفاوت باشد. درخواست هزینه دارد."));
+        box.addView(dialogTitle("تصویر تبلیغاتی", "این عکس ساختگی است و ممکن است با کالای واقعی متفاوت باشد. شرح شما ابتدا به سرویس انتخابی و در صورت رد قطعی به fal، DeepAI، BytePlus یا Stability ارسال می‌شود؛ درخواست‌ها ممکن است هزینه داشته باشند. اگر نتیجهٔ درخواست نامعلوم باشد تلاش بعدی متوقف می‌شود؛ قبل از تکرار پنل را بررسی کنید."));
         final EditText prompt = makeInput("شرح تصویر تبلیغاتی", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE, false);
         prompt.setSingleLine(false); prompt.setMinLines(3);
         prompt.setText("A refined luxury product advertising background, warm studio lighting, no labels, no text, no people.");
@@ -9280,19 +9285,22 @@ public final class MainActivity extends Activity {
                 dialog.dismiss(); aiBusy = true; final int generation = aiGeneration;
                 toast("در حال ساخت تصویر تبلیغاتی…");
                 new Thread(new Runnable() { @Override public void run() {
-                    Bitmap bitmap = null; String failure = "خطا در دریافت تصویر؛ حساب، مدل و اینترنت را بررسی کنید.";
+                    Bitmap bitmap = null; String used = ""; String failure = "خطا در دریافت تصویر؛ حساب، مدل و اینترنت را بررسی کنید.";
                     try {
-                        bitmap = AiMedia.generateImage(getApplicationContext(), provider, text);
-                    } catch (DirectAiStudio.ProviderHttpException e) { failure = "خطای سرویس HTTP " + e.status + "; اعتبار، سهمیه یا دسترسی مدل را بررسی کنید."; }
-                      catch (java.net.SocketTimeoutException e) { failure = "زمان انتظار به پایان رسید؛ ممکن است درخواست هزینه داشته باشد. پیش از تکرار حساب را بررسی کنید."; }
+                        CreationFallback.Result<Bitmap> outcome = CreationFallback.run(CreationFallback.preferredFirst(provider, new String[]{"fal", "deepai", "byteplus", "stability"}),
+                                new CreationFallback.Attempt<Bitmap>() { @Override public Bitmap run(String id) throws Exception { return AiMedia.generateImage(getApplicationContext(), id, text); } },
+                                new CreationFallback.Cancelled() { @Override public boolean isCancelled() { return generation != aiGeneration; } });
+                        bitmap = outcome.value; used = outcome.provider;
+                    } catch (CreationFallback.Failed e) { failure = e.uncertain ? "نتیجهٔ " + e.provider + " نامعلوم است و ممکن است هزینه شده باشد. سرویس بعدی اجرا نشد؛ پیش از تکرار پنل را بررسی کنید." : "سرویس‌ها درخواست را رد کردند؛ اعتبار و سهمیه را بررسی کنید.\n" + e.attempts; }
                       catch (Exception e) { failure = "پاسخ یا اتصال سرویس قابل استفاده نبود؛ درخواست ممکن است هزینه داشته باشد."; }
                       catch (OutOfMemoryError e) { failure = "حافظه برای تصویر کافی نبود."; }
-                    final Bitmap result = bitmap; final String error = failure;
+                    final Bitmap result = bitmap; final String error = failure; final String usedProvider = used;
                     runOnUiThread(new Runnable() { @Override public void run() {
                         if (generation != aiGeneration || isFinishing()) return;
                         aiBusy = false;
                         if (result == null) { new AlertDialog.Builder(MainActivity.this).setTitle("تصویر ساخته نشد").setMessage(error).setPositiveButton("بستن", null).show(); return; }
                         if (!aiStudioOpen || !adminMode || aiDraft == null) { toast("تصویر دریافت شد اما استودیو بسته است؛ چیزی اعمال نشد."); return; }
+                        toast("تصویر توسط " + usedProvider + " دریافت شد؛ آن را بررسی کنید.");
                         previewMediaImage(result, generation);
                     }});
                 }}, "media-generation").start();

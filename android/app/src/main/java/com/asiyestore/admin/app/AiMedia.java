@@ -10,8 +10,10 @@ import java.nio.charset.StandardCharsets;
 public final class AiMedia {
     private AiMedia() { }
     static String key(Context context, String id) throws Exception {
-        String k = StudioCredentials.get(context, id);
-        if (k.isEmpty()) throw new IllegalArgumentException("missing key");
+        final String k;
+        try { k = StudioCredentials.get(context, id); }
+        catch (Exception e) { throw new CreationFallback.MissingCredential(); }
+        if (k.isEmpty()) throw new CreationFallback.MissingCredential();
         return k;
     }
     public static android.graphics.Bitmap generateImage(Context context, String provider, String prompt) throws Exception {

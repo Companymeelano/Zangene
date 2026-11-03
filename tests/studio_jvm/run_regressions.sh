@@ -10,12 +10,12 @@ mkdir -p "$OUT/transport" "$OUT/pipeline"
 cd "$ROOT"
 "$JAVA" -jar "$ECJ" -source 8 -target 8 -encoding UTF-8 -proc:none -nowarn -d "$OUT/transport" \
  tests/studio_jvm/transport_stub/com/asiyestore/admin/app/DirectAiStudio.java \
- android/app/src/main/java/com/asiyestore/admin/app/{AiHttpTransport,AiProviderOrder,AiProviderError,CredentialCipher}.java \
- tests/studio_jvm/com/asiyestore/admin/app/{TransportRegression,ProviderErrorRegression,CredentialRegression}.java
+ android/app/src/main/java/com/asiyestore/admin/app/{AiHttpTransport,AiProviderOrder,AiProviderError,CredentialCipher,CreationFallback}.java \
+ tests/studio_jvm/com/asiyestore/admin/app/{TransportRegression,ProviderErrorRegression,CredentialRegression,CreationFallbackRegression}.java
 "$JAVA" -jar "$ECJ" -source 8 -target 8 -encoding UTF-8 -proc:none -nowarn -d "$OUT/transport" \
  tests/studio_jvm/pipeline_stub/android/graphics/Bitmap.java \
  android/app/src/main/java/com/asiyestore/admin/app/AiProductStudio.java tests/studio_jvm/com/asiyestore/admin/app/StudioRegression.java
-for t in TransportRegression ProviderErrorRegression CredentialRegression StudioRegression; do "$JAVA" -cp "$OUT/transport" com.asiyestore.admin.app."$t"; done
+for t in TransportRegression ProviderErrorRegression CredentialRegression StudioRegression CreationFallbackRegression; do "$JAVA" -cp "$OUT/transport" com.asiyestore.admin.app."$t"; done
 if [ ! -d /tmp/JSON-java-20240303 ]; then
  curl -fsSL https://codeload.github.com/stleary/JSON-java/zip/refs/tags/20240303 -o /tmp/jsonjava-20240303.zip
  unzip -q /tmp/jsonjava-20240303.zip -d /tmp

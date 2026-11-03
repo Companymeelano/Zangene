@@ -24,5 +24,9 @@ class ServiceCoverage(unittest.TestCase):
         self.assertIn('ثبت درخواست هزینه‌دار', activity)
         self.assertIn('setInstanceFollowRedirects(false)', video)
         self.assertNotIn('getErrorStream', media + video)
+        self.assertIn('CreationFallback.preferredFirst(provider, new String[]{"fal", "deepai", "byteplus", "stability"})', activity)
+        self.assertIn('CreationFallback.preferredFirst(provider, new String[]{"kling", "piapi"})', activity)
+        self.assertIn('شرح شما به هر دو ممکن است ارسال شود', activity)
+        self.assertIn('سرویس بعدی خودکار اجرا نشد', activity)
 
 if __name__ == '__main__': unittest.main()
