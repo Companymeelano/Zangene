@@ -8849,18 +8849,25 @@ public final class MainActivity extends Activity {
 
     private void showPriceLookup() {
         if (aiBusy || aiDraft == null) { toast("عملیات دیگری در حال انجام است."); return; }
+        new AlertDialog.Builder(this).setTitle("روش استعلام قیمت")
+            .setItems(new String[]{"جست‌وجوی رایگان ترب و دیجی‌کالا", "سرویس قیمت اختصاصی"}, new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int which) {
+                    if (which == 0) new AlertDialog.Builder(MainActivity.this).setTitle("جست‌وجوی رایگان و غیررسمی")
+                        .setMessage("نام و برند کالا مستقیماً برای جست‌وجو به ترب و دیجی‌کالا ارسال می‌شود. دسترسی و صحت قیمت تضمین نیست؛ قیمت ترب، کمترین قیمت نمایش‌داده‌شده است. زمان فهرست، زمان دریافت است نه لزوماً زمان به‌روزرسانی قیمت. فقط کالاهای دقیقاً مشابه را انتخاب و قیمت را در سایت بررسی کنید.")
+                        .setNegativeButton("انصراف", null)
+                        .setPositiveButton("جست‌وجو", new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface dialog, int w) { runPriceLookup(null); } }).show();
+                    else showCustomPriceLookup();
+                }
+            }).setNegativeButton("بستن", null).show();
+    }
+
+    private void showCustomPriceLookup() {
         final String endpoint = getSharedPreferences("market_price", MODE_PRIVATE).getString("endpoint", "");
-        new AlertDialog.Builder(this).setTitle("استعلام قیمت بازار")
-                .setMessage(endpoint.isEmpty() ? "سرویس قیمت هنوز تنظیم نشده است. برای دریافت خودکار باید نشانی HTTPS سرویس سازگار را تنظیم کنید؛ هیچ قیمتی حدس زده نمی‌شود." : "نام، برند و حجم یا وزن به سرویس قیمت تنظیم‌شده ارسال می‌شود. فقط پیشنهادهای همان کالا را انتخاب کنید؛ میانگین قابل ویرایش است و قیمت‌ها ممکن است تغییر کنند.")
+        new AlertDialog.Builder(this).setTitle("سرویس قیمت اختصاصی")
+                .setMessage(endpoint.isEmpty() ? "نشانی سرویس سازگار تنظیم نشده است." : "نام، برند و حجم یا وزن به سرویس تنظیم‌شده ارسال می‌شود. نتیجه نیازمند بررسی شماست.")
                 .setNegativeButton("بستن", null)
-                .setNeutralButton("تنظیم سرویس", new android.content.DialogInterface.OnClickListener() {
-                    @Override public void onClick(android.content.DialogInterface d, int w) { configurePriceEndpoint(); }
-                })
-                .setPositiveButton(endpoint.isEmpty() ? "راهنما" : "ارسال و استعلام", new android.content.DialogInterface.OnClickListener() {
-                    @Override public void onClick(android.content.DialogInterface d, int w) {
-                        if (endpoint.isEmpty()) configurePriceEndpoint(); else runPriceLookup(endpoint);
-                    }
-                }).show();
+                .setNeutralButton("تنظیم سرویس", new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface d, int w) { configurePriceEndpoint(); } })
+                .setPositiveButton(endpoint.isEmpty() ? "تنظیم" : "ارسال و استعلام", new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface d, int w) { if (endpoint.isEmpty()) configurePriceEndpoint(); else runPriceLookup(endpoint); } }).show();
     }
 
     private void configurePriceEndpoint() {
@@ -8889,29 +8896,49 @@ public final class MainActivity extends Activity {
         if (name.trim().isEmpty()) { toast("ابتدا نام محصول را وارد کنید."); return; }
         aiBusy = true; toast("در حال دریافت پیشنهادهای قیمت…");
         new Thread(new Runnable() { @Override public void run() {
-            MarketPrice.Offer[] found = null;
-            try {
+            MarketPrice.Offer[] found = null; String failed = "";
+            if (endpoint == null) {
+                java.util.ArrayList<MarketPrice.Offer> all = new java.util.ArrayList<>();
+                String query = (name.trim() + " " + brand.trim()).trim();
+                if (query.length() > 200) query = query.substring(0, 200);
+                try { java.util.Collections.addAll(all, FreeMarketPrice.torob(FreeMarketPrice.get(false, query), System.currentTimeMillis())); }
+                catch (Exception ignored) { failed += "ترب "; }
+                try { java.util.Collections.addAll(all, FreeMarketPrice.digikala(FreeMarketPrice.get(true, query), System.currentTimeMillis())); }
+                catch (Exception ignored) { failed += "دیجی‌کالا"; }
+                found = all.toArray(new MarketPrice.Offer[0]);
+            } else try {
                 org.json.JSONObject body = new org.json.JSONObject().put("name", name).put("brand", brand).put("volume", volume);
                 String response = AiHttpTransport.post(MarketPrice.endpoint(endpoint), "Accept", "application/json", body.toString(), 256 * 1024);
                 found = MarketPrice.parse(response, System.currentTimeMillis());
-            } catch (Exception ignored) { }
-            final MarketPrice.Offer[] offers = found;
+            } catch (Exception ignored) { failed = "سرویس اختصاصی"; }
+            final MarketPrice.Offer[] offers = found; final String unavailable = failed;
             runOnUiThread(new Runnable() { @Override public void run() {
                 if (generation != aiGeneration || isFinishing()) return;
                 aiBusy = false;
                 if (draft != aiDraft || !name.equals(draft.nameFa) || !brand.equals(draft.brand) || !volume.equals(draft.volume) || draft.suggestedPrice != priceAtStart) { toast("اطلاعات تغییر کرد؛ نتیجهٔ قیمت اعمال نشد."); return; }
-                if (offers == null || offers.length < 2) { new AlertDialog.Builder(MainActivity.this).setTitle("قیمت قابل اتکا دریافت نشد").setMessage("سرویس باید دست‌کم دو پیشنهاد معتبر و به‌روز برگرداند. اتصال و تنظیمات را بررسی کنید یا قیمت را دستی وارد کنید.").setPositiveButton("بستن", null).show(); return; }
+                if (offers == null || offers.length == 0) { new AlertDialog.Builder(MainActivity.this).setTitle("نتیجه‌ای دریافت نشد").setMessage("سرویس ممکن است محدود یا قطع باشد، یا کالایی پیدا نشده باشد. " + (unavailable.isEmpty() ? "" : "در دسترس نبود: " + unavailable) + " قیمت را می‌توانید پس از بررسی سایت‌ها دستی وارد کنید.").setPositiveButton("بستن", null).show(); return; }
+                if (!unavailable.isEmpty()) toast("برخی منابع در دسترس نبودند: " + unavailable);
                 final boolean[] chosen = new boolean[offers.length]; String[] labels = new String[offers.length];
                 java.text.SimpleDateFormat date = new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
-                for (int i=0;i<offers.length;i++) labels[i]=offers[i].source + " · " + offers[i].title + "\n" + PersianFormatter.formatToman(offers[i].toman) + " · " + date.format(new java.util.Date(offers[i].observedAt)) + "\n" + offers[i].url;
+                for (int i=0;i<offers.length;i++) labels[i]=offers[i].source + " · " + offers[i].title + "\n" + PersianFormatter.formatToman(offers[i].toman) + " · زمان دریافت/مشاهده: " + date.format(new java.util.Date(offers[i].observedAt)) + "\n" + offers[i].url;
                 new AlertDialog.Builder(MainActivity.this).setTitle("فقط پیشنهادهای دقیقاً مشابه را انتخاب کنید")
                     .setMultiChoiceItems(labels, chosen, new android.content.DialogInterface.OnMultiChoiceClickListener() { @Override public void onClick(android.content.DialogInterface d, int which, boolean checked) { chosen[which] = checked; } })
                     .setNegativeButton("انصراف", null)
-                    .setPositiveButton("محاسبه و اعمال میانگین", new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface d, int w) {
+                    .setNeutralButton("بررسی لینک", new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface d, int w) {
+                        String[] links = new String[offers.length];
+                        for (int i=0;i<offers.length;i++) links[i]=offers[i].source + " · " + offers[i].title + "\n" + offers[i].url;
+                        new AlertDialog.Builder(MainActivity.this).setTitle("انتخاب لینک برای بررسی در مرورگر").setItems(links, new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface dialog, int index) {
+                            try { startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(offers[index].url))); } catch (Exception e) { toast("بازکردن مرورگر ممکن نیست."); }
+                        }}).setNegativeButton("بستن", null).show();
+                    }})
+                    .setPositiveButton("اعمال قیمت یا میانگین", new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface d, int w) {
                         if (generation != aiGeneration || draft != aiDraft || !name.equals(draft.nameFa) || !brand.equals(draft.brand) || !volume.equals(draft.volume) || draft.suggestedPrice != priceAtStart) { toast("اطلاعات تغییر کرده است؛ دوباره استعلام کنید."); return; }
                         for (int i = 0; i < offers.length; i++) if (chosen[i] && (System.currentTimeMillis() - offers[i].observedAt > 86400000L || offers[i].observedAt > System.currentTimeMillis() + 300000L)) { toast("زمان پیشنهادها منقضی شده است؛ دوباره استعلام کنید."); return; }
-                        try { long average = MarketPrice.average(offers, chosen); aiPriceInput.setText(String.valueOf(average)); toast("میانگین پیشنهادی اعمال شد؛ قابل ویرایش است."); }
-                        catch (Exception e) { toast("حداقل دو پیشنهاد مشابه را انتخاب کنید."); }
+                        int count = 0; long single = 0;
+                        for (int i = 0; i < offers.length; i++) if (chosen[i]) { count++; single = offers[i].toman; }
+                        if (count == 0) { toast("حداقل یک پیشنهاد مشابه را انتخاب کنید."); return; }
+                        long selectedPrice = count == 1 ? single : MarketPrice.average(offers, chosen);
+                        aiPriceInput.setText(String.valueOf(selectedPrice)); toast(count == 1 ? "یک قیمت پیشنهادی اعمال شد؛ میانگین نیست." : "میانگین پیشنهادهای انتخابی اعمال شد؛ قابل ویرایش است.");
                     }}).show();
             }});
         }}, "price-lookup").start();
