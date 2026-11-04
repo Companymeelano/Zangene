@@ -12,7 +12,8 @@ public class StudioRegression {
         check(d.category.equals("چای و نوشیدنی"), "draft category");
         check(d.instagramCaption.contains("ساقدوش") && !d.instagramCaption.contains("پوست"), "wrong caption");
         check(d.ingredients.isEmpty() && d.country.isEmpty() && d.volume.isEmpty(), "fabricated facts");
-        check(d.suggestedPrice == 0 && d.stock == 0 && d.imageKey.equals("generic"), "fabricated commercial info");
+        check(d.suggestedPrice == 0 && d.stock == 5 && d.imageKey.equals("generic"), "fabricated commercial info");
+        check(!d.youtubeCaption.isEmpty() && !d.telegramCaption.isEmpty() && !d.whatsappCaption.isEmpty(), "social drafts missing");
         d.longDescription = ""; d.keywords = ""; d.seoTitle = ""; d.seoDescription = ""; d.instagramCaption = "";
         d.description = "متن ویرایش‌شده"; d.ingredients = "تأیید شده";
         AiProductStudio.fillEmptyCopy(d);

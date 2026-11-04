@@ -23,7 +23,9 @@ fi
 "$JAVA" -jar "$ECJ" -source 8 -target 8 -encoding UTF-8 -proc:none -nowarn -d "$OUT/pipeline" \
  $(find /tmp/JSON-java-20240303/src/main/java/org/json -name '*.java') \
  $(find tests/studio_jvm/pipeline_stub -name '*.java') \
- android/app/src/main/java/com/asiyestore/admin/app/{DirectAiStudio,AiProviderOrder,AiProviderError,AiVideo}.java \
- tests/studio_jvm/com/asiyestore/admin/app/{PipelineRegression,VideoRegression}.java
+ android/app/src/main/java/com/asiyestore/admin/app/{DirectAiStudio,AiProviderOrder,AiProviderError,AiVideo,MarketPrice}.java \
+ tests/studio_jvm/com/asiyestore/admin/app/{PipelineRegression,VideoRegression,MarketPriceRegression}.java
 "$JAVA" -cp "$OUT/pipeline" com.asiyestore.admin.app.PipelineRegression
 "$JAVA" -cp "$OUT/pipeline" com.asiyestore.admin.app.VideoRegression
+
+"$JAVA" -cp "$OUT/pipeline" com.asiyestore.admin.app.MarketPriceRegression

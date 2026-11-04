@@ -2114,7 +2114,23 @@ public final class MainActivity extends Activity {
         return t;
     }
 
-    private void shareProduct(Models.Product p) {
+    private void shareProduct(final Models.Product p) {
+        final String[] labels = {"کارت کالا", "اینستاگرام", "یوتیوب", "تلگرام", "واتس‌اپ"};
+        final String[] messages = {"", p.instagramCaption, p.youtubeCaption, p.telegramCaption, p.whatsappCaption};
+        new AlertDialog.Builder(this).setTitle("متن اشتراک‌گذاری")
+                .setItems(labels, new android.content.DialogInterface.OnClickListener() {
+                    @Override public void onClick(android.content.DialogInterface d, int which) {
+                        if (which == 0) { shareProductCard(p); return; }
+                        String value = messages[which];
+                        if (value == null || value.trim().isEmpty()) { toast("برای این شبکه متنی ذخیره نشده است."); return; }
+                        Intent intent = new Intent(Intent.ACTION_SEND); intent.setType("text/plain"); intent.putExtra(Intent.EXTRA_TEXT, value);
+                        try { startActivity(Intent.createChooser(intent, "اشتراک‌گذاری متن قابل بازبینی")); }
+                        catch (Exception e) { toast("اشتراک‌گذاری در این دستگاه ممکن نیست."); }
+                    }
+                }).setNegativeButton("بستن", null).show();
+    }
+
+    private void shareProductCard(Models.Product p) {
         String message = "✨ " + p.nameFa + "\n" +
                 "قیمت ویژه: " + PersianFormatter.formatToman(p.salePrice) + "\n" +
                 "کد کالا: " + ltr(p.sku) + "\n" +
@@ -8696,10 +8712,16 @@ public final class MainActivity extends Activity {
         observeDraftNumber(aiStockInput, "stock");
         edit.addView(text("قیمت فروش · تومان (الزامی)", 10.5f, COL_TEXT_MUTED, true));
         edit.addView(space(5)); edit.addView(aiPriceInput);
+        edit.addView(space(6));
+        edit.addView(ghostButton("استعلام قیمت از سرویس متصل", new Runnable() {
+            @Override public void run() { showPriceLookup(); }
+        }));
         edit.addView(space(10));
         edit.addView(text("قیمت پیش از تخفیف · تومان (اختیاری)", 10.5f, COL_TEXT_MUTED, true));
         edit.addView(space(5)); edit.addView(aiOldPriceInput);
         edit.addView(space(10));
+        edit.addView(text("موجودی اولیهٔ پیشنهادی ۵ است؛ تعداد واقعی را بررسی کنید.", 10f, COL_TEXT_MUTED, false));
+        edit.addView(space(6));
         edit.addView(text("تعداد موجود در انبار", 10.5f, COL_TEXT_MUTED, true));
         edit.addView(space(5)); edit.addView(aiStockInput);
         contentContainer.addView(edit);
@@ -8733,6 +8755,9 @@ public final class MainActivity extends Activity {
         seo.addView(aiEditableField("عنوان سئو", "seoTitle", false));
         seo.addView(aiEditableField("توضیح سئو", "seoDescription", true));
         seo.addView(aiEditableField("کپشن اینستاگرام", "instagramCaption", true));
+        seo.addView(aiEditableField("توضیح یوتیوب", "youtubeCaption", true));
+        seo.addView(aiEditableField("متن تلگرام", "telegramCaption", true));
+        seo.addView(aiEditableField("متن واتس‌اپ", "whatsappCaption", true));
         contentContainer.addView(seo);
         contentContainer.addView(space(16));
 
@@ -8763,7 +8788,7 @@ public final class MainActivity extends Activity {
                 String error = db.saveAiProduct(null, null, d.nameFa, d.nameEn, d.brand, d.category,
                         d.description, d.longDescription, d.benefits, d.ingredients, d.usage,
                         d.country, d.volume, old, price, stock, true, d.imageKey, savedImagePath,
-                        d.seoTitle, d.seoDescription, d.keywords, d.instagramCaption);
+                        d.seoTitle, d.seoDescription, d.keywords, d.instagramCaption, d.youtubeCaption, d.telegramCaption, d.whatsappCaption);
                 if (error == null) {
                     toast("کالا با موفقیت به ویترین اضافه شد.");
                     resetAiStudio();
@@ -8820,6 +8845,76 @@ public final class MainActivity extends Activity {
             }
             public void afterTextChanged(Editable e) { }
         });
+    }
+
+    private void showPriceLookup() {
+        if (aiBusy || aiDraft == null) { toast("عملیات دیگری در حال انجام است."); return; }
+        final String endpoint = getSharedPreferences("market_price", MODE_PRIVATE).getString("endpoint", "");
+        new AlertDialog.Builder(this).setTitle("استعلام قیمت بازار")
+                .setMessage(endpoint.isEmpty() ? "سرویس قیمت هنوز تنظیم نشده است. برای دریافت خودکار باید نشانی HTTPS سرویس سازگار را تنظیم کنید؛ هیچ قیمتی حدس زده نمی‌شود." : "نام، برند و حجم یا وزن به سرویس قیمت تنظیم‌شده ارسال می‌شود. فقط پیشنهادهای همان کالا را انتخاب کنید؛ میانگین قابل ویرایش است و قیمت‌ها ممکن است تغییر کنند.")
+                .setNegativeButton("بستن", null)
+                .setNeutralButton("تنظیم سرویس", new android.content.DialogInterface.OnClickListener() {
+                    @Override public void onClick(android.content.DialogInterface d, int w) { configurePriceEndpoint(); }
+                })
+                .setPositiveButton(endpoint.isEmpty() ? "راهنما" : "ارسال و استعلام", new android.content.DialogInterface.OnClickListener() {
+                    @Override public void onClick(android.content.DialogInterface d, int w) {
+                        if (endpoint.isEmpty()) configurePriceEndpoint(); else runPriceLookup(endpoint);
+                    }
+                }).show();
+    }
+
+    private void configurePriceEndpoint() {
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("سرویس قیمت", "نشانی HTTPS سرویس سازگار را وارد کنید. فقط به سرویس قابل اعتماد خود متصل شوید؛ قرارداد پاسخ در مستندات برنامه آمده است."));
+        final EditText input = makeInput("https://example.com/api/prices", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI, true);
+        input.setText(getSharedPreferences("market_price", MODE_PRIVATE).getString("endpoint", "")); box.addView(input); box.addView(space(8));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ذخیرهٔ نشانی", Luxury3DIconView.ICON_CHECK, new Runnable() {
+            @Override public void run() {
+                try { String value = MarketPrice.endpoint(input.getText().toString());
+                    getSharedPreferences("market_price", MODE_PRIVATE).edit().putString("endpoint", value).apply(); dialog.dismiss(); toast("سرویس ثبت شد؛ برای استعلام تأیید کنید.");
+                } catch (Exception e) { toast("نشانی HTTPS معتبر بدون رمز یا پارامتر وارد کنید."); }
+            }
+        }));
+        box.addView(ghostButton("حذف تنظیم سرویس", new Runnable() { @Override public void run() {
+            getSharedPreferences("market_price", MODE_PRIVATE).edit().remove("endpoint").apply(); dialog.dismiss(); toast("تنظیم سرویس پاک شد.");
+        } }));
+        box.addView(ghostButton("انصراف", new Runnable() { @Override public void run() { dialog.dismiss(); } })); showRoundedDialog(dialog);
+    }
+
+    private void runPriceLookup(final String endpoint) {
+        if (aiBusy || aiDraft == null) return;
+        final AiProductStudio.Draft draft = aiDraft; final String name = draft.nameFa, brand = draft.brand, volume = draft.volume;
+        final long priceAtStart = draft.suggestedPrice; final int generation = aiGeneration;
+        if (name.trim().isEmpty()) { toast("ابتدا نام محصول را وارد کنید."); return; }
+        aiBusy = true; toast("در حال دریافت پیشنهادهای قیمت…");
+        new Thread(new Runnable() { @Override public void run() {
+            MarketPrice.Offer[] found = null;
+            try {
+                org.json.JSONObject body = new org.json.JSONObject().put("name", name).put("brand", brand).put("volume", volume);
+                String response = AiHttpTransport.post(MarketPrice.endpoint(endpoint), "Accept", "application/json", body.toString(), 256 * 1024);
+                found = MarketPrice.parse(response, System.currentTimeMillis());
+            } catch (Exception ignored) { }
+            final MarketPrice.Offer[] offers = found;
+            runOnUiThread(new Runnable() { @Override public void run() {
+                if (generation != aiGeneration || isFinishing()) return;
+                aiBusy = false;
+                if (draft != aiDraft || !name.equals(draft.nameFa) || !brand.equals(draft.brand) || !volume.equals(draft.volume) || draft.suggestedPrice != priceAtStart) { toast("اطلاعات تغییر کرد؛ نتیجهٔ قیمت اعمال نشد."); return; }
+                if (offers == null || offers.length < 2) { new AlertDialog.Builder(MainActivity.this).setTitle("قیمت قابل اتکا دریافت نشد").setMessage("سرویس باید دست‌کم دو پیشنهاد معتبر و به‌روز برگرداند. اتصال و تنظیمات را بررسی کنید یا قیمت را دستی وارد کنید.").setPositiveButton("بستن", null).show(); return; }
+                final boolean[] chosen = new boolean[offers.length]; String[] labels = new String[offers.length];
+                java.text.SimpleDateFormat date = new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
+                for (int i=0;i<offers.length;i++) labels[i]=offers[i].source + " · " + offers[i].title + "\n" + PersianFormatter.formatToman(offers[i].toman) + " · " + date.format(new java.util.Date(offers[i].observedAt)) + "\n" + offers[i].url;
+                new AlertDialog.Builder(MainActivity.this).setTitle("فقط پیشنهادهای دقیقاً مشابه را انتخاب کنید")
+                    .setMultiChoiceItems(labels, chosen, new android.content.DialogInterface.OnMultiChoiceClickListener() { @Override public void onClick(android.content.DialogInterface d, int which, boolean checked) { chosen[which] = checked; } })
+                    .setNegativeButton("انصراف", null)
+                    .setPositiveButton("محاسبه و اعمال میانگین", new android.content.DialogInterface.OnClickListener() { @Override public void onClick(android.content.DialogInterface d, int w) {
+                        if (generation != aiGeneration || draft != aiDraft || !name.equals(draft.nameFa) || !brand.equals(draft.brand) || !volume.equals(draft.volume) || draft.suggestedPrice != priceAtStart) { toast("اطلاعات تغییر کرده است؛ دوباره استعلام کنید."); return; }
+                        for (int i = 0; i < offers.length; i++) if (chosen[i] && (System.currentTimeMillis() - offers[i].observedAt > 86400000L || offers[i].observedAt > System.currentTimeMillis() + 300000L)) { toast("زمان پیشنهادها منقضی شده است؛ دوباره استعلام کنید."); return; }
+                        try { long average = MarketPrice.average(offers, chosen); aiPriceInput.setText(String.valueOf(average)); toast("میانگین پیشنهادی اعمال شد؛ قابل ویرایش است."); }
+                        catch (Exception e) { toast("حداقل دو پیشنهاد مشابه را انتخاب کنید."); }
+                    }}).show();
+            }});
+        }}, "price-lookup").start();
     }
 
     private void showOnlineImageDialog() {

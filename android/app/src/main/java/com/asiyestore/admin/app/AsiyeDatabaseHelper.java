@@ -20,7 +20,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
     public static final long STANDARD_SHIPPING_COST  = 65_000L;
 
     private static final String DB_NAME = "asiye_royal_v5.db";
-    private static final int DB_VERSION = 8;
+    private static final int DB_VERSION = 9;
 
     public AsiyeDatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -59,6 +59,9 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                 "seo_description TEXT," +
                 "keywords TEXT," +
                 "instagram_caption TEXT," +
+                "youtube_caption TEXT," +
+                "telegram_caption TEXT," +
+                "whatsapp_caption TEXT," +
                 "image_path TEXT," +
                 "ai_generated INTEGER NOT NULL DEFAULT 0" +
                 ")");
@@ -915,6 +918,9 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         alterAdd(db, "orders", "vip_gift_box", "INTEGER NOT NULL DEFAULT 1");
         alterAdd(db, "orders", "cold_chain", "INTEGER NOT NULL DEFAULT 0");
         alterAdd(db, "products", "brand", "TEXT NOT NULL DEFAULT ''");
+        alterAdd(db, "products", "youtube_caption", "TEXT");
+        alterAdd(db, "products", "telegram_caption", "TEXT");
+        alterAdd(db, "products", "whatsapp_caption", "TEXT");
         alterAdd(db, "products", "wishlisted", "INTEGER NOT NULL DEFAULT 0");
         alterAdd(db, "products", "image_key", "TEXT NOT NULL DEFAULT 'gatieau_whitening'");
         createReviewsTable(db);
@@ -1328,7 +1334,7 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
                                 String volume, long origPrice, long salePrice, int stock,
                                 boolean published, String imageKey, String imagePath,
                                 String seoTitle, String seoDescription, String keywords,
-                                String instagramCaption) {
+                                String instagramCaption, String youtubeCaption, String telegramCaption, String whatsappCaption) {
         if (nameFa == null || nameFa.trim().isEmpty()) return "نام محصول را وارد کنید.";
         if (salePrice <= 0) return "قیمت فروش معتبر نیست.";
         if (origPrice < salePrice) origPrice = salePrice;
@@ -1361,6 +1367,9 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         cv.put("seo_description", seoDescription);
         cv.put("keywords", keywords);
         cv.put("instagram_caption", instagramCaption);
+        cv.put("youtube_caption", youtubeCaption);
+        cv.put("telegram_caption", telegramCaption);
+        cv.put("whatsapp_caption", whatsappCaption);
         cv.put("ai_generated", 1);
 
         SQLiteDatabase db = getWritableDatabase();
@@ -1457,6 +1466,9 @@ public final class AsiyeDatabaseHelper extends SQLiteOpenHelper {
         p.seoDescription = safeString(c, "seo_description");
         p.keywords = safeString(c, "keywords");
         p.instagramCaption = safeString(c, "instagram_caption");
+        p.youtubeCaption = safeString(c, "youtube_caption");
+        p.telegramCaption = safeString(c, "telegram_caption");
+        p.whatsappCaption = safeString(c, "whatsapp_caption");
         p.imagePath = safeString(c, "image_path");
         p.aiGenerated = safeInt(c, "ai_generated") == 1;
         return p;

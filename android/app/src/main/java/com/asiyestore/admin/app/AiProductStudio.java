@@ -33,11 +33,14 @@ public final class AiProductStudio {
         public String seoTitle = "";
         public String seoDescription = "";
         public String instagramCaption = "";
+        public String youtubeCaption = "";
+        public String telegramCaption = "";
+        public String whatsappCaption = "";
         public String provenance = "";
         public String imageKey = "generic";
         public long suggestedPrice = 0;
         public long suggestedOldPrice = 0;
-        public int stock = 0;
+        public int stock = 5; // New drafts only; editable and not a verified inventory count.
     }
 
     /** A keyword suggestion, not identification; the merchant can change the category. */
@@ -68,6 +71,9 @@ public final class AiProductStudio {
         d.seoTitle = trim(name + (brand.isEmpty() ? "" : " | " + brand), 60);
         d.seoDescription = trim(d.description, 160);
         d.instagramCaption = "✨ " + name + brandText + "\n\nبرای اطلاعات بیشتر با مجموعه تماس بگیرید.\n\n#اسیه_استور";
+        d.youtubeCaption = name + " | " + brand + "\n" + d.description + "\nمشخصات محصول را پیش از خرید بررسی کنید.";
+        d.telegramCaption = "✨ " + name + brandText + "\n" + d.description + "\nبرای اطلاعات بیشتر با مجموعه تماس بگیرید.";
+        d.whatsappCaption = name + brandText + "\nبرای اطلاع از مشخصات و موجودی با ما تماس بگیرید.";
         return d;
     }
 
@@ -83,6 +89,9 @@ public final class AiProductStudio {
         if (empty(d.seoTitle)) d.seoTitle = neutral.seoTitle;
         if (empty(d.seoDescription)) d.seoDescription = neutral.seoDescription;
         if (empty(d.instagramCaption)) d.instagramCaption = neutral.instagramCaption;
+        if (empty(d.youtubeCaption)) d.youtubeCaption = neutral.youtubeCaption;
+        if (empty(d.telegramCaption)) d.telegramCaption = neutral.telegramCaption;
+        if (empty(d.whatsappCaption)) d.whatsappCaption = neutral.whatsappCaption;
     }
 
     private static boolean empty(String s) { return s == null || s.trim().isEmpty(); }

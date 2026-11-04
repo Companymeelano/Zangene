@@ -39,6 +39,9 @@ public final class Models {
         public String seoDescription;
         public String keywords;
         public String instagramCaption;
+        public String youtubeCaption;
+        public String telegramCaption;
+        public String whatsappCaption;
         public String imagePath;         // absolute path of AI studio render
         public boolean aiGenerated;
     }
