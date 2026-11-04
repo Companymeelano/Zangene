@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V7.1.5 · SAFE FALLBACK";
+    private static final String APP_VERSION         = "V7.1.6 · UPDATED KEYS";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -8928,7 +8928,7 @@ public final class MainActivity extends Activity {
 
     private void editCredential(final String id, final String label) {
         LinearLayout box = dialogBox();
-        String status = StudioCredentials.hasOverride(this, id) ? "کلید محلی وجود دارد." : "در حال استفاده از کلید داخل بسته هستید.";
+        String status = StudioCredentials.isOverrideActive(this, id) ? "کلید محلی فعال است." : StudioCredentials.hasOverride(this, id) ? "کلید محلی قبلی حفظ شده ولی کلید جدید بسته فعال است." : "در حال استفاده از کلید داخل بسته هستید.";
         box.addView(dialogTitle(label, status + " مقدار فعلی نمایش داده نمی‌شود. کلید جایگزین فقط روی همین دستگاه رمزگذاری می‌شود؛ کلید قبلی همچنان داخل APK قابل استخراج است."));
         final EditText input = makeInput("مقدار جدید", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS, false);
         input.setSingleLine(true); input.setSaveEnabled(false);
@@ -8950,7 +8950,7 @@ public final class MainActivity extends Activity {
             box.addView(ghostButton("حذف کلید محلی و بازگشت به کلید بسته", new Runnable() {
                 @Override public void run() {
                     new AlertDialog.Builder(MainActivity.this).setTitle("حذف کلید محلی؟")
-                        .setMessage("پس از حذف، دوباره از کلید قدیمی داخل APK استفاده می‌شود که ممکن است نامعتبر باشد.")
+                        .setMessage("پس از حذف، از کلید فعال داخل APK استفاده می‌شود که ممکن است نامعتبر باشد.")
                         .setNegativeButton("انصراف", null).setPositiveButton("حذف", new android.content.DialogInterface.OnClickListener() {
                             @Override public void onClick(android.content.DialogInterface d, int w) {
                                 try { StudioCredentials.clear(MainActivity.this, id); dialog.dismiss(); showAiServices(); }

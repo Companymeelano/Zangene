@@ -35,20 +35,27 @@ public final class StudioCredentials {
     public static boolean hasOverride(Context ctx, String id) {
         checkId(id); return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).contains(id);
     }
+    /** Prior device overrides are retained but superseded for newly supplied package credentials. */
+    public static boolean isOverrideActive(Context ctx, String id) {
+        checkId(id);
+        if (!hasOverride(ctx, id)) return false;
+        int revision = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt("revision_" + id, 0);
+        return CredentialRevision.isOverrideActive(id, revision);
+    }
     public static void save(Context ctx, String id, String input) throws Exception {
         checkId(id); String value = input.trim();
         if (value.isEmpty() || value.length() > 4096 || value.contains("\n") || value.contains("\r")) throw new IllegalArgumentException("invalid value");
         byte[] payload = CredentialCipher.seal(getKey(true), id, value);
-        if (!ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(id, Base64.encodeToString(payload, Base64.NO_WRAP)).commit())
+        if (!ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(id, Base64.encodeToString(payload, Base64.NO_WRAP)).putInt("revision_" + id, CredentialRevision.CURRENT).commit())
             throw new IllegalStateException("storage failed");
     }
     public static void clear(Context ctx, String id) {
         checkId(id);
-        if (!ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(id).commit()) throw new IllegalStateException("storage failed");
+        if (!ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(id).remove("revision_" + id).commit()) throw new IllegalStateException("storage failed");
     }
     public static String get(Context ctx, String id) throws Exception {
         checkId(id);
-        if (hasOverride(ctx, id)) {
+        if (isOverrideActive(ctx, id)) {
             byte[] payload = Base64.decode(ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(id, ""), Base64.NO_WRAP);
             return CredentialCipher.open(getKey(false), id, payload);
         }
