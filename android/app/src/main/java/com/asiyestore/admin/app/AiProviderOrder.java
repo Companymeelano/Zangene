@@ -3,7 +3,9 @@ package com.asiyestore.admin.app;
 /** Preferred provider first, followed by all other configured providers. */
 public final class AiProviderOrder {
     private AiProviderOrder() { }
-    public static final String[] IDS = {"gemini", "openai", "groq", "gapgpt", "deepseek", "openrouter", "openrouter_free", "cerebras", "huggingface", "cloudflare", "maxrouter"};
+    // Only the three most recently supplied providers are active. Other credentials remain untouched.
+    public static final String[] IDS = {"gemini", "openai", "groq"};
+    public static boolean isActive(String id) { for (String allowed : IDS) if (allowed.equals(id)) return true; return false; }
     public static String[] forPreference(String preferred) {
         String[] result = new String[IDS.length];
         boolean found = false;
@@ -14,9 +16,7 @@ public final class AiProviderOrder {
         for (String id : IDS) if (!id.equals(first)) result[pos++] = id;
         return result;
     }
-    public static boolean supportsImage(String id) {
-        return "gemini".equals(id) || "openai".equals(id) || "groq".equals(id) || "deepseek".equals(id) || "openrouter".equals(id) || "openrouter_free".equals(id) || "cerebras".equals(id) || "huggingface".equals(id) || "cloudflare".equals(id);
-    }
+    public static boolean supportsImage(String id) { return isActive(id); }
     public static String label(String id) {
         if ("gemini".equals(id)) return "Gemini";
         if ("openai".equals(id)) return "OpenAI";

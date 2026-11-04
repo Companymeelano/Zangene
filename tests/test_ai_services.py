@@ -11,15 +11,16 @@ class ServiceCoverage(unittest.TestCase):
         media = (JAVA/'AiMedia.java').read_text()
         video = (JAVA/'AiVideo.java').read_text()
         activity = (JAVA/'MainActivity.java').read_text()
-        for provider in ['gemini','openai','groq','gapgpt','deepseek','openrouter','cerebras','huggingface','cloudflare','maxrouter']:
-            self.assertIn('"'+provider+'"', order)
-            self.assertIn('"'+provider+'"', direct)
-        for provider in ['fal','deepai','byteplus','stability']:
-            self.assertIn('"'+provider+'"', media)
-        for provider in ['kling','piapi']:
-            self.assertIn('"'+provider+'"', video)
+        self.assertIn('IDS = {"gemini", "openai", "groq"}', order)
+        self.assertIn('if (!AiProviderOrder.isActive(provider))', direct)
+        self.assertIn('if (!AiProviderOrder.isActive(id))', media)
+        self.assertIn('StudioCredentials.get(context, id)', media)
         self.assertIn('image != null && !AiProviderOrder.supportsImage(provider)', direct)
         self.assertIn('request(context, provider, key, facts, null, true)', direct)
+        menu = activity.split('private void showFinalMediaOptions()', 1)[1].split('private void cancelCloudAnalysis()', 1)[0]
+        self.assertNotIn('chooseMediaProvider()', menu)
+        self.assertNotIn('showVideoMenu()', menu)
+        self.assertIn('generateStudioImage()', menu)
         self.assertIn('تصویر تولیدشده ممکن است محصول واقعی را نشان ندهد', activity)
         self.assertIn('ثبت درخواست هزینه‌دار', activity)
         self.assertIn('setInstanceFollowRedirects(false)', video)

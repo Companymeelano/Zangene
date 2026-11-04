@@ -16,6 +16,10 @@ class CredentialRecoveryTests(unittest.TestCase):
         self.assertIn('putInt("revision_" + id, CredentialRevision.CURRENT)', store)
         self.assertIn('کلید محلی قبلی حفظ شده ولی کلید جدید بسته فعال است', activity)
         self.assertIn('CredentialCipher.open(getKey(false), id, payload)', store)
+        self.assertIn('setOverrideEnabled(Context ctx, String id, boolean enabled)', store)
+        self.assertIn('putBoolean("disabled_" + id, !enabled)', store)
+        self.assertIn('StudioCredentials.setOverrideEnabled(MainActivity.this, id, !localActive)', activity)
+        self.assertNotIn('StudioCredentials.clear(MainActivity.this, id)', activity)
         self.assertIn('AES/GCM/NoPadding', cipher)
         self.assertIn('cipher.updateAAD', cipher)
         self.assertIn('StudioCredentials.get(context, "openrouter_free".equals(provider) ? "openrouter" : provider)', direct)
@@ -24,6 +28,6 @@ class CredentialRecoveryTests(unittest.TestCase):
         self.assertIn('StudioCredentials.save(MainActivity.this, id, value)', activity)
         self.assertIn('input.setSaveEnabled(false)', activity)
         self.assertIn('کلید قبلی همچنان داخل APK قابل استخراج است', activity)
-        self.assertIn('DeepSeek، OpenRouter، Cerebras، Hugging Face و Cloudflare برای عکس', activity)
+        self.assertIn('Gemini، OpenAI یا Groq', activity)
 
 if __name__ == '__main__': unittest.main()

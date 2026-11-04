@@ -21,7 +21,7 @@ class WorkflowTest(unittest.TestCase):
         self.assertIn('final Bitmap photo = textOnly ? null : aiSourceBitmap', activity)
         self.assertIn('setPositiveButton("ارسال فقط متن"', activity)
         self.assertIn('عکس تحلیل نشد', activity)
-        self.assertIn('سیاست نگهداری دادهٔ آن‌ها متفاوت است', activity)
+        self.assertIn('سیاست داده و هزینهٔ هر سرویس متفاوت است', activity)
         self.assertIn('AiProductStudio.fillEmptyCopy(d)', draft)
         self.assertIn('قیمت فروش · تومان (الزامی)', draft)
         self.assertIn('تعداد موجود در انبار', draft)

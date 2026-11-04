@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 public final class AiMedia {
     private AiMedia() { }
     static String key(Context context, String id) throws Exception {
+        if (!AiProviderOrder.isActive(id)) throw new CreationFallback.MissingCredential();
         final String k;
         try { k = StudioCredentials.get(context, id); }
         catch (Exception e) { throw new CreationFallback.MissingCredential(); }

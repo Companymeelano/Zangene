@@ -138,6 +138,7 @@ public final class DirectAiStudio {
     }
 
     private static String request(Context context, String provider, String key, JSONObject facts, String image, boolean probe) throws Exception {
+        if (!AiProviderOrder.isActive(provider)) throw new IllegalArgumentException("provider inactive");
         if ("gemini".equals(provider)) return gemini(key, facts, image, probe);
         if ("cloudflare".equals(provider)) {
             String account = StudioCredentials.get(context, "cloudflare_account");
@@ -159,7 +160,7 @@ public final class DirectAiStudio {
         JSONArray parts = new JSONArray().put(new JSONObject().put("text", PROMPT + "\nProduct data: " + facts.toString()));
         if (image != null) parts.put(new JSONObject().put("inline_data", new JSONObject().put("mime_type", "image/jpeg").put("data", image)));
         JSONObject body = new JSONObject().put("contents", new JSONArray().put(new JSONObject().put("role", "user").put("parts", parts)))
-                .put("generationConfig", new JSONObject().put("responseMimeType", "application/json").put("temperature", 0.2).put("maxOutputTokens", probe ? 1500 : 4000));
+                .put("generationConfig", new JSONObject().put("responseMimeType", "application/json").put("maxOutputTokens", probe ? 1500 : 4000));
         JSONObject response = call(GEMINI_URL, "x-goog-api-key", key, body);
         JSONArray output = response.getJSONArray("candidates").getJSONObject(0).getJSONObject("content").getJSONArray("parts");
         StringBuilder text = new StringBuilder();

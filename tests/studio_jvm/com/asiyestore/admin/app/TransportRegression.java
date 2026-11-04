@@ -14,8 +14,10 @@ public class TransportRegression {
             check(new java.util.HashSet<String>(Arrays.asList(order)).containsAll(Arrays.asList(AiProviderOrder.IDS)));
         }
         check(AiProviderOrder.forPreference("unknown")[0].equals("gemini"));
-        check(AiProviderOrder.supportsImage("deepseek") && AiProviderOrder.supportsImage("cloudflare") && AiProviderOrder.supportsImage("openrouter_free") && !AiProviderOrder.supportsImage("maxrouter"));
-        check(AiProviderOrder.supportsImage("gemini") && AiProviderOrder.supportsImage("openrouter"));
+        check(!AiProviderOrder.supportsImage("deepseek") && !AiProviderOrder.supportsImage("cloudflare") && !AiProviderOrder.supportsImage("openrouter_free") && !AiProviderOrder.supportsImage("maxrouter"));
+        check(AiProviderOrder.supportsImage("gemini") && AiProviderOrder.supportsImage("openai") && AiProviderOrder.supportsImage("groq"));
+        check(AiProviderOrder.forPreference("deepseek")[0].equals("gemini"));
+        check(AiProviderOrder.IDS.length == 3);
         ServerSocket server = new ServerSocket(0, 10, InetAddress.getByName("127.0.0.1"));
         final String[] requests = new String[4];
         Thread worker = new Thread(new Runnable() { public void run() {

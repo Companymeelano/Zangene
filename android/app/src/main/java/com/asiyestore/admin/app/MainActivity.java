@@ -4267,7 +4267,7 @@ public final class MainActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(22), dp(22), dp(22), dp(18));
-        box.setBackgroundColor(COL_WHITE);
+        box.setBackground(roundedShape(COL_WHITE, dp(22), COL_BORDER, dp(1)));
         return box;
     }
 
@@ -8337,6 +8337,10 @@ public final class MainActivity extends Activity {
                 renderCurrentScreen();
             }
         });
+        TextView settings = text("تنظیمات", 10f, COL_GOLD_LIGHT, true);
+        settings.setPadding(dp(10), dp(8), dp(10), dp(8));
+        settings.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { showAiServices(); } });
+        bar.addView(settings);
         bar.addView(close);
         stage.addView(bar);
 
@@ -8345,10 +8349,6 @@ public final class MainActivity extends Activity {
         try {
             contentContainer.addView(space(12));
             contentContainer.addView(aiStepStrip());
-            contentContainer.addView(space(10));
-            contentContainer.addView(outlineDarkButton("سرویس‌ها و تست سلامت کلیدها", Luxury3DIconView.ICON_AI, new Runnable() {
-                @Override public void run() { showAiServices(); }
-            }));
             contentContainer.addView(space(14));
             if (aiDraft != null) {
                 renderAiDraft();
@@ -8538,7 +8538,7 @@ public final class MainActivity extends Activity {
         }));
         if (aiAnalysisRunning) {
             contentContainer.addView(space(6));
-            contentContainer.addView(text("در حال بررسی سرویس‌ها؛ ساخت تصویر انجام نمی‌شود. در صورت خطا، علت هر سرویس نمایش داده می‌شود.", 10f, COL_TEXT_MUTED, false));
+            contentContainer.addView(text("در حال آماده‌سازی پیش‌نویس…", 10f, COL_TEXT_MUTED, false));
             contentContainer.addView(space(6));
             contentContainer.addView(ghostButton("لغو انتظار برای تحلیل", new Runnable() {
                 @Override public void run() { cancelCloudAnalysis(); }
@@ -8987,38 +8987,9 @@ public final class MainActivity extends Activity {
 
     private void showAiServices() {
         final String current = getSharedPreferences("ai_services", MODE_PRIVATE).getString("preferred", "gemini");
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setBackgroundColor(COL_WHITE);
-        box.setPadding(dp(18), dp(8), dp(18), dp(12));
-        TextView details = text("سرویس اول: " + aiServiceLabel(current) + "؛ در صورت خطا سرویس‌های سازگار دیگر به ترتیب امتحان می‌شوند. سرویس‌های صرفاً متنی برای عکس به کار نمی‌روند. خروجی را بررسی کنید.\n\n"
-                + "Gemini · مدل gemini-3.5-flash-lite\nتحلیل چندرسانه‌ای و ساخت پیش‌نویس\n" + DirectAiStudio.GEMINI_URL + "\n\n"
-                + "OpenAI · مدل gpt-4o-mini\nتحلیل تصویر و نگارش متن ساختاریافته / SEO\n" + DirectAiStudio.OPENAI_URL + "\n\n"
-                + "Groq · مدل qwen/qwen3.8-27b\nپردازش سریع متن و تصویر، جایگزین دیگر\n" + DirectAiStudio.GROQ_URL + "\n\n"
-                + "GapGPT · متن\nhttps://api.gapgpt.app/v1/chat/completions\n\n"
-                + "DeepSeek · متن و تصویر (مدل Flash)\nhttps://api.deepseek.com/chat/completions\n\n"
-                + "MaxRouter · متن\nhttps://api.maxrouter.ai/v1/chat/completions\n\n"
-                + "OpenRouter · متن و تصویر؛ مدل پولی و مدل رایگان جایگزین\nhttps://openrouter.ai/api/v1/chat/completions\n\n"
-                + "Cerebras · متن و تصویر\nhttps://api.cerebras.ai/v1/chat/completions\n\n"
-                + "Hugging Face · متن و تصویر\nhttps://router.huggingface.co/v1/chat/completions\n\n"
-                + "Cloudflare Workers AI · متن و تصویر؛ مدل تصویری ممکن است نیاز به پذیرش مجوز مدل در پنل داشته باشد\nhttps://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct\n\n"
-                + "Stability · تصویر\nhttps://api.stability.ai/v2beta/stable-image/generate/core\n\n"
-                + "DeepAI · تصویر\nhttps://api.deepai.org/api/text2img\n\n"
-                + "fal · تصویر\nhttps://fal.run/fal-ai/flux/dev\n\n"
-                + "BytePlus · تصویر\nhttps://ark.ap-southeast.bytepluses.com/api/v3/images/generations\n\n"
-                + "Kling · ویدئو\nhttps://api-singapore.klingai.com/text-to-video/kling-3.0\n\n"
-                + "PiAPI · ویدئو\nhttps://api.piapi.ai/api/v1/task\n\n"
-                + "آزمون سرویس‌های تصویر و ویدئو از بخش پیش‌نویس با درخواست تولید هزینه‌دار انجام می‌شود؛ نتیجه باید بازبینی شود.\n\n"
-                + "آزمون یک متن نمونهٔ ساختگی می‌فرستد، نه اطلاعات یا عکس محصول؛ ممکن است سهمیه یا هزینه مصرف کند. موفقیت آزمون متنی، سلامت عکس یا سهمیهٔ آینده را تضمین نمی‌کند. کلیدها نمایش داده نمی‌شوند.", 11f, COL_TEXT_MAIN, false);
-        details.setTextIsSelectable(true);
-        details.setLineSpacing(dp(3), 1f);
-        box.addView(text("تنظیم کلید، اولویت و آزمون؛ نشانی‌ها و توضیحات در پایین صفحه است.", 11f, COL_TEXT_MUTED, false));
-        box.addView(space(10));
-        final AlertDialog dialog = new AlertDialog.Builder(this).setTitle("سرویس‌ها و سلامت کلیدها")
-                .setPositiveButton("بستن", null).create();
-        ScrollView scroll = new ScrollView(this);
-        scroll.addView(box);
-        dialog.setView(scroll);
+        LinearLayout box = dialogBox();
+        box.addView(dialogTitle("سرویس‌های هوشمند", "اولویت: " + aiServiceLabel(AiProviderOrder.forPreference(current)[0]) + " · در صورت نیاز، تنها Gemini، OpenAI و Groq امتحان می‌شوند."));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
         box.addView(outlineDarkButton("تعویض کلید روی دستگاه", Luxury3DIconView.ICON_AI, new Runnable() {
             @Override public void run() { dialog.dismiss(); chooseCredential(); }
         }));
@@ -9034,14 +9005,14 @@ public final class MainActivity extends Activity {
         box.addView(ghostButton("آزمون یک سرویس متنی", new Runnable() {
             @Override public void run() { dialog.dismiss(); chooseSingleProbe(); }
         }));
-        box.addView(space(14));
-        box.addView(details);
-        dialog.show();
+        box.addView(space(8));
+        box.addView(ghostButton("بستن", new Runnable() { @Override public void run() { dialog.dismiss(); } }));
+        showRoundedDialog(dialog);
     }
 
     private void chooseCredential() {
-        final String[] ids = {"gemini", "openai", "groq", "gapgpt", "deepseek", "openrouter", "cerebras", "huggingface", "cloudflare", "cloudflare_account", "maxrouter", "stability", "deepai", "fal", "byteplus", "kling", "piapi"};
-        final String[] labels = {"Gemini", "OpenAI", "Groq", "GapGPT", "DeepSeek", "OpenRouter", "Cerebras", "Hugging Face", "Cloudflare API Token", "Cloudflare Account ID", "MaxRouter", "Stability", "DeepAI", "fal", "BytePlus", "Kling", "PiAPI"};
+        final String[] ids = {"gemini", "openai", "groq"};
+        final String[] labels = {"Gemini", "OpenAI", "Groq"};
         new AlertDialog.Builder(this).setTitle("تعویض کلید روی دستگاه")
             .setItems(labels, new android.content.DialogInterface.OnClickListener() {
                 @Override public void onClick(android.content.DialogInterface d, int which) { editCredential(ids[which], labels[which]); }
@@ -9069,16 +9040,11 @@ public final class MainActivity extends Activity {
         }));
         if (StudioCredentials.hasOverride(this, id)) {
             box.addView(space(8));
-            box.addView(ghostButton("حذف کلید محلی و بازگشت به کلید بسته", new Runnable() {
+            final boolean localActive = StudioCredentials.isOverrideActive(this, id);
+            box.addView(ghostButton(localActive ? "استفاده از کلید بسته؛ حفظ کلید محلی" : "فعال‌سازی کلید محلی ذخیره‌شده", new Runnable() {
                 @Override public void run() {
-                    new AlertDialog.Builder(MainActivity.this).setTitle("حذف کلید محلی؟")
-                        .setMessage("پس از حذف، از کلید فعال داخل APK استفاده می‌شود که ممکن است نامعتبر باشد.")
-                        .setNegativeButton("انصراف", null).setPositiveButton("حذف", new android.content.DialogInterface.OnClickListener() {
-                            @Override public void onClick(android.content.DialogInterface d, int w) {
-                                try { StudioCredentials.clear(MainActivity.this, id); dialog.dismiss(); showAiServices(); }
-                                catch (Exception e) { toast("حذف کلید محلی ممکن نشد."); }
-                            }
-                        }).show();
+                    try { StudioCredentials.setOverrideEnabled(MainActivity.this, id, !localActive); dialog.dismiss(); toast("انتخاب ذخیره شد؛ اتصال را آزمایش کنید."); showAiServices(); }
+                    catch (Exception e) { toast("تغییر کلید فعال ممکن نشد."); }
                 }
             }));
         }
@@ -9141,15 +9107,8 @@ public final class MainActivity extends Activity {
 
     private void showFinalMediaOptions() {
         if (aiBusy || aiDraft == null) { toast("عملیات دیگری در حال انجام است."); return; }
-        new AlertDialog.Builder(this).setTitle("تصویرسازی اختیاری")
-                .setItems(new String[]{"ساخت تصویر استودیویی از عکس اصلی", "ساخت تصویر تبلیغاتی با هوش مصنوعی", "ساخت و پیگیری ویدئوی تبلیغاتی"},
-                        new android.content.DialogInterface.OnClickListener() {
-                            @Override public void onClick(android.content.DialogInterface dialog, int which) {
-                                if (which == 0) generateStudioImage();
-                                else if (which == 1) chooseMediaProvider();
-                                else showVideoMenu();
-                            }
-                        }).setNegativeButton("بستن", null).show();
+        // Local rendering does not use an external AI provider or modify the original photo.
+        generateStudioImage();
     }
 
     private void cancelCloudAnalysis() {
@@ -9163,12 +9122,17 @@ public final class MainActivity extends Activity {
         final String name = aiName.trim(), brand = aiBrand.trim();
         if (name.length() < 3) { toast("نام محصول را کامل وارد کنید."); return; }
         if (aiBusy) { toast("عملیات دیگری در حال انجام است."); return; }
-        new AlertDialog.Builder(this).setTitle("ارسال اطلاعات برای تحلیل")
-                .setMessage("نام، برند و عکس انتخابی به سرویس انتخابی و در صورت خطا به سایر سرویس‌های سازگار فرستاده می‌شوند: Gemini، OpenAI، Groq، DeepSeek، OpenRouter، Cerebras، Hugging Face و Cloudflare برای عکس؛ GapGPT و MaxRouter نیز برای متن. OpenRouter ممکن است از مدل رایگان و ارائه‌دهندهٔ ثالث استفاده کند؛ سیاست نگهداری دادهٔ آن‌ها متفاوت است. درخواست‌ها ممکن است هزینه داشته باشند و چند دقیقه طول بکشند. خروجی را پیش از انتشار بررسی کنید.")
-                .setNegativeButton("انصراف", null)
-                .setPositiveButton("ارسال و تحلیل", new android.content.DialogInterface.OnClickListener() {
-                    public void onClick(android.content.DialogInterface dialog, int which) { runCloudAnalysis(name, brand); }
-                }).show();
+        LinearLayout box = dialogBox();
+        LinearLayout heading = row(Gravity.CENTER_VERTICAL);
+        heading.addView(iconMedallion(Luxury3DIconView.ICON_AI, 40, Luxury3DIconView.PEDESTAL_GOLD));
+        TextView title = text("تحلیل هوشمند محصول", 15f, COL_TEXT_MAIN, true);
+        title.setPadding(dp(10), 0, dp(10), 0); heading.addView(title, weight(1f)); box.addView(heading); box.addView(space(12));
+        TextView privacy = text("نام، برند و عکس انتخابی به Gemini، OpenAI یا Groq ارسال می‌شود. در صورت نیاز سرویس بعدی امتحان می‌شود؛ سیاست داده و هزینهٔ هر سرویس متفاوت است. خروجی را پیش از انتشار بررسی کنید.", 11f, COL_TEXT_MUTED, false);
+        privacy.setLineSpacing(dp(3), 1f); box.addView(privacy); box.addView(space(14));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("ارسال و تحلیل", Luxury3DIconView.ICON_AI, new Runnable() { @Override public void run() { dialog.dismiss(); runCloudAnalysis(name, brand); } }));
+        box.addView(ghostButton("انصراف", new Runnable() { @Override public void run() { dialog.dismiss(); } }));
+        showRoundedDialog(dialog);
     }
 
     private void confirmTextOnlyAnalysis(final String name, final String brand) {
@@ -9200,7 +9164,7 @@ public final class MainActivity extends Activity {
             try { draft = DirectAiStudio.generate(MainActivity.this, name, brand, photo, preferred, new DirectAiStudio.Cancellation() {
                 @Override public boolean isCancelled() { return generation != aiGeneration; }
             }); }
-            catch (DirectAiStudio.ProvidersFailedException e) { failure = e.getMessage(); }
+            catch (DirectAiStudio.ProvidersFailedException e) { /* diagnostics remain available in settings */ }
             catch (Exception e) { android.util.Log.e("ASIYE", "direct AI failed: " + e.getClass().getSimpleName()); }
             catch (OutOfMemoryError e) { failure = "حافظه برای پردازش عکس کافی نیست؛ تصویر کوچک‌تری انتخاب کنید."; }
             final AiProductStudio.Draft result = draft;
@@ -9211,8 +9175,8 @@ public final class MainActivity extends Activity {
                 if (result == null) {
                     if (aiStudioOpen && adminMode) {
                         renderCurrentScreen();
-                        AlertDialog.Builder errorDialog = new AlertDialog.Builder(MainActivity.this).setTitle("جزئیات خطای سرویس‌ها")
-                                .setMessage(errorText + "\n\nکلید یا عکس در این گزارش نمایش داده نمی‌شود. اعتبار، موجودی و دسترسی حساب را بررسی کنید.")
+                        AlertDialog.Builder errorDialog = new AlertDialog.Builder(MainActivity.this).setTitle("تحلیل در دسترس نیست")
+                                .setMessage(errorText + " اطلاعات واردشده حفظ شده است.")
                                 .setPositiveButton("متوجه شدم", null);
                         if (photo != null && name.equals(aiName.trim()) && brand.equals(aiBrand.trim()) && sourceAtRequest.equals(aiSourcePath)) {
                             errorDialog.setNeutralButton("آزمون فقط با نام و برند", new android.content.DialogInterface.OnClickListener() {
