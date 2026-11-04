@@ -41,19 +41,49 @@ public final class AiVideo {
             int code = c.getResponseCode(); if (code != 200) throw new DirectAiStudio.ProviderHttpException(code);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             try (InputStream in = c.getInputStream()) { byte[] b = new byte[4096]; int n, total = 0; while ((n=in.read(b)) != -1) { total += n; if (total > 256*1024) throw new IllegalArgumentException("response too large"); out.write(b,0,n); } }
-            JSONObject response = new JSONObject(new String(out.toByteArray(), StandardCharsets.UTF_8));
-            if (response.optInt("code", -1) != (kling ? 0 : 200)) throw new IllegalArgumentException("provider failure");
-            JSONObject data = kling ? response.getJSONArray("data").getJSONObject(0) : response.getJSONObject("data");
-            String state = data.optString("status", ""); String video = "";
-            if (kling) {
-                JSONArray outputs = data.optJSONArray("outputs");
-                if (outputs != null && outputs.length() > 0) video = outputs.getJSONObject(0).optString("url", "");
-            } else {
-                JSONObject output = data.optJSONObject("output"); if (output != null) video = output.optString("video", output.optString("video_url", ""));
-            }
-            if (!state.matches("submitted|pending|processing|succeeded|completed|failed")) throw new IllegalArgumentException("invalid status");
-            if (!video.isEmpty()) { URL parsed = new URL(video); if (!"https".equalsIgnoreCase(parsed.getProtocol()) || parsed.getUserInfo()!=null) throw new IllegalArgumentException("unsafe url"); }
-            return new String[]{state, video};
+            return parseStatus(id, task, new JSONObject(new String(out.toByteArray(), StandardCharsets.UTF_8)));
         } finally { c.disconnect(); }
+    }
+
+    /** Parse only the requested job and only video outputs; never confuse an image for a video. */
+    static String[] parseStatus(String id, String task, JSONObject response) throws Exception {
+        boolean kling = "kling".equals(id);
+        if (!kling && !"piapi".equals(id)) throw new IllegalArgumentException("unknown provider");
+        if (response.optInt("code", -1) != (kling ? 0 : 200)) throw new IllegalArgumentException("provider failure");
+        JSONObject data = null;
+        if (kling) {
+            JSONArray tasks = response.getJSONArray("data");
+            for (int i = 0; i < tasks.length(); i++) {
+                JSONObject candidate = tasks.getJSONObject(i);
+                if (task.equals(candidate.optString("id", ""))) { data = candidate; break; }
+            }
+            if (data == null) throw new IllegalArgumentException("requested task missing");
+        } else {
+            data = response.getJSONObject("data");
+            if (!task.equals(data.optString("task_id", ""))) throw new IllegalArgumentException("requested task missing");
+        }
+        String state = data.optString("status", ""); String video = "";
+        if (kling) {
+            JSONArray outputs = data.optJSONArray("outputs");
+            if (outputs != null) for (int i = 0; i < outputs.length(); i++) {
+                JSONObject output = outputs.getJSONObject(i);
+                if ("video".equals(output.optString("type", "")) && !output.optString("url", "").isEmpty()) {
+                    video = output.optString("url", ""); break;
+                }
+            }
+        } else {
+            JSONObject output = data.optJSONObject("output"); if (output != null) {
+                video = output.optString("video", "");
+                if (video.isEmpty()) video = output.optString("video_url", "");
+            }
+        }
+        if (!state.matches("submitted|pending|processing|succeeded|completed|failed")) throw new IllegalArgumentException("invalid status");
+        if (!"succeeded".equals(state) && !"completed".equals(state)) video = "";
+        if (!video.isEmpty()) {
+            URL parsed = new URL(video);
+            if (!"https".equalsIgnoreCase(parsed.getProtocol()) || parsed.getUserInfo() != null || parsed.getHost().isEmpty())
+                throw new IllegalArgumentException("unsafe url");
+        }
+        return new String[]{state, video};
     }
 }

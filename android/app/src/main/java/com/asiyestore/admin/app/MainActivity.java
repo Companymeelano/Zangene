@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
     private static final String ADMIN_MOBILE_2      = "09120000000";
     private static final String ADMIN_EMAIL         = "admin@asiyestore.ir";
     private static final String ADMIN_PASSWORD      = "Asiye@2026";
-    private static final String APP_VERSION         = "V7.1.6 · UPDATED KEYS";
+    private static final String APP_VERSION         = "V7.1.7 · VIDEO REVIEW";
 
     // ── Palette (v6.4: one engine, two moods — ivory day & obsidian night) ──
     private static int COL_OBSIDIAN      = 0xFF0B0B0E;
@@ -9213,6 +9213,7 @@ public final class MainActivity extends Activity {
             final String value = prompt.getText().toString().trim();
             if (value.isEmpty() || value.length() > 1000) { toast("شرح ویدئو را بین ۱ تا ۱۰۰۰ نویسه وارد کنید."); return; }
             if (aiBusy) return; dialog.dismiss(); aiBusy = true; toast("در حال ثبت درخواست…");
+            final int generation = aiGeneration;
             final Context app = getApplicationContext();
             new Thread(new Runnable() { @Override public void run() {
                 String task = "", used = ""; String error = "ثبت ناموفق بود؛ پیش از تکرار پنل سرویس را بررسی کنید.";
@@ -9226,7 +9227,8 @@ public final class MainActivity extends Activity {
                 } catch (Exception ignored) { }
                 final String id = task; final String message = error; final String usedProvider = used;
                 runOnUiThread(new Runnable() { @Override public void run() {
-                    aiBusy = false; if (isFinishing()) return;
+                    if (generation != aiGeneration || isFinishing()) return;
+                    aiBusy = false;
                     new AlertDialog.Builder(MainActivity.this).setTitle(id.isEmpty() ? "ثبت ناموفق" : "درخواست ثبت شد")
                         .setMessage(id.isEmpty() ? message : "سرویس: " + usedProvider + "\nشناسهٔ درخواست ذخیره شد. از بخش پیگیری همان سرویس وضعیت را بررسی کنید.\n" + id)
                         .setPositiveButton("بستن", null).show();
@@ -9241,6 +9243,7 @@ public final class MainActivity extends Activity {
         final String task = app.getSharedPreferences("ai_video", MODE_PRIVATE).getString(provider, "");
         if (task.isEmpty()) { toast("درخواستی برای این سرویس ذخیره نشده است."); return; }
         aiBusy = true; toast("در حال بررسی وضعیت…");
+        final int generation = aiGeneration;
         new Thread(new Runnable() { @Override public void run() {
             String[] state = null; String error = "وضعیت دریافت نشد؛ مجوز، اتصال و سهمیه را بررسی کنید.";
             try { state = AiVideo.status(app, provider, task); }
@@ -9248,9 +9251,12 @@ public final class MainActivity extends Activity {
             catch (Exception ignored) { }
             final String[] result = state; final String failure = error;
             runOnUiThread(new Runnable() { @Override public void run() {
-                aiBusy = false; if (isFinishing()) return;
+                if (generation != aiGeneration || isFinishing()) return;
+                aiBusy = false;
+                String videoMessage = result == null ? failure : "وضعیت: " + videoStatusLabel(result[0]) + "\nشناسه: " + task
+                        + ("failed".equals(result[0]) ? "\nدرخواست ناموفق بود. پیش از ثبت دوباره، وضعیت و هزینه را در پنل سرویس بررسی کنید." : result[1].isEmpty() ? "\nلینک ویدئوی نهایی در پاسخ موجود نیست." : "\nبرای مشاهده و ذخیره، لینک را باز کنید.");
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this).setTitle("وضعیت ویدئو")
-                    .setMessage(result == null ? failure : "وضعیت: " + result[0] + "\nشناسه: " + task + (result[1].isEmpty() ? "\nهنوز لینک ویدئو در پاسخ نیست." : "\nبرای مشاهده و ذخیره، لینک را باز کنید."))
+                    .setMessage(videoMessage)
                     .setNegativeButton("بستن", null);
                 if (result != null && !result[1].isEmpty()) builder.setPositiveButton("باز کردن ویدئو", new android.content.DialogInterface.OnClickListener() {
                     @Override public void onClick(android.content.DialogInterface d, int w) { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(result[1]))); } catch (Exception e) { toast("باز کردن ویدئو ممکن نشد."); } }
@@ -9258,6 +9264,14 @@ public final class MainActivity extends Activity {
                 builder.show();
             }});
         }}, "video-status").start();
+    }
+
+    private String videoStatusLabel(String state) {
+        if ("submitted".equals(state) || "pending".equals(state)) return "در صف";
+        if ("processing".equals(state)) return "در حال ساخت";
+        if ("succeeded".equals(state) || "completed".equals(state)) return "تکمیل‌شده";
+        if ("failed".equals(state)) return "ناموفق";
+        return "نامشخص";
     }
 
     private void chooseMediaProvider() {

@@ -27,5 +27,7 @@ class WorkflowTest(unittest.TestCase):
         self.assertIn('تعداد موجود در انبار', draft)
         self.assertIn('ScaleType.FIT_CENTER', draft)
         self.assertIn('d.provenance', draft)
+        self.assertIn('videoStatusLabel(result[0])', activity)
+        self.assertIn('پیش از ثبت دوباره، وضعیت و هزینه را در پنل سرویس بررسی کنید', activity)
 
 if __name__ == '__main__': unittest.main()
