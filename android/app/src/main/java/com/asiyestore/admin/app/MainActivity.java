@@ -8773,7 +8773,7 @@ public final class MainActivity extends Activity {
         LinearLayout optionalMedia = whiteCard();
         optionalMedia.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_CAMERA, "مرحلهٔ پایانی · تصویرسازی اختیاری"));
         optionalMedia.addView(space(6));
-        optionalMedia.addView(text("طرح استودیویی با عکس واقعی و رنگ تم ساخته می‌شود؛ تصویر برش یا بازسازی نمی‌شود. هر طرح را پیش از انتخاب بررسی کنید.", 10f, COL_TEXT_MUTED, false));
+        optionalMedia.addView(text("طرح محلی با عکس واقعی و رنگ تم ساخته می‌شود. هر طرح را پیش از انتخاب بررسی کنید؛ حداکثر ۸ طرح اخیر در پیش‌نویس نگه داشته می‌شود.", 10f, COL_TEXT_MUTED, false));
         optionalMedia.addView(space(8));
         optionalMedia.addView(outlineDarkButton("ساخت طرح تازه", Luxury3DIconView.ICON_CAMERA, new Runnable() {
             @Override public void run() { showFinalMediaOptions(); }
@@ -8976,7 +8976,7 @@ public final class MainActivity extends Activity {
                     Bitmap bitmap = null; String path = "";
                     try {
                         bitmap = StudioNetwork.downloadImage(link);
-                        java.io.File f = LuxuryImageStudio.saveToPrivateStorage(MainActivity.this, bitmap);
+                        java.io.File f = LuxuryImageStudio.saveSourceToPrivateStorage(MainActivity.this, bitmap);
                         if (f != null) path = f.getAbsolutePath();
                     } catch (Exception e) { android.util.Log.w("ASIYE", "online image", e); }
                       catch (OutOfMemoryError e) { android.util.Log.w("ASIYE", "online image too large", e); }
@@ -9174,14 +9174,15 @@ public final class MainActivity extends Activity {
         new Thread(new Runnable() { public void run() {
             AiProductStudio.Draft draft = null;
             String failure = "تحلیل انجام نشد؛ اتصال اینترنت، دسترسی و اعتبار کلیدها یا سهمیهٔ سرویس‌ها را بررسی کنید.";
+            String diagnostics = "";
             try { draft = DirectAiStudio.generate(MainActivity.this, name, brand, photo, preferred, new DirectAiStudio.Cancellation() {
                 @Override public boolean isCancelled() { return generation != aiGeneration; }
             }); }
-            catch (DirectAiStudio.ProvidersFailedException e) { /* diagnostics remain available in settings */ }
+            catch (DirectAiStudio.ProvidersFailedException e) { diagnostics = e.getMessage(); }
             catch (Exception e) { android.util.Log.e("ASIYE", "direct AI failed: " + e.getClass().getSimpleName()); }
             catch (OutOfMemoryError e) { failure = "حافظه برای پردازش عکس کافی نیست؛ تصویر کوچک‌تری انتخاب کنید."; }
             final AiProductStudio.Draft result = draft;
-            final String errorText = failure;
+            final String errorText = failure; final String safeDiagnostics = diagnostics;
             runOnUiThread(new Runnable() { public void run() {
                 if (generation != aiGeneration || isFinishing()) return;
                 aiBusy = false; aiAnalysisRunning = false;
@@ -9191,6 +9192,15 @@ public final class MainActivity extends Activity {
                         AlertDialog.Builder errorDialog = new AlertDialog.Builder(MainActivity.this).setTitle("تحلیل در دسترس نیست")
                                 .setMessage(errorText + " اطلاعات واردشده حفظ شده است.")
                                 .setPositiveButton("متوجه شدم", null);
+                        if (!safeDiagnostics.isEmpty()) errorDialog.setNegativeButton("جزئیات", new android.content.DialogInterface.OnClickListener() {
+                            @Override public void onClick(android.content.DialogInterface dialog, int which) {
+                                StringBuilder sources = new StringBuilder();
+                                for (String provider : AiProviderOrder.IDS) sources.append(AiProviderOrder.label(provider)).append(StudioCredentials.isOverrideActive(MainActivity.this, provider) ? " · کلید محلی\n" : " · کلید بسته\n");
+                                new AlertDialog.Builder(MainActivity.this).setTitle("نتیجهٔ آخرین تلاش")
+                                    .setMessage(safeDiagnostics + "\n\nمنبع کلید فعال:\n" + sources.toString() + "\nاین گزارش شامل مقدار کلید و اطلاعات محصول نیست.")
+                                    .setPositiveButton("بستن", null).show();
+                            }
+                        });
                         if (photo != null && name.equals(aiName.trim()) && brand.equals(aiBrand.trim()) && sourceAtRequest.equals(aiSourcePath)) {
                             errorDialog.setNeutralButton("آزمون فقط با نام و برند", new android.content.DialogInterface.OnClickListener() {
                                 @Override public void onClick(android.content.DialogInterface dialog, int which) { confirmTextOnlyAnalysis(name, brand); }
@@ -9249,7 +9259,7 @@ public final class MainActivity extends Activity {
                 int maxSide = Math.max(bounds.outWidth, bounds.outHeight);
                 if (bounds.outWidth <= 0 || bounds.outHeight <= 0 || maxSide > 20000) throw new java.io.IOException("invalid image dimensions");
                 BitmapFactory.Options opts = new BitmapFactory.Options(); opts.inSampleSize = 1;
-                while (maxSide / opts.inSampleSize > 1200) opts.inSampleSize *= 2;
+                while (maxSide / (opts.inSampleSize * 2) >= 1200) opts.inSampleSize *= 2;
                 try (java.io.InputStream stream = getContentResolver().openInputStream(uri)) {
                     if (stream == null) throw new java.io.IOException("empty image stream");
                     bitmap = BitmapFactory.decodeStream(stream, null, opts);
@@ -9272,10 +9282,19 @@ public final class MainActivity extends Activity {
                                 case android.media.ExifInterface.ORIENTATION_TRANSVERSE: transform.postRotate(270); transform.postScale(-1, 1); break;
                                 default: break;
                             }
-                            if (!transform.isIdentity()) bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), transform, true);
+                            if (!transform.isIdentity()) {
+                                Bitmap rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), transform, true);
+                                if (rotated != bitmap) bitmap.recycle(); bitmap = rotated;
+                            }
                         }
                     } catch (Exception ignored) { /* Non-JPEG or no metadata: retain decoded pixels. */ }
-                    java.io.File stored = LuxuryImageStudio.saveToPrivateStorage(MainActivity.this, bitmap);
+                    int longest = Math.max(bitmap.getWidth(), bitmap.getHeight());
+                    if (longest > 2048) {
+                        float scale = 2048f / longest;
+                        Bitmap resized = Bitmap.createScaledBitmap(bitmap, Math.max(1, Math.round(bitmap.getWidth()*scale)), Math.max(1, Math.round(bitmap.getHeight()*scale)), true);
+                        if (resized != bitmap) bitmap.recycle(); bitmap = resized;
+                    }
+                    java.io.File stored = LuxuryImageStudio.saveSourceToPrivateStorage(MainActivity.this, bitmap);
                     if (stored != null) path = stored.getAbsolutePath();
                 }
             } catch (Exception e) { android.util.Log.w("ASIYE", "gallery image", e); }
@@ -9522,7 +9541,7 @@ public final class MainActivity extends Activity {
             BitmapFactory.decodeFile(p.imagePath, bounds);
             int sample = 1;
             int maxSide = Math.max(bounds.outWidth, bounds.outHeight);
-            while (maxSide / sample > 640) sample *= 2;
+            while (maxSide / (sample * 2) >= 640) sample *= 2;
             BitmapFactory.Options opts = new BitmapFactory.Options();
             opts.inSampleSize = sample;
             opts.inPreferredConfig = Bitmap.Config.RGB_565;
@@ -9541,7 +9560,7 @@ public final class MainActivity extends Activity {
             BitmapFactory.decodeFile(path, bounds);
             int sample = 1;
             int maxSide = Math.max(bounds.outWidth, bounds.outHeight);
-            while (maxSide / sample > maxSideWanted) sample *= 2;
+            while (maxSide / (sample * 2) >= maxSideWanted) sample *= 2;
             BitmapFactory.Options opts = new BitmapFactory.Options();
             opts.inSampleSize = sample;
             return BitmapFactory.decodeFile(path, opts);

@@ -16,3 +16,8 @@ class StudioVariations(unittest.TestCase):
         self.assertIn('!sourcePath.equals(aiSourcePath)', activity)
         self.assertIn('ساخت طرح دیگر', activity)
         self.assertIn('مشاهده و انتخاب طرح‌های ساخته‌شده', activity)
+        self.assertIn('Bitmap.CompressFormat.PNG', design)
+        self.assertIn('saveSourceToPrivateStorage(MainActivity.this, bitmap)', activity)
+        self.assertIn('while (maxSide / (opts.inSampleSize * 2) >= 1200)', activity)
+        self.assertIn('setNegativeButton("جزئیات"', activity)
+        self.assertIn('final String safeDiagnostics = diagnostics', activity)

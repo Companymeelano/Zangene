@@ -28,6 +28,20 @@ public final class LuxuryImageStudio {
             return out;
         } catch (Exception e) { return null; }
     }
+    /** Keep the source lossless, including transparency; studio exports remain JPEG. */
+    public static File saveSourceToPrivateStorage(Context context, Bitmap bitmap) {
+        File out = null;
+        try {
+            File dir = new File(context.getFilesDir(), "product_studio");
+            if (!dir.exists() && !dir.mkdirs()) return null;
+            out = new File(dir, "source_" + java.util.UUID.randomUUID().toString() + ".png");
+            try (FileOutputStream fos = new FileOutputStream(out)) {
+                if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)) { out.delete(); return null; }
+                fos.flush();
+            }
+            return out;
+        } catch (Exception e) { if (out != null) out.delete(); return null; }
+    }
     private static int alpha(int color, int a) { return (color & 0x00ffffff) | (a << 24); }
     private static int mix(int a, int b, float t) {
         return Color.rgb((int)(Color.red(a)*(1-t)+Color.red(b)*t), (int)(Color.green(a)*(1-t)+Color.green(b)*t), (int)(Color.blue(a)*(1-t)+Color.blue(b)*t));
