@@ -5,7 +5,7 @@ public class PipelineRegression {
     private static void check(boolean ok) { if (!ok) throw new AssertionError(); }
     private static void reset(String success) {
         AiHttpTransport.URLS.clear(); AiHttpTransport.BODIES.clear(); AiHttpTransport.KEYS.clear();
-        StudioCredentials.VALUES.clear(); AiHttpTransport.successful = success;
+        StudioCredentials.VALUES.clear(); AiHttpTransport.successful = success; AiHttpTransport.finish = "";
         AiHttpTransport.content = "{\"nameFa\":\"Test\",\"category\":\"Tea\",\"description\":\"Draft\"}";
     }
     public static void main(String[] args) throws Exception {
@@ -17,6 +17,12 @@ public class PipelineRegression {
         check(AiHttpTransport.URLS.get(0).contains("googleapis") && AiHttpTransport.URLS.get(1).contains("api.openai.com") && AiHttpTransport.URLS.get(2).contains("api.groq.com"));
         check(AiHttpTransport.KEYS.get(2).equals("Bearer new-device-credential"));
         check(AiHttpTransport.BODIES.get(0).contains("inline_data") && AiHttpTransport.BODIES.get(2).contains("data:image/jpeg;base64,"));
+        org.json.JSONObject groqBody=new org.json.JSONObject(AiHttpTransport.BODIES.get(2));
+        check(groqBody.getString("reasoning_format").equals("hidden") && groqBody.getString("reasoning_effort").equals("none") && groqBody.has("max_completion_tokens"));
+        reset("api.openai.com"); AiHttpTransport.finish="length";
+        try { DirectAiStudio.generate(ctx,"Tea","Brand",null,"openai"); throw new AssertionError(); } catch (DirectAiStudio.ProvidersFailedException expected) { check(AiHttpTransport.URLS.size()==3); }
+        reset("googleapis"); AiHttpTransport.finish="MAX_TOKENS";
+        try { DirectAiStudio.generate(ctx,"Tea","Brand",null,"gemini"); throw new AssertionError(); } catch (DirectAiStudio.ProvidersFailedException expected) { check(AiHttpTransport.URLS.size()==3); }
         reset("api.openai.com");
         AiHttpTransport.content = new org.json.JSONObject().put("nameFa","Test").put("category","Tea").put("description","Draft").put("longDescription","  ").toString();
         d=DirectAiStudio.generate(ctx,"Tea","Brand",null,"deepseek");

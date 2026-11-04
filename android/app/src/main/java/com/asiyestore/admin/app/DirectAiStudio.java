@@ -162,7 +162,10 @@ public final class DirectAiStudio {
         JSONObject body = new JSONObject().put("contents", new JSONArray().put(new JSONObject().put("role", "user").put("parts", parts)))
                 .put("generationConfig", new JSONObject().put("responseMimeType", "application/json").put("maxOutputTokens", probe ? 1500 : 4000));
         JSONObject response = call(GEMINI_URL, "x-goog-api-key", key, body);
-        JSONArray output = response.getJSONArray("candidates").getJSONObject(0).getJSONObject("content").getJSONArray("parts");
+        JSONObject candidate = response.getJSONArray("candidates").getJSONObject(0);
+        String finish = candidate.optString("finishReason", "");
+        if (!finish.isEmpty() && !"STOP".equals(finish)) throw new IllegalArgumentException("incomplete model response");
+        JSONArray output = candidate.getJSONObject("content").getJSONArray("parts");
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < output.length(); i++) {
             JSONObject part = output.getJSONObject(i);
@@ -189,8 +192,13 @@ public final class DirectAiStudio {
         if (image != null) content.put(new JSONObject().put("type", "image_url").put("image_url", new JSONObject().put("url", "data:image/jpeg;base64," + image)));
         JSONArray messages = new JSONArray().put(new JSONObject().put("role", "system").put("content", PROMPT))
                 .put(new JSONObject().put("role", "user").put("content", content));
-        JSONObject body = new JSONObject().put("model", model).put("temperature", 0.2).put("max_tokens", probe ? 1500 : 3000)
+        JSONObject body = new JSONObject().put("model", model).put("temperature", "groq".equals(provider) ? 0.6 : 0.2)
+                .put("max_completion_tokens", probe ? 1500 : 4000)
                 .put("response_format", new JSONObject().put("type", "json_object")).put("messages", messages);
-        return call(url, "Authorization", "Bearer " + key, body).getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+        if ("groq".equals(provider)) body.put("reasoning_format", "hidden").put("reasoning_effort", "none");
+        JSONObject choice = call(url, "Authorization", "Bearer " + key, body).getJSONArray("choices").getJSONObject(0);
+        String finish = choice.optString("finish_reason", "");
+        if (!finish.isEmpty() && !"stop".equals(finish)) throw new IllegalArgumentException("incomplete model response");
+        return choice.getJSONObject("message").getString("content");
     }
 }

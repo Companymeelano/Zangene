@@ -198,6 +198,8 @@ public final class MainActivity extends Activity {
     private String aiBrand = "";
     private Bitmap aiSourceBitmap;
     private String aiStudioPath = "";
+    private final ArrayList<String> aiStudioVariants = new ArrayList<>();
+    private int aiStudioVariantCounter = 0;
     private String aiSourcePath = "";
     private volatile int aiGeneration = 0;
     private boolean aiBusy = false;
@@ -8247,13 +8249,15 @@ public final class MainActivity extends Activity {
         aiGeneration++;
         aiAnalysis = null; aiDraft = null; aiStudioPath = ""; aiSourcePath = "";
         aiSourceBitmap = null; aiName = ""; aiBrand = ""; aiBusy = false; aiAnalysisRunning = false;
+        aiStudioVariants.clear(); aiStudioVariantCounter = 0;
         getSharedPreferences(PREF_STUDIO, MODE_PRIVATE).edit().clear().apply();
     }
 
     private void persistStudioDraft() {
         android.content.SharedPreferences.Editor editor = getSharedPreferences(PREF_STUDIO, MODE_PRIVATE).edit();
         editor.putString("name", aiName).putString("brand", aiBrand)
-                .putString("source", aiSourcePath).putString("studio", aiStudioPath);
+                .putString("source", aiSourcePath).putString("studio", aiStudioPath)
+                .putString("studio_variants", new org.json.JSONArray(aiStudioVariants).toString()).putInt("studio_variant_counter", aiStudioVariantCounter);
         if (aiDraft == null) editor.remove("draft");
         else {
             org.json.JSONObject obj = new org.json.JSONObject();
@@ -8271,6 +8275,11 @@ public final class MainActivity extends Activity {
         android.content.SharedPreferences prefs = getSharedPreferences(PREF_STUDIO, MODE_PRIVATE);
         aiName = prefs.getString("name", ""); aiBrand = prefs.getString("brand", "");
         aiSourcePath = prefs.getString("source", ""); aiStudioPath = prefs.getString("studio", "");
+        aiStudioVariants.clear(); aiStudioVariantCounter = prefs.getInt("studio_variant_counter", 0);
+        try { org.json.JSONArray variants = new org.json.JSONArray(prefs.getString("studio_variants", "[]"));
+            for (int i=0; i<variants.length() && i<8; i++) { String path = variants.optString(i, ""); if (!path.isEmpty() && new java.io.File(path).isFile()) aiStudioVariants.add(path); }
+        } catch (Exception ignored) { }
+        if (!aiStudioPath.isEmpty() && new java.io.File(aiStudioPath).isFile() && !aiStudioVariants.contains(aiStudioPath)) aiStudioVariants.add(aiStudioPath);
         aiSourceBitmap = decodeSampled(aiSourcePath, 1200);
         if (aiSourceBitmap == null) aiSourcePath = "";
         String json = prefs.getString("draft", "");
@@ -8648,7 +8657,7 @@ public final class MainActivity extends Activity {
         heroImg.setScaleType(ImageView.ScaleType.FIT_CENTER);
         hero.addView(heroImg, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        TextView tag = text(!aiStudioPath.isEmpty() ? "تصویر ساختگی" : aiSourceBitmap != null ? "عکس اصلی" : "تصویر پیش‌فرض", 8.5f, COL_GOLD_LIGHT, true);
+        TextView tag = text(!aiStudioPath.isEmpty() ? "طرح استودیویی" : aiSourceBitmap != null ? "عکس اصلی" : "تصویر پیش‌فرض", 8.5f, COL_GOLD_LIGHT, true);
         tag.setPadding(dp(8), dp(4), dp(8), dp(4));
         tag.setBackground(roundedShape(scrim(0xCC), dp(9), lineGold(0x55), dp(1)));
         FrameLayout.LayoutParams tagLp = new FrameLayout.LayoutParams(
@@ -8764,11 +8773,15 @@ public final class MainActivity extends Activity {
         LinearLayout optionalMedia = whiteCard();
         optionalMedia.addView(sectionLabelWithIcon(Luxury3DIconView.ICON_CAMERA, "مرحلهٔ پایانی · تصویرسازی اختیاری"));
         optionalMedia.addView(space(6));
-        optionalMedia.addView(text("پس از بررسی مشخصات، در صورت تمایل تصویر یا ویدئوی تبلیغاتی بسازید. برای ذخیرهٔ کالا این مرحله الزامی نیست.", 10f, COL_TEXT_MUTED, false));
+        optionalMedia.addView(text("طرح استودیویی با عکس واقعی و رنگ تم ساخته می‌شود؛ تصویر برش یا بازسازی نمی‌شود. هر طرح را پیش از انتخاب بررسی کنید.", 10f, COL_TEXT_MUTED, false));
         optionalMedia.addView(space(8));
-        optionalMedia.addView(outlineDarkButton("گزینه‌های تصویر و ویدئو", Luxury3DIconView.ICON_CAMERA, new Runnable() {
+        optionalMedia.addView(outlineDarkButton("ساخت طرح تازه", Luxury3DIconView.ICON_CAMERA, new Runnable() {
             @Override public void run() { showFinalMediaOptions(); }
         }));
+        if (!aiStudioVariants.isEmpty()) {
+            optionalMedia.addView(space(8));
+            optionalMedia.addView(ghostButton("مشاهده و انتخاب طرح‌های ساخته‌شده", new Runnable() { @Override public void run() { showStudioVariants(); } }));
+        }
         contentContainer.addView(optionalMedia);
         contentContainer.addView(space(12));
 
@@ -8972,7 +8985,7 @@ public final class MainActivity extends Activity {
                         if (generation != aiGeneration || isFinishing()) return;
                         aiBusy = false;
                         if (result == null || savedPath.isEmpty()) { toast("دریافت عکس ناموفق بود؛ لینک مستقیم، نوع تصویر و اتصال را بررسی کنید."); return; }
-                        aiSourceBitmap = result; aiSourcePath = savedPath; aiStudioPath = ""; persistStudioDraft();
+                        aiSourceBitmap = result; aiSourcePath = savedPath; aiStudioPath = ""; aiStudioVariants.clear(); aiStudioVariantCounter = 0; persistStudioDraft();
                         toast("عکس آنلاین دریافت شد."); if (aiStudioOpen && adminMode) renderCurrentScreen();
                     }});
                 }}).start();
@@ -9272,7 +9285,7 @@ public final class MainActivity extends Activity {
                 if (generation != aiGeneration || isFinishing()) return;
                 aiBusy = false;
                 if (result == null || storedPath.isEmpty()) { toast("خواندن یا ذخیره عکس ممکن نشد؛ تصویر دیگری انتخاب کنید."); return; }
-                aiSourceBitmap = result; aiSourcePath = storedPath; aiStudioPath = "";
+                aiSourceBitmap = result; aiSourcePath = storedPath; aiStudioPath = ""; aiStudioVariants.clear(); aiStudioVariantCounter = 0;
                 persistStudioDraft(); toast("عکس محصول ذخیره شد.");
                 if (aiStudioOpen && adminMode) renderCurrentScreen();
             }});
@@ -9430,50 +9443,74 @@ public final class MainActivity extends Activity {
         showRoundedDialog(dialog);
     }
 
+    private void showStudioVariants() {
+        if (aiStudioVariants.isEmpty()) { toast("هنوز طرحی ساخته نشده است."); return; }
+        LinearLayout box = dialogBox(); box.addView(dialogTitle("طرح‌های استودیویی", "برای بررسی و انتخاب، تصویر دلخواه را لمس کنید."));
+        ScrollView scroll = new ScrollView(this); LinearLayout list = new LinearLayout(this); list.setOrientation(LinearLayout.VERTICAL); scroll.addView(list);
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        for (int i=aiStudioVariants.size()-1; i>=0; i--) {
+            final String path = aiStudioVariants.get(i); final int index = i;
+            LinearLayout row = row(Gravity.CENTER_VERTICAL); row.setPadding(dp(4),dp(6),dp(4),dp(6));
+            ImageView thumb = new ImageView(this); Bitmap bitmap = decodeSampled(path, 280);
+            if (bitmap != null) thumb.setImageBitmap(bitmap); thumb.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            row.addView(thumb,new LinearLayout.LayoutParams(dp(82),dp(62)));
+            TextView label=text("طرح " + PersianFormatter.toPersianDigits(String.valueOf(index+1)) + (path.equals(aiStudioPath) ? " · انتخاب‌شده" : ""),11f,COL_TEXT_MAIN,true);
+            label.setPadding(dp(12),0,dp(12),0); row.addView(label,weight(1f));
+            row.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { dialog.dismiss(); showStudioVariant(path); } });
+            list.addView(row);
+        }
+        box.addView(scroll,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(300)));
+        box.addView(ghostButton("بستن", new Runnable() { @Override public void run() { dialog.dismiss(); } })); showRoundedDialog(dialog);
+    }
+
+    private void showStudioVariant(final String path) {
+        if (!aiStudioVariants.contains(path)) return;
+        Bitmap bitmap=decodeSampled(path, 1200); if (bitmap==null) { toast("این طرح در دسترس نیست."); return; }
+        LinearLayout box=dialogBox(); box.addView(dialogTitle("پیش‌نمایش طرح", "برای نمایش در ویترین، تصویر نهایی را انتخاب کنید."));
+        ImageView image=new ImageView(this); image.setImageBitmap(bitmap); image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        box.addView(image,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(230))); box.addView(space(10));
+        final AlertDialog dialog=new AlertDialog.Builder(this).setView(box).create();
+        box.addView(primaryButton("انتخاب برای ویترین",Luxury3DIconView.ICON_CHECK,new Runnable() { @Override public void run() {
+            if (!aiStudioVariants.contains(path) || !new java.io.File(path).isFile()) { dialog.dismiss(); toast("طرح در دسترس نیست."); return; }
+            aiStudioPath=path; persistStudioDraft(); dialog.dismiss(); toast("طرح انتخاب شد."); if (aiStudioOpen && adminMode) renderCurrentScreen();
+        }}));
+        box.addView(ghostButton("ساخت طرح دیگر",new Runnable() { @Override public void run() { dialog.dismiss(); generateStudioImage(); } }));
+        box.addView(ghostButton("بستن",new Runnable() { @Override public void run() { dialog.dismiss(); } })); showRoundedDialog(dialog);
+    }
+
     private void generateStudioImage() {
-        if (aiSourceBitmap == null) {
-            toast("ابتدا عکس محصول را از گالری انتخاب کنید.");
-            return;
-        }
-        if (aiBusy) return;
-        if (aiDraft != null) {
-            long editedPrice = parseLong(aiPriceInput == null ? "" : aiPriceInput.getText().toString());
-            long editedOld = parseLong(aiOldPriceInput == null ? "" : aiOldPriceInput.getText().toString());
-            if (editedPrice > 0) aiDraft.suggestedPrice = editedPrice;
-            if (editedOld > 0) aiDraft.suggestedOldPrice = editedOld;
-        }
-        aiBusy = true;
-        toast("در حال ساخت تصویر استودیویی ابسیدین–طلایی…");
-        final Bitmap src = aiSourceBitmap;
-        final int generation = aiGeneration;
-        final String brandLine = aiBrand == null || aiBrand.trim().isEmpty() ? "ASIYE STORE" : aiBrand.trim();
-        final String productLine = aiAnalysis == null ? "" : aiAnalysis.formFactorFa;
-        new Thread(new Runnable() {
-            @Override public void run() {
-                Bitmap rendered = null;
-                String path = "";
-                try {
-                    rendered = LuxuryImageStudio.render(src, brandLine, productLine);
-                    java.io.File file = LuxuryImageStudio.saveToPrivateStorage(MainActivity.this, rendered);
-                    if (file != null) path = file.getAbsolutePath();
-                } catch (Throwable ignored) { }
-                final String finalPath = path;
-                runOnUiThread(new Runnable() {
-                    @Override public void run() {
-                        if (generation != aiGeneration || isFinishing()) return;
-                        aiBusy = false;
-                        if (finalPath.isEmpty()) {
-                            toast("ساخت تصویر ممکن نشد؛ از عکس اصلی استفاده می‌شود.");
-                        } else {
-                            aiStudioPath = finalPath;
-                            persistStudioDraft();
-                            toast("تصویر استودیویی اختصاصی ساخته شد.");
-                            if (aiStudioOpen && adminMode) renderCurrentScreen();
-                        }
-                    }
-                });
-            }
-        }).start();
+        if (aiSourceBitmap == null || aiSourcePath.isEmpty()) { toast("ابتدا عکس محصول را انتخاب کنید."); return; }
+        if (aiBusy || aiDraft == null) return;
+        aiBusy = true; toast("در حال ساخت طرح متناسب با تم…");
+        final int generation = aiGeneration, variant = aiStudioVariantCounter++;
+        final int dark=COL_OBSIDIAN, surface=COL_SILK_CREAM, metal=COL_METAL;
+        final String sourcePath=aiSourcePath; final AiProductStudio.Draft draft=aiDraft;
+        persistStudioDraft();
+        new Thread(new Runnable() { @Override public void run() {
+            String path=""; Bitmap photo=null, rendered=null;
+            try {
+                photo=decodeSampled(sourcePath, 1800);
+                if (photo != null) {
+                    rendered=LuxuryImageStudio.render(photo,dark,surface,metal,variant);
+                    java.io.File file=LuxuryImageStudio.saveToPrivateStorage(getApplicationContext(),rendered);
+                    if (file!=null) path=file.getAbsolutePath();
+                }
+            } catch (Exception ignored) { } catch (OutOfMemoryError ignored) { }
+            finally { if (rendered!=null) rendered.recycle(); if (photo!=null && photo!=aiSourceBitmap) photo.recycle(); }
+            final String result=path;
+            runOnUiThread(new Runnable() { @Override public void run() {
+                if (generation!=aiGeneration || isFinishing() || aiDraft!=draft || !sourcePath.equals(aiSourcePath)) {
+                    if (!result.isEmpty()) new java.io.File(result).delete(); return;
+                }
+                aiBusy=false;
+                if (result.isEmpty()) { toast("ساخت طرح ممکن نشد؛ عکس اصلی حفظ شده است."); return; }
+                aiStudioVariants.add(result); if (aiStudioVariants.size()>8) {
+                    // Do not evict the selected image. Never delete a file referenced by a saved product.
+                    int remove=aiStudioVariants.get(0).equals(aiStudioPath) ? 1 : 0; aiStudioVariants.remove(remove);
+                }
+                persistStudioDraft(); if (aiStudioOpen && adminMode) { renderCurrentScreen(); showStudioVariant(result); }
+            }});
+        }},"studio-composite").start();
     }
 
     /** Memory-safe decode: AI studio renders are 1080², so we downsample for list rows. */
