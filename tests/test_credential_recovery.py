@@ -27,6 +27,10 @@ class CredentialRecoveryTests(unittest.TestCase):
         self.assertIn('StudioCredentials.get(context, id)', media)
         self.assertIn('StudioCredentials.save(MainActivity.this, id, value)', activity)
         self.assertIn('input.setSaveEnabled(false)', activity)
+        self.assertIn('افزودن یا تغییر کلید هوش مصنوعی', activity)
+        self.assertIn('keyAction.setOnClickListener', activity)
+        self.assertIn('کلید API این سرویس را اینجا وارد کنید', activity)
+        self.assertIn('SOFT_INPUT_ADJUST_RESIZE', activity)
         self.assertIn('کلید قبلی همچنان داخل APK قابل استخراج است', activity)
         self.assertIn('Gemini، OpenAI یا Groq', activity)
 

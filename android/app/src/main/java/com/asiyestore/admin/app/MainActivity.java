@@ -8358,6 +8358,18 @@ public final class MainActivity extends Activity {
         try {
             contentContainer.addView(space(12));
             contentContainer.addView(aiStepStrip());
+            contentContainer.addView(space(10));
+            LinearLayout keyAction = row(Gravity.CENTER_VERTICAL);
+            keyAction.setBackground(roundedShape(SURF_CHIP, dp(14), COL_BORDER, dp(1)));
+            keyAction.setPadding(dp(10), dp(7), dp(10), dp(7));
+            keyAction.addView(iconMedallion(Luxury3DIconView.ICON_AI, 30, Luxury3DIconView.PEDESTAL_GOLD));
+            LinearLayout keyLabels = new LinearLayout(this); keyLabels.setOrientation(LinearLayout.VERTICAL); keyLabels.setPadding(dp(8), 0, dp(8), 0);
+            keyLabels.addView(text("افزودن یا تغییر کلید هوش مصنوعی", 10.5f, COL_TEXT_MAIN, true));
+            keyLabels.addView(text("Gemini · OpenAI · Groq", 9f, COL_TEXT_MUTED, false));
+            keyAction.addView(keyLabels, weight(1f));
+            keyAction.setContentDescription("افزودن یا تغییر کلید هوش مصنوعی");
+            keyAction.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { chooseCredential(); } });
+            contentContainer.addView(keyAction);
             contentContainer.addView(space(14));
             if (aiDraft != null) {
                 renderAiDraft();
@@ -9026,7 +9038,7 @@ public final class MainActivity extends Activity {
     private void chooseCredential() {
         final String[] ids = {"gemini", "openai", "groq"};
         final String[] labels = {"Gemini", "OpenAI", "Groq"};
-        new AlertDialog.Builder(this).setTitle("تعویض کلید روی دستگاه")
+        new AlertDialog.Builder(this).setTitle("افزودن یا تغییر کلید")
             .setItems(labels, new android.content.DialogInterface.OnClickListener() {
                 @Override public void onClick(android.content.DialogInterface d, int which) { editCredential(ids[which], labels[which]); }
             }).setNegativeButton("انصراف", null).show();
@@ -9036,11 +9048,12 @@ public final class MainActivity extends Activity {
         LinearLayout box = dialogBox();
         String status = StudioCredentials.isOverrideActive(this, id) ? "کلید محلی فعال است." : StudioCredentials.hasOverride(this, id) ? "کلید محلی قبلی حفظ شده ولی کلید جدید بسته فعال است." : "در حال استفاده از کلید داخل بسته هستید.";
         box.addView(dialogTitle(label, status + " مقدار فعلی نمایش داده نمی‌شود. کلید جایگزین فقط روی همین دستگاه رمزگذاری می‌شود؛ کلید قبلی همچنان داخل APK قابل استخراج است."));
-        final EditText input = makeInput("مقدار جدید", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS, false);
+        final EditText input = makeInput("کلید API این سرویس را اینجا وارد کنید", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS, true);
         input.setSingleLine(true); input.setSaveEnabled(false);
         if (android.os.Build.VERSION.SDK_INT >= 26) input.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
         box.addView(input); box.addView(space(8));
-        final AlertDialog dialog = new AlertDialog.Builder(this).setView(box).create();
+        ScrollView scroll = new ScrollView(this); scroll.setFillViewport(false); scroll.addView(box);
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(scroll).create();
         box.addView(primaryButton("ذخیرهٔ کلید جدید", Luxury3DIconView.ICON_AI, new Runnable() {
             @Override public void run() {
                 String value = input.getText().toString();
@@ -9063,6 +9076,7 @@ public final class MainActivity extends Activity {
         }
         box.addView(space(8)); box.addView(ghostButton("انصراف", new Runnable() { @Override public void run() { dialog.dismiss(); } }));
         showRoundedDialog(dialog);
+        if (dialog.getWindow() != null) dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
     }
 
     private void chooseSingleProbe() {
