@@ -12,7 +12,8 @@ mkdir -p "$WORK/android" "$WORK/jvm"
 "$JAVA" -jar "$ECJ" -source 8 -target 8 -encoding UTF-8 -proc:none \
   -bootclasspath "$ANDROID_JAR" -d "$WORK/android" $(find reconstruction/android/src -name '*.java')
 "$JAVA" -jar "$ECJ" -source 8 -target 8 -encoding UTF-8 -proc:none -d "$WORK/jvm" \
-  reconstruction/android/src/com/asiyestore/admin/app/{ThemePreference,SimpleNavigation,JewelIconRegistry}.java \
-  reconstruction/android/test/com/asiyestore/admin/app/RecoveryTest.java
+  reconstruction/android/src/com/asiyestore/admin/app/{ThemePreference,SimpleNavigation,JewelIconRegistry,ReferenceDraftMigration}.java \
+  reconstruction/android/test/com/asiyestore/admin/app/{RecoveryTest,ReferenceDraftMigrationTest}.java
 "$JAVA" -cp "$WORK/jvm" com.asiyestore.admin.app.RecoveryTest reconstruction/android/assets/icons
+"$JAVA" -cp "$WORK/jvm" com.asiyestore.admin.app.ReferenceDraftMigrationTest
 python3 -m unittest discover -s tests -p 'test_*.py' -v
