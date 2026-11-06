@@ -16,4 +16,10 @@ mkdir -p "$WORK/android" "$WORK/jvm"
   reconstruction/android/test/com/asiyestore/admin/app/{RecoveryTest,ReferenceDraftMigrationTest}.java
 "$JAVA" -cp "$WORK/jvm" com.asiyestore.admin.app.RecoveryTest reconstruction/android/assets/icons
 "$JAVA" -cp "$WORK/jvm" com.asiyestore.admin.app.ReferenceDraftMigrationTest
+mkdir -p "$WORK/sqlite"
+"$JAVA" -jar "$ECJ" -source 8 -target 8 -encoding UTF-8 -proc:none -d "$WORK/sqlite" \
+  $(find reconstruction/android/test/sqlite -name '*.java') \
+  reconstruction/android/src/com/asiyestore/admin/app/{ReferenceDraftMigration,AndroidReferenceDraftStore}.java
+"$JAVA" -cp "$WORK/sqlite" com.asiyestore.admin.app.RealSqliteMigrationTest \
+  reconstruction/android/test/sqlite/sqlite_bridge.py reconstruction/android/test/sqlite/products_v9.sql
 python3 -m unittest discover -s tests -p 'test_*.py' -v
