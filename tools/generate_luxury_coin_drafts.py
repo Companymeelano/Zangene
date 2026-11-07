@@ -33,7 +33,8 @@ def render(doc):
         if item['image_path']!='reconstruction/android/assets/'+asset or not (ROOT/item['image_path']).is_file():
             raise ValueError('Missing or unexpected image path')
         fields=['draft_id','product_name','english_name','brand','category','size','short_description','description','usage','seo_title','seo_description']
-        values=[java_string(item[k]) for k in fields]
+        values=[java_string(item['broad_category'] if k == 'category' else item[k]) for k in fields]
+        if item['broad_category'] not in ('مراقبت پوست و بدن','مراقبت مو','آرایش','سایر'): raise ValueError('Unknown broad category')
         values += [java_string('، '.join(item['keywords']))]
         values += [java_string(item[k]) for k in ['instagram_caption','youtube_caption','telegram_caption','whatsapp_caption']]
         values += [java_string(item['post_hook']), java_string(item['image_alt_text'])]

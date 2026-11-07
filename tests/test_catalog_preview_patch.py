@@ -24,12 +24,20 @@ class CatalogPreviewPatchTest(unittest.TestCase):
             (root/'smali/com/asiyestore/admin/app/AsiyeDatabaseHelper.smali').write_text('''.method public onCreate(Landroid/database/sqlite/SQLiteDatabase;)V
     invoke-direct {p0, p1}, Lcom/asiyestore/admin/app/AsiyeDatabaseHelper;->seedSignatureCatalog(Landroid/database/sqlite/SQLiteDatabase;)V
     invoke-direct {p0, p1}, Lcom/asiyestore/admin/app/AsiyeDatabaseHelper;->seedReferenceDrafts(Landroid/database/sqlite/SQLiteDatabase;)V
+.end method
+.method public getProducts(ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/List;
+    :cond_1
+    const-string p1, " AND category = ?"
 .end method''')
             (root/'smali/com/asiyestore/admin/app/MainActivity.smali').write_text('''.method private resolveProductImage(Ljava/lang/String;)I
     .locals 2
 .end method
 .method private showEditorialProductDialog(Lcom/asiyestore/admin/app/Models$Product;)V
     iget-object v6, v1, Lcom/asiyestore/admin/app/Models$Product;->benefits:Ljava/lang/String;
+.end method
+.method private categoryChips()Landroid/view/View;
+    const-string v2, "\\u067e\\u0648\\u0633\\u062a"
+    .line 1423
 .end method
 .method private showAdminLoginDialog()V
     bypass
@@ -38,7 +46,7 @@ class CatalogPreviewPatchTest(unittest.TestCase):
             s=(root/'smali/com/asiyestore/admin/app/MainActivity.smali').read_text()
             self.assertIn('OfflineContentPreview;->addContentButton', s); self.assertNotIn('bypass',s); self.assertIn('OfflineCatalogPreview;->imageResource',s)
             db=(root/'smali/com/asiyestore/admin/app/AsiyeDatabaseHelper.smali').read_text()
-            self.assertIn('OfflineCatalogPreview;->seedPreview',db)
+            self.assertIn('OfflineCatalogPreview;->seedPreview',db); self.assertIn(' AND brand = ?',db); self.assertIn('brand:',s)
             self.assertNotIn('seedSignatureCatalog',db); self.assertNotIn('seedReferenceDrafts',db)
             self.assertEqual(len(list((root/'res/drawable-nodpi').glob('lc155_*.jpg'))),30)
-            self.assertIn('com.asiyestore.admin.catalog30preview',(root/'AndroidManifest.xml').read_text())
+            self.assertIn('com.asiyestore.admin.simplecategoriespreview',(root/'AndroidManifest.xml').read_text())

@@ -44,7 +44,8 @@
       "stock_verified": false,
       "image_path": "reconstruction/android/assets/catalog/luxury_coin/vitaminc.jpg",
       "image_note": "برش تصویر ارسالی روی پس‌زمینه تولیدشده؛ تطابق و مجوز بررسی شود.",
-      "published": false
+      "published": false,
+      "broad_category": "مراقبت پوست و بدن"
     },
     {
       "draft_id": "LC155-ALLINONE",
@@ -83,7 +84,8 @@
       "stock_verified": false,
       "image_path": "reconstruction/android/assets/catalog/luxury_coin/allinone.jpg",
       "image_note": "برش تصویر ارسالی روی پس‌زمینه تولیدشده؛ تطابق و مجوز بررسی شود.",
-      "published": false
+      "published": false,
+      "broad_category": "مراقبت پوست و بدن"
     },
     {
       "draft_id": "LC155-CAFFEINE",
@@ -122,7 +124,8 @@
       "stock_verified": false,
       "image_path": "reconstruction/android/assets/catalog/luxury_coin/caffeine.jpg",
       "image_note": "برش تصویر ارسالی روی پس‌زمینه تولیدشده؛ تطابق و مجوز بررسی شود.",
-      "published": false
+      "published": false,
+      "broad_category": "مراقبت پوست و بدن"
     },
     {
       "draft_id": "LC155-BLACKGARLIC",
@@ -161,7 +164,8 @@
       "stock_verified": false,
       "image_path": "reconstruction/android/assets/catalog/luxury_coin/blackgarlic.jpg",
       "image_note": "برش تصویر ارسالی روی پس‌زمینه تولیدشده؛ تطابق و مجوز بررسی شود.",
-      "published": false
+      "published": false,
+      "broad_category": "سایر"
     },
     {
       "draft_id": "LC155-MICELLARDRY",
@@ -200,7 +204,8 @@
       "stock_verified": false,
       "image_path": "reconstruction/android/assets/catalog/luxury_coin/micellardry.jpg",
       "image_note": "برش تصویر ارسالی روی پس‌زمینه تولیدشده؛ تطابق و مجوز بررسی شود.",
-      "published": false
+      "published": false,
+      "broad_category": "مراقبت پوست و بدن"
     },
     {
       "draft_id": "LC155-MICELLAROILY",
@@ -239,7 +244,8 @@
       "stock_verified": false,
       "image_path": "reconstruction/android/assets/catalog/luxury_coin/micellaroily.jpg",
       "image_note": "برش تصویر ارسالی روی پس‌زمینه تولیدشده؛ تطابق و مجوز بررسی شود.",
-      "published": false
+      "published": false,
+      "broad_category": "مراقبت پوست و بدن"
     },
     {
       "draft_id": "LC155-MICELLARNORMAL",
@@ -278,7 +284,8 @@
       "stock_verified": false,
       "image_path": "reconstruction/android/assets/catalog/luxury_coin/micellarnormal.jpg",
       "image_note": "برش تصویر ارسالی روی پس‌زمینه تولیدشده؛ تطابق و مجوز بررسی شود.",
-      "published": false
+      "published": false,
+      "broad_category": "مراقبت پوست و بدن"
     },
     {
       "draft_id": "LC155-GATIEREPAIR",
@@ -317,7 +324,8 @@
       "stock_verified": false,
       "image_path": "reconstruction/android/assets/catalog/luxury_coin/gatierepair.jpg",
       "image_note": "برش تصویر ارسالی روی پس‌زمینه تولیدشده؛ تطابق و مجوز بررسی شود.",
-      "published": false
+      "published": false,
+      "broad_category": "مراقبت پوست و بدن"
     },
     {
       "draft_id": "LC155-GATIEANTIWRINKLE",
@@ -356,7 +364,8 @@
       "stock_verified": false,
       "image_path": "reconstruction/android/assets/catalog/luxury_coin/gatieantiwrinkle.jpg",
       "image_note": "برش تصویر ارسالی روی پس‌زمینه تولیدشده؛ تطابق و مجوز بررسی شود.",
-      "published": false
+      "published": false,
+      "broad_category": "مراقبت پوست و بدن"
     },
     {
       "draft_id": "LC155-GATIEBODY",
@@ -395,7 +404,8 @@
       "stock_verified": false,
       "image_path": "reconstruction/android/assets/catalog/luxury_coin/gatiebody.jpg",
       "image_note": "برش تصویر ارسالی روی پس‌زمینه تولیدشده؛ تطابق و مجوز بررسی شود.",
-      "published": false
+      "published": false,
+      "broad_category": "مراقبت پوست و بدن"
     }
   ]
 }

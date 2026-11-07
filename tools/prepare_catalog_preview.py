@@ -20,9 +20,9 @@ manifest=root/'AndroidManifest.xml'
 s=manifest.read_text()
 old='package="com.asiyestore.admin.screenshotpolishtest"'
 assert s.count(old)==1
-manifest.write_text(s.replace(old,'package="com.asiyestore.admin.catalog30preview"'))
+manifest.write_text(s.replace(old,'package="com.asiyestore.admin.simplecategoriespreview"'))
 yml=root/'apktool.yml'; s=yml.read_text(); assert 'renameManifestPackage: null' in s
-yml.write_text(s.replace('renameManifestPackage: null','renameManifestPackage: com.asiyestore.admin.catalog30preview'))
+yml.write_text(s.replace('renameManifestPackage: null','renameManifestPackage: com.asiyestore.admin.simplecategoriespreview'))
 db=root/'smali/com/asiyestore/admin/app/AsiyeDatabaseHelper.smali'; s=db.read_text()
 a=s.index('.method public onCreate(Landroid/database/sqlite/SQLiteDatabase;)V'); b=s.index('.end method',a)
 m=s[a:b]
@@ -31,6 +31,27 @@ refs='    invoke-direct {p0, p1}, Lcom/asiyestore/admin/app/AsiyeDatabaseHelper;
 assert m.count(seed)==m.count(refs)==1
 # Only the ten review products in this separate preview database.
 m=m.replace(seed,'').replace(refs,'    invoke-static {p1}, Lcom/asiyestore/admin/app/OfflineCatalogPreview;->seedPreview(Landroid/database/sqlite/SQLiteDatabase;)V')
+s=s[:a]+m+s[b:]
+a=s.index('.method public getProducts(ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/util/List;')
+b=s.index('.end method',a)
+m=s[a:b]
+anchor="""    :cond_1
+    const-string p1, \" AND category = ?\""""
+assert m.count(anchor)==1
+m=m.replace(anchor,"""    :cond_1
+    const-string p1, \"brand:\"
+    invoke-virtual {p2, p1}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+    move-result p1
+    if-eqz p1, :ordinary_category
+    const-string p1, \" AND brand = ?\"
+    invoke-virtual {v1, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    const/4 p1, 0x6
+    invoke-virtual {p2, p1}, Ljava/lang/String;->substring(I)Ljava/lang/String;
+    move-result-object p1
+    invoke-interface {v2, p1}, Ljava/util/List;->add(Ljava/lang/Object;)Z
+    goto :cond_2
+    :ordinary_category
+    const-string p1, \" AND category = ?\"""")
 s=s[:a]+m+s[b:]; db.write_text(s)
 activity=root/'smali/com/asiyestore/admin/app/MainActivity.smali'; s=activity.read_text()
 a=s.index('.method private resolveProductImage(Ljava/lang/String;)I'); b=s.index('.end method',a)
@@ -64,6 +85,21 @@ m=m.replace(anchor,"""    iget-object v6, v1, Lcom/asiyestore/admin/app/Models$P
     invoke-static {v0, v5, v6}, Lcom/asiyestore/admin/app/OfflineContentPreview;->addContentButton(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;)V
 
 """+anchor,1)
+s=s[:a]+m+s[b:]
+# Preserve original theme-aware chips and click listener; replace fragmented initial choices.
+a=s.index('.method private categoryChips()Landroid/view/View;')
+b=s.index('.end method',a)
+m=s[a:b]
+start=m.index('    const-string v2, \"\\u067e\\u0648\\u0633\\u062a\"')
+end=m.index('    .line 1423',start)
+choices=[('پوست و بدن','مراقبت پوست و بدن'),('مو','مراقبت مو'),('آرایش','آرایش'),
+         ('سایر','سایر'),('برند: لاکچری کوین','brand:لاکچری کوین'),('برند: گاتیو','brand:گاتیو'),
+         ('منتخب‌ها','منتخب‌های من')]
+def lit(value): return value.encode('unicode_escape').decode('ascii')
+segments=[]
+for label,value in choices:
+    segments.append('    const-string v2, \"'+lit(label)+'\"\n    const-string v3, \"'+lit(value)+'\"\n    filled-new-array {v2, v3}, [Ljava/lang/String;\n    move-result-object v2\n    invoke-interface {v0, v2}, Ljava/util/List;->add(Ljava/lang/Object;)Z\n\n')
+m=m[:start]+''.join(segments)+m[end:]
 s=s[:a]+m+s[b:]
 activity.write_text(s)
 target=root/'res/drawable-nodpi'
