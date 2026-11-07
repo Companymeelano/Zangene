@@ -47,5 +47,11 @@ public class SQLiteDatabase implements AutoCloseable {
         for (Map.Entry<String,String> e : values.values.entrySet()) { args.add(e.getKey()); args.add(e.getValue()); }
         call("insert",args.toArray(new String[0])); return 1;
     }
+    public int update(String table,ContentValues values,String where,String[] whereArgs) {
+        List<String> args=new ArrayList<>(); args.add(table); args.add(where); args.add(Integer.toString(whereArgs.length));
+        for (String arg : whereArgs) args.add(arg);
+        for (Map.Entry<String,String> e : values.values.entrySet()) { args.add(e.getKey()); args.add(e.getValue()); }
+        return Integer.parseInt(call("update",args.toArray(new String[0])));
+    }
     public void close() throws Exception { writer.close(); if (process.waitFor()!=0) throw new IOException("bridge failed"); }
 }
