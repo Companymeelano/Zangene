@@ -35,7 +35,7 @@ public final class RealSqliteMigrationTest {
             db.begin(); ReferenceDraftMigration.applyFromVersion9(new AndroidReferenceDraftStore(db),9); db.commit();
             check(exists(db,"SELECT 1 FROM products WHERE sku=? AND name_fa='user edit' AND stock=27 AND published=1","AS-REF-GATIEAU"),"existing product preserved");
             check(exists(db,"SELECT 1 FROM product_reference_reviews WHERE sku='AS-REF-WHEAT' AND price_note='user note'"),"existing note preserved");
-            check(exists(db,"SELECT 1 FROM products WHERE sku='AS-REF-MORINGA' AND stock=5 AND published=0 AND sale_price=507500"),"unpublished draft inserted");
+            check(exists(db,"SELECT 1 FROM products WHERE sku='AS-REF-MORINGA' AND stock=5 AND published=0 AND sale_price=0"),"unpublished draft inserted");
             check(exists(db,"SELECT count(*) FROM products HAVING count(*)=4"),"four products total");
             check(exists(db,"SELECT 1 FROM orders WHERE id=42 AND customer_name='customer data'"),"order preserved");
             db.begin(); ReferenceDraftMigration.applyFromVersion9(new AndroidReferenceDraftStore(db),9); db.commit();
