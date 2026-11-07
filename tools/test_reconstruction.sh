@@ -12,10 +12,16 @@ mkdir -p "$WORK/android" "$WORK/jvm"
 "$JAVA" -jar "$ECJ" -source 8 -target 8 -encoding UTF-8 -proc:none \
   -bootclasspath "$ANDROID_JAR" -d "$WORK/android" $(find reconstruction/android/src -name '*.java')
 "$JAVA" -jar "$ECJ" -source 8 -target 8 -encoding UTF-8 -proc:none -d "$WORK/jvm" \
-  reconstruction/android/src/com/asiyestore/admin/app/{ThemePreference,SimpleNavigation,JewelIconRegistry,ReferenceDraftMigration}.java \
-  reconstruction/android/test/com/asiyestore/admin/app/{RecoveryTest,ReferenceDraftMigrationTest}.java
+  reconstruction/android/src/com/asiyestore/admin/app/{ThemePreference,SimpleNavigation,JewelIconRegistry,ReferenceDraftMigration,ProductImageRegistry}.java \
+  reconstruction/android/test/com/asiyestore/admin/app/{RecoveryTest,ReferenceDraftMigrationTest,ProductImageRegistryTest}.java
 "$JAVA" -cp "$WORK/jvm" com.asiyestore.admin.app.RecoveryTest reconstruction/android/assets/icons
 "$JAVA" -cp "$WORK/jvm" com.asiyestore.admin.app.ReferenceDraftMigrationTest
+"$JAVA" -cp "$WORK/jvm" com.asiyestore.admin.app.ProductImageRegistryTest reconstruction/android/res/drawable-nodpi
+mkdir -p "$WORK/images"
+"$JAVA" -jar "$ECJ" -source 8 -target 8 -encoding UTF-8 -proc:none -d "$WORK/images" \
+  $(find reconstruction/android/test/images -name '*.java') \
+  reconstruction/android/src/com/asiyestore/admin/app/{ProductImageRegistry,AndroidProductImages}.java
+"$JAVA" -cp "$WORK/images" com.asiyestore.admin.app.AndroidProductImagesTest
 mkdir -p "$WORK/sqlite"
 "$JAVA" -jar "$ECJ" -source 8 -target 8 -encoding UTF-8 -proc:none -d "$WORK/sqlite" \
   $(find reconstruction/android/test/sqlite -name '*.java') \
