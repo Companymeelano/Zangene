@@ -29,3 +29,18 @@ class LuxuryCoinDraftTests(unittest.TestCase):
     def test_generated_java_matches_catalog(self):
         import subprocess
         subprocess.run(['python3',str(ROOT/'tools/generate_luxury_coin_drafts.py'),'--check'],check=True,cwd=ROOT)
+
+    def test_editorial_content_is_distinct_and_exported(self):
+        import subprocess
+        d=json.loads((ROOT/'reconstruction/catalog/luxury_coin_155_drafts.json').read_text(encoding='utf-8'))
+        items=d['products']
+        for field in ('description','usage','instagram_caption','telegram_caption','whatsapp_caption',
+                      'youtube_caption','seo_title','seo_description','post_hook','image_alt_text'):
+            self.assertEqual(len({p[field] for p in items}),10,field)
+        for p in items:
+            self.assertGreater(len(p['description']),200)
+            self.assertGreaterEqual(len(p['keywords']),5)
+            self.assertIn(p['product_name'],p['image_alt_text'])
+            self.assertIn('#لاکچری_کوین',p['instagram_caption'])
+            self.assertIn('تضمین نمی‌کند',p['editorial_note'])
+        subprocess.run(['python3',str(ROOT/'tools/export_luxury_coin_content.py'),'--check'],check=True,cwd=ROOT)
