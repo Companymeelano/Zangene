@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE=ROOT/'reconstruction/catalog/luxury_coin_155_drafts.json'
+EXTRA=ROOT/'reconstruction/catalog/luxury_coin_extra_drafts.json'
 OUTPUT=ROOT/'reconstruction/android/src/com/asiyestore/admin/app/LuxuryCoinDraftCatalog.java'
 
 
@@ -15,8 +16,8 @@ def java_string(value):
 
 
 def render(doc):
-    if doc['auto_import'] or doc['auto_publish'] or len(doc['products'])!=10:
-        raise ValueError('Expected ten opt-in unpublished drafts')
+    if doc['auto_import'] or doc['auto_publish'] or len(doc['products'])!=20:
+        raise ValueError('Expected twenty opt-in unpublished drafts')
     rows=[]; seen=set()
     for item in doc['products']:
         key=item['draft_id']
@@ -79,7 +80,11 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--check',action='store_true')
     args=parser.parse_args()
-    content=render(json.loads(SOURCE.read_text(encoding='utf-8')))
+    doc=json.loads(SOURCE.read_text(encoding='utf-8'))
+    extra=json.loads(EXTRA.read_text(encoding='utf-8'))
+    if extra['auto_import'] or extra['auto_publish']: raise ValueError('Extra catalog must remain draft only')
+    doc['products'] += extra['products']
+    content=render(doc)
     if args.check:
         if not OUTPUT.exists() or OUTPUT.read_text(encoding='utf-8')!=content:
             raise SystemExit('Generated catalog is out of date')

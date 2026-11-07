@@ -40,5 +40,5 @@ class CatalogPreviewPatchTest(unittest.TestCase):
             db=(root/'smali/com/asiyestore/admin/app/AsiyeDatabaseHelper.smali').read_text()
             self.assertIn('OfflineCatalogPreview;->seedPreview',db)
             self.assertNotIn('seedSignatureCatalog',db); self.assertNotIn('seedReferenceDrafts',db)
-            self.assertEqual(len(list((root/'res/drawable-nodpi').glob('lc155_*.jpg'))),10)
-            self.assertIn('com.asiyestore.admin.contentpreview',(root/'AndroidManifest.xml').read_text())
+            self.assertEqual(len(list((root/'res/drawable-nodpi').glob('lc155_*.jpg'))),20)
+            self.assertIn('com.asiyestore.admin.expandedpreview',(root/'AndroidManifest.xml').read_text())
