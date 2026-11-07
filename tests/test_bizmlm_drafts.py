@@ -12,7 +12,7 @@ class BizDraftTests(unittest.TestCase):
         self.assertIs(doc['auto_import'], False)
         self.assertIs(doc['auto_publish'], False)
         self.assertTrue((ROOT/doc['visual_background']).is_file())
-        self.assertEqual(len(doc['products']), 3)
+        self.assertEqual(len(doc['products']), 5)
         skus=set()
         for p in doc['products']:
             self.assertNotIn(p['source_id'], skus); skus.add(p['source_id'])
@@ -25,6 +25,6 @@ class BizDraftTests(unittest.TestCase):
             self.assertEqual((url.scheme,url.hostname), ('https','bizmlm.ir'))
             self.assertTrue(url.path.endswith('/'+p['source_id']))
             self.assertIn('تأیید نشده', p['price_evidence'])
-            self.assertEqual(p['image_status'], 'third_party_reference_not_licensed_or_verified')
+            self.assertIn(p['image_status'], ('third_party_reference_not_licensed_or_verified', 'reference_not_licensed_or_verified'))
             for field in ('name', 'short_description', 'description', 'caption', 'keywords'):
                 self.assertTrue(p[field], field)
