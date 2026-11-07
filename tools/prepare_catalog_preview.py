@@ -20,9 +20,9 @@ manifest=root/'AndroidManifest.xml'
 s=manifest.read_text()
 old='package="com.asiyestore.admin.screenshotpolishtest"'
 assert s.count(old)==1
-manifest.write_text(s.replace(old,'package="com.asiyestore.admin.expandedpreview"'))
+manifest.write_text(s.replace(old,'package="com.asiyestore.admin.catalog30preview"'))
 yml=root/'apktool.yml'; s=yml.read_text(); assert 'renameManifestPackage: null' in s
-yml.write_text(s.replace('renameManifestPackage: null','renameManifestPackage: com.asiyestore.admin.expandedpreview'))
+yml.write_text(s.replace('renameManifestPackage: null','renameManifestPackage: com.asiyestore.admin.catalog30preview'))
 db=root/'smali/com/asiyestore/admin/app/AsiyeDatabaseHelper.smali'; s=db.read_text()
 a=s.index('.method public onCreate(Landroid/database/sqlite/SQLiteDatabase;)V'); b=s.index('.end method',a)
 m=s[a:b]

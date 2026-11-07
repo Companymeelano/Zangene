@@ -27,8 +27,8 @@ public final class LuxuryCoinDraftImportTest {
             db.execSQL("DROP TRIGGER fail_eye");
             db.execSQL("CREATE TABLE product_reference_reviews (sku TEXT PRIMARY KEY, price_note TEXT NOT NULL)");
             db.execSQL("INSERT INTO product_reference_reviews VALUES ('LC155-NIGHT','user note')");
-            db.begin(); check(LuxuryCoinDraftImporter.addDrafts(store)==19,"nineteen new"); db.commit();
-            check(exists(db,"SELECT count(*) FROM products HAVING count(*)=20"),"twenty records");
+            db.begin(); check(LuxuryCoinDraftImporter.addDrafts(store)==29,"twenty-nine new"); db.commit();
+            check(exists(db,"SELECT count(*) FROM products HAVING count(*)=30"),"thirty records");
             check(exists(db,"SELECT 1 FROM products WHERE sku='LC155-DAY' AND name_fa='user edit' AND stock=21 AND published=1 AND sale_price=999"),"existing product untouched");
             check(exists(db,"SELECT 1 FROM products WHERE sku='LC155-NIGHT' AND stock=5 AND published=0 AND sale_price=6600000 AND image_key='LC155-NIGHT'"),"draft initialized");
             check(exists(db,"SELECT 1 FROM product_reference_reviews WHERE sku='LC155-NIGHT' AND price_note='user note'"),"note preserved");
@@ -40,6 +40,6 @@ public final class LuxuryCoinDraftImportTest {
             }
             check(LuxuryCoinDraftCatalog.assetPathForSku("../../etc/passwd")==null,"arbitrary paths prohibited");
         }
-        System.out.println("20 product draft import exercised against CPython SQLite, not Android or a live app.");
+        System.out.println("30 product draft import exercised against CPython SQLite, not Android or a live app.");
     }
 }

@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE=ROOT/'reconstruction/catalog/luxury_coin_155_drafts.json'
 EXTRA=ROOT/'reconstruction/catalog/luxury_coin_extra_drafts.json'
+NEW=ROOT/'reconstruction/catalog/new_screenshot_drafts.json'
 OUTPUT=ROOT/'reconstruction/android/src/com/asiyestore/admin/app/LuxuryCoinDraftCatalog.java'
 
 
@@ -16,8 +17,8 @@ def java_string(value):
 
 
 def render(doc):
-    if doc['auto_import'] or doc['auto_publish'] or len(doc['products'])!=20:
-        raise ValueError('Expected twenty opt-in unpublished drafts')
+    if doc['auto_import'] or doc['auto_publish'] or len(doc['products'])!=30:
+        raise ValueError('Expected thirty opt-in unpublished drafts')
     rows=[]; seen=set()
     for item in doc['products']:
         key=item['draft_id']
@@ -84,6 +85,9 @@ def main():
     extra=json.loads(EXTRA.read_text(encoding='utf-8'))
     if extra['auto_import'] or extra['auto_publish']: raise ValueError('Extra catalog must remain draft only')
     doc['products'] += extra['products']
+    new=json.loads(NEW.read_text(encoding='utf-8'))
+    if new['auto_import'] or new['auto_publish']: raise ValueError('New catalog must remain draft only')
+    doc['products'] += new['products']
     content=render(doc)
     if args.check:
         if not OUTPUT.exists() or OUTPUT.read_text(encoding='utf-8')!=content:
