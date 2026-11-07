@@ -34,6 +34,7 @@ def render(doc):
         values=[java_string(item[k]) for k in fields]
         values += [java_string('، '.join(item['keywords']))]
         values += [java_string(item[k]) for k in ['instagram_caption','youtube_caption','telegram_caption','whatsapp_caption']]
+        values += [java_string(item['post_hook']), java_string(item['image_alt_text'])]
         values += [java_string(item['price_note'] + ' منبع: ' + item['source_category_url'] + '؛ تصویر: ' + item['source_screenshot'])]
         values += [java_string(asset), str(item['reference_price_toman'])+'L']
         rows.append('        new Draft('+', '.join(values)+')')
@@ -47,17 +48,17 @@ import java.util.List;
 public final class LuxuryCoinDraftCatalog {
     public static final class Draft {
         public final String sku, nameFa, nameEn, brand, category, size, shortDescription, description, usage,
-                seoTitle, seoDescription, keywords, instagram, youtube, telegram, whatsapp, priceNote, assetPath;
+                seoTitle, seoDescription, keywords, instagram, youtube, telegram, whatsapp, postHook, imageAltText, priceNote, assetPath;
         public final long referencePriceToman;
         private Draft(String sku, String nameFa, String nameEn, String brand, String category, String size,
                 String shortDescription, String description, String usage, String seoTitle, String seoDescription,
                 String keywords, String instagram, String youtube, String telegram, String whatsapp,
-                String priceNote, String assetPath, long referencePriceToman) {
+                String postHook, String imageAltText, String priceNote, String assetPath, long referencePriceToman) {
             this.sku=sku; this.nameFa=nameFa; this.nameEn=nameEn; this.brand=brand; this.category=category;
             this.size=size; this.shortDescription=shortDescription; this.description=description; this.usage=usage;
             this.seoTitle=seoTitle; this.seoDescription=seoDescription; this.keywords=keywords;
             this.instagram=instagram; this.youtube=youtube; this.telegram=telegram; this.whatsapp=whatsapp;
-            this.priceNote=priceNote; this.assetPath=assetPath; this.referencePriceToman=referencePriceToman;
+            this.postHook=postHook; this.imageAltText=imageAltText; this.priceNote=priceNote; this.assetPath=assetPath; this.referencePriceToman=referencePriceToman;
         }
     }
     private static final List<Draft> DRAFTS=Collections.unmodifiableList(Arrays.asList(

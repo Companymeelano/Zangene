@@ -28,14 +28,17 @@ class CatalogPreviewPatchTest(unittest.TestCase):
             (root/'smali/com/asiyestore/admin/app/MainActivity.smali').write_text('''.method private resolveProductImage(Ljava/lang/String;)I
     .locals 2
 .end method
+.method private showEditorialProductDialog(Lcom/asiyestore/admin/app/Models$Product;)V
+    iget-object v6, v1, Lcom/asiyestore/admin/app/Models$Product;->benefits:Ljava/lang/String;
+.end method
 .method private showAdminLoginDialog()V
     bypass
 .end method''')
             subprocess.run(['python3',str(SCRIPT),str(root),str(APK)],check=True)
             s=(root/'smali/com/asiyestore/admin/app/MainActivity.smali').read_text()
-            self.assertNotIn('bypass',s); self.assertIn('OfflineCatalogPreview;->imageResource',s)
+            self.assertIn('OfflineContentPreview;->addContentButton', s); self.assertNotIn('bypass',s); self.assertIn('OfflineCatalogPreview;->imageResource',s)
             db=(root/'smali/com/asiyestore/admin/app/AsiyeDatabaseHelper.smali').read_text()
             self.assertIn('OfflineCatalogPreview;->seedPreview',db)
             self.assertNotIn('seedSignatureCatalog',db); self.assertNotIn('seedReferenceDrafts',db)
             self.assertEqual(len(list((root/'res/drawable-nodpi').glob('lc155_*.jpg'))),10)
-            self.assertIn('com.asiyestore.admin.catalogpreview',(root/'AndroidManifest.xml').read_text())
+            self.assertIn('com.asiyestore.admin.contentpreview',(root/'AndroidManifest.xml').read_text())

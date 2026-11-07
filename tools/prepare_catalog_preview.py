@@ -20,9 +20,9 @@ manifest=root/'AndroidManifest.xml'
 s=manifest.read_text()
 old='package="com.asiyestore.admin.screenshotpolishtest"'
 assert s.count(old)==1
-manifest.write_text(s.replace(old,'package="com.asiyestore.admin.catalogpreview"'))
+manifest.write_text(s.replace(old,'package="com.asiyestore.admin.contentpreview"'))
 yml=root/'apktool.yml'; s=yml.read_text(); assert 'renameManifestPackage: null' in s
-yml.write_text(s.replace('renameManifestPackage: null','renameManifestPackage: com.asiyestore.admin.catalogpreview'))
+yml.write_text(s.replace('renameManifestPackage: null','renameManifestPackage: com.asiyestore.admin.contentpreview'))
 db=root/'smali/com/asiyestore/admin/app/AsiyeDatabaseHelper.smali'; s=db.read_text()
 a=s.index('.method public onCreate(Landroid/database/sqlite/SQLiteDatabase;)V'); b=s.index('.end method',a)
 m=s[a:b]
@@ -54,6 +54,17 @@ s=s[:a]+'''.method private showAdminLoginDialog()V
     invoke-virtual {v0}, Landroid/widget/Toast;->show()V
     return-void
 .end method'''+s[b:]
+# Add a read-only button to the existing product detail layout in this isolated demo.
+a=s.index('.method private showEditorialProductDialog(Lcom/asiyestore/admin/app/Models$Product;)V')
+b=s.index('.end method',a)
+m=s[a:b]
+anchor="""    iget-object v6, v1, Lcom/asiyestore/admin/app/Models$Product;->benefits:Ljava/lang/String;"""
+assert m.count(anchor)>=1
+m=m.replace(anchor,"""    iget-object v6, v1, Lcom/asiyestore/admin/app/Models$Product;->sku:Ljava/lang/String;
+    invoke-static {v0, v5, v6}, Lcom/asiyestore/admin/app/OfflineContentPreview;->addContentButton(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;)V
+
+"""+anchor,1)
+s=s[:a]+m+s[b:]
 activity.write_text(s)
 target=root/'res/drawable-nodpi'
 for p in sorted((repo/'reconstruction/android/assets/catalog/luxury_coin').glob('*.jpg')):
