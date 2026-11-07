@@ -25,3 +25,7 @@ class LuxuryCoinDraftTests(unittest.TestCase):
                 self.assertTrue(p[key],key)
         night=next(p for p in items if p['draft_id']=='LC155-NIGHT')
         self.assertIn('قیمت متفاوت',night['price_note'])
+
+    def test_generated_java_matches_catalog(self):
+        import subprocess
+        subprocess.run(['python3',str(ROOT/'tools/generate_luxury_coin_drafts.py'),'--check'],check=True,cwd=ROOT)
