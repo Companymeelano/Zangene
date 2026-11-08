@@ -1,25 +1,22 @@
 (() => {
   'use strict';
 
-  // The catalog is deliberately local and illustrative; prices and stock require confirmation.
+  // Illustrative catalog only. Real prices and inventory have not been provided.
+  // priceToman is an integer per kilogram or null when no real price is known.
   const products = [
-    { id: 'pistachio', category: 'pistachio', categoryLabel: 'پسته', name: 'پسته اکبری', detail: 'انتخابی اصیل برای خرید عمده', image: 'assets/product-pistachio.webp', badge: 'انتخاب درخشان', keywords: 'آجیل پسته ایرانی خام' },
-    { id: 'almond', category: 'almond', categoryLabel: 'بادام', name: 'مغز بادام درختی', detail: 'طبیعی و خوش‌طعم', image: 'assets/product-almond.webp', badge: 'طعم طبیعی', keywords: 'آجیل مغز بادام خام' },
-    { id: 'walnut', category: 'walnut', categoryLabel: 'مغزها', name: 'مغز گردو', detail: 'گزینه‌ای دلنشین برای فروشگاه‌ها', image: 'assets/product-walnut.webp', badge: 'انتخاب درخشان', keywords: 'گردو آجیل مغز' },
-    { id: 'fig', category: 'driedfruit', categoryLabel: 'خشکبار', name: 'انجیر خشک', detail: 'شیرینیِ دوست‌داشتنی طبیعت', image: 'assets/product-fig.webp', badge: 'طعم طبیعی', keywords: 'میوه خشک خشکبار انجیر' },
-    { id: 'mixed', category: 'mixed', categoryLabel: 'آجیل مخلوط', name: 'آجیل مخلوط', detail: 'ترکیبی خوش‌طعم از مغزها', image: 'assets/hero-nuts.webp', badge: 'انتخاب درخشان', keywords: 'آجیل مخلوط پسته بادام گردو' }
+    { id: 'pistachio', category: 'pistachio', categoryLabel: 'پسته', name: 'پسته اکبری', detail: 'انتخابی خوش‌طعم از پسته', image: 'assets/product-pistachio.webp', keywords: 'آجیل پسته ایرانی خام', priceToman: null, inStock: null },
+    { id: 'almond', category: 'almond', categoryLabel: 'بادام', name: 'مغز بادام درختی', detail: 'انتخابی از مغزهای محبوب', image: 'assets/product-almond.webp', keywords: 'آجیل مغز بادام خام', priceToman: null, inStock: null },
+    { id: 'walnut', category: 'walnut', categoryLabel: 'مغزها', name: 'مغز گردو', detail: 'مغز گردو برای انتخاب شما', image: 'assets/product-walnut.webp', keywords: 'گردو آجیل مغز', priceToman: null, inStock: null },
+    { id: 'fig', category: 'driedfruit', categoryLabel: 'خشکبار', name: 'انجیر خشک', detail: 'انتخابی از دنیای خشکبار', image: 'assets/product-fig.webp', keywords: 'میوه خشک خشکبار انجیر', priceToman: null, inStock: null },
+    { id: 'mixed', category: 'mixed', categoryLabel: 'آجیل مخلوط', name: 'آجیل مخلوط', detail: 'ترکیبی از طعم‌های متنوع', image: 'assets/hero-nuts.webp', keywords: 'آجیل مخلوط پسته بادام گردو', priceToman: null, inStock: null }
   ];
   const productById = new Map(products.map(product => [product.id, product]));
-  const storageKey = 'derakhshan-wholesale-quote-v1';
+  const cartKey = 'derakhshan-shopping-cart-v1';
+  const legacyQuoteKey = 'derakhshan-wholesale-quote-v1';
   const favoritesKey = 'derakhshan-wholesale-favorites-v1';
-  const productDescriptions = {
-    pistachio: 'پسته اکبری، انتخابی خوش‌نام برای فروشگاه‌ها و سفارش‌های عمده است. جزئیات محصول و شرایط همکاری را از فروشنده استعلام کنید.',
-    almond: 'مغز بادام درختی انتخابی کاربردی برای فروشگاه، شیرینی‌پزی و سفارش عمده است. برای اطلاع از جزئیات و شرایط تهیه، استعلام بگیرید.',
-    walnut: 'مغز گردو را برای انتخابی متناسب با نیاز کسب‌وکارتان بررسی کنید. جزئیات، بسته‌بندی و شرایط سفارش با فروشنده هماهنگ می‌شود.',
-    fig: 'انجیر خشک، انتخابی دلنشین در مجموعه خشکبار است. مشخصات و شرایط تأمین این محصول پس از استعلام تأیید می‌شود.',
-    mixed: 'ترکیبی از طعم‌های متنوع برای انتخاب عمده. اجزای محصول و شرایط بسته‌بندی پیش از سفارش با فروشنده هماهنگ می‌شود.'
-  };
+  const maxQuantity = 100000;
   const numberFormat = new Intl.NumberFormat('fa-IR');
+  const quantityFormat = new Intl.NumberFormat('fa-IR', { useGrouping: false });
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
   const appScroll = $('#app-scroll');
@@ -27,19 +24,13 @@
   const search = $('#product-search');
   const emptyResults = $('#empty-results');
   const sortControl = $('#catalog-sort');
-  const favoritesFilter = $('#favorites-filter');
   const productModal = $('#product-modal');
-  const drawer = $('#quote-drawer');
-  const quoteItems = $('#quote-items');
-  const quoteEmpty = $('#quote-empty');
-  const quoteSummary = $('#quote-summary');
-  const quoteForm = $('#quote-form');
-  const quoteResult = $('#quote-result');
-  const quoteText = $('#quote-text');
-  const feedback = $('#copy-feedback');
+  const cartDrawer = $('#cart-drawer');
+  const checkoutDrawer = $('#checkout-drawer');
+  const checkoutForm = $('#checkout-form');
+  const checkoutFormView = $('#checkout-form-view');
+  const checkoutSuccess = $('#checkout-success');
   const toast = $('#toast');
-  const mobileNav = $('#mobile-nav');
-  const mobileToggle = $('.mobile-menu-toggle');
   let activeCategory = 'all';
   let showFavorites = false;
   let dockSection = 'home';
@@ -51,41 +42,54 @@
   const normalize = value => toEnglishDigits(value).trim().toLowerCase()
     .replace(/ي|ى/g, 'ی').replace(/ك/g, 'ک').replace(/[\u064b-\u065f\u0670]/g, '')
     .replace(/[\u200c\u200f]/g, ' ').replace(/\s+/g, ' ');
-  const formatNumber = number => numberFormat.format(number);
+  const escapeHTML = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+  const formatNumber = value => numberFormat.format(value);
   const scrollBehavior = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
   const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
+  const hasPrice = product => Number.isSafeInteger(product.priceToman) && product.priceToman > 0;
+  const priceLabel = product => hasPrice(product) ? `${formatNumber(product.priceToman)} تومان` : 'قیمت ثبت نشده';
 
-  function readQuote() {
+  function cleanCart(value) {
+    if (!Array.isArray(value)) return [];
+    const seen = new Set();
+    return value.reduce((items, item) => {
+      const quantity = Number(item?.quantity);
+      if (productById.has(item?.id) && !seen.has(item.id) && Number.isFinite(quantity) && quantity >= 1) {
+        seen.add(item.id);
+        items.push({ id: item.id, quantity: Math.min(maxQuantity, Math.floor(quantity)) });
+      }
+      return items;
+    }, []);
+  }
+
+  function readCart() {
     try {
-      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      if (!Array.isArray(stored)) return [];
-      const seen = new Set();
-      return stored.reduce((items, item) => {
-        const quantity = Number(item?.quantity);
-        if (productById.has(item?.id) && !seen.has(item.id) && Number.isFinite(quantity) && quantity >= 1) {
-          seen.add(item.id);
-          items.push({ id: item.id, quantity: Math.min(100000, Math.floor(quantity)) });
-        }
-        return items;
-      }, []);
-    } catch {
-      return [];
-    }
+      const saved = localStorage.getItem(cartKey);
+      if (saved !== null) return cleanCart(JSON.parse(saved));
+      // Preserve selections made in the previous inquiry-based version on upgrade.
+      const legacy = localStorage.getItem(legacyQuoteKey);
+      const migrated = legacy === null ? [] : cleanCart(JSON.parse(legacy));
+      if (legacy !== null) localStorage.setItem(cartKey, JSON.stringify(migrated));
+      return migrated;
+    } catch { return []; }
   }
 
   function readFavorites() {
     try {
       const stored = JSON.parse(localStorage.getItem(favoritesKey) || '[]');
       return new Set(Array.isArray(stored) ? stored.filter(id => productById.has(id)) : []);
-    } catch {
-      return new Set();
-    }
+    } catch { return new Set(); }
   }
 
+  let cart = readCart();
   let favorites = readFavorites();
-  let quote = readQuote();
-  function saveQuote() {
-    try { localStorage.setItem(storageKey, JSON.stringify(quote)); } catch { /* The list remains available for this page session. */ }
+  const saveCart = () => { try { localStorage.setItem(cartKey, JSON.stringify(cart)); } catch { /* The cart remains available in this session. */ } };
+  const itemCount = () => cart.reduce((total, item) => total + item.quantity, 0);
+
+  function cartTotal() {
+    if (!cart.length || cart.some(item => !hasPrice(productById.get(item.id)))) return null;
+    const total = cart.reduce((sum, item) => sum + productById.get(item.id).priceToman * item.quantity, 0);
+    return Number.isSafeInteger(total) ? total : null;
   }
 
   function syncDock() {
@@ -93,13 +97,15 @@
     $$('.dock-item').forEach(item => item.classList.toggle('is-current', item.matches(active)));
   }
 
-  function syncFavoriteControls() {
+  function syncFavorites() {
     $$('[data-favorites-count]').forEach(el => {
       el.textContent = formatNumber(favorites.size);
       if (el.classList.contains('dock-count')) el.hidden = favorites.size === 0;
     });
-    favoritesFilter.setAttribute('aria-pressed', String(showFavorites));
-    favoritesFilter.classList.toggle('is-active', showFavorites);
+    $$('[data-toggle-favorites]').forEach(button => {
+      button.setAttribute('aria-pressed', String(showFavorites));
+      button.classList.toggle('is-active', showFavorites);
+    });
     $$('[data-favorite-product]').forEach(button => {
       const product = productById.get(button.dataset.favoriteProduct);
       if (!product) return;
@@ -114,144 +120,139 @@
     syncDock();
   }
 
+  function notify(message, kind = 'basket') {
+    clearTimeout(toastTimer);
+    toast.dataset.kind = kind;
+    toast.textContent = message;
+    toast.classList.add('visible');
+    toastTimer = setTimeout(() => toast.classList.remove('visible'), 2500);
+  }
+
   function toggleFavorite(id) {
     const product = productById.get(id);
     if (!product) return;
     const selected = !favorites.has(id);
     if (selected) favorites.add(id); else favorites.delete(id);
     try { localStorage.setItem(favoritesKey, JSON.stringify([...favorites])); } catch { /* Retained for this session. */ }
-    if (showFavorites) renderProducts(); else syncFavoriteControls();
-    notify(selected ? `${product.name} به منتخب‌ها اضافه شد.` : `${product.name} از منتخب‌ها حذف شد.`, 'favorite');
+    if (showFavorites) renderProducts(); else syncFavorites();
+    if (!productModal.open) notify(selected ? `${product.name} به منتخب‌ها اضافه شد.` : `${product.name} از منتخب‌ها حذف شد.`, 'favorite');
   }
 
   function renderProducts() {
     const query = normalize(search.value);
     let filtered = products.filter(product => {
       const matchesCategory = activeCategory === 'all' || product.category === activeCategory;
-      const searchable = normalize([product.name, product.categoryLabel, product.detail, product.keywords].join(' '));
-      return matchesCategory && (!showFavorites || favorites.has(product.id)) && (!query || searchable.includes(query));
+      const text = normalize([product.name, product.categoryLabel, product.detail, product.keywords].join(' '));
+      return matchesCategory && (!showFavorites || favorites.has(product.id)) && (!query || text.includes(query));
     });
     if (sortControl.value !== 'featured') {
       const direction = sortControl.value === 'name-desc' ? -1 : 1;
       filtered = [...filtered].sort((a, b) => direction * a.name.localeCompare(b.name, 'fa'));
     }
-    grid.innerHTML = filtered.map(product => `
-      <article class="product-card">
+    grid.innerHTML = filtered.map(product => {
+      const id = escapeHTML(product.id), name = escapeHTML(product.name), unavailable = product.inStock === false;
+      return `<article class="product-card">
         <div class="product-image-wrap">
-          <img src="${product.image}" alt="تصویر مفهومی ${product.name}" loading="lazy">
-          <span class="product-badge">${product.badge}</span>
-          <button class="product-favorite" type="button" data-favorite-product="${product.id}" aria-label="افزودن ${product.name} به منتخب‌ها" aria-pressed="false"><img src="assets/ui-favorites-3d.webp" alt=""><span aria-hidden="true">♥</span></button>
-          <button class="product-add" type="button" data-add-product="${product.id}" aria-label="افزودن ${product.name} به لیست استعلام"><img src="assets/ui-basket-3d.webp" alt=""><span aria-hidden="true">+</span></button>
+          <img src="${escapeHTML(product.image)}" alt="تصویر نمونه ${name}">
+          <span class="product-badge">نمونه</span>
+          <button class="product-favorite" type="button" data-favorite-product="${id}" aria-label="افزودن به منتخب‌ها: ${name}" aria-pressed="false"><img src="assets/ui-favorites-3d.webp" alt=""><span aria-hidden="true">♥</span></button>
         </div>
         <div class="product-info">
-          <p class="product-category">${product.categoryLabel} <span aria-hidden="true"> / </span> فروش عمده</p>
-          <h3>${product.name}</h3>
-          <p class="product-detail">${product.detail}</p>
-          <button class="product-view" type="button" data-open-product="${product.id}" aria-label="جزئیات محصول: ${product.name}"><span class="product-view-art" aria-hidden="true"><img src="assets/ui-details-3d.webp" alt=""></span><span>جزئیات محصول</span><svg class="icon"><use href="#i-arrow-left"></use></svg></button>
-          <div class="product-card-footer"><span>قیمت همکاری</span><button class="product-quote" type="button" data-quote-product="${product.id}"><span class="product-quote-art" aria-hidden="true"><img src="assets/ui-inquiry-3d.webp" alt=""></span>استعلام قیمت</button></div>
+          <p class="product-category">${escapeHTML(product.categoryLabel)}</p>
+          <h3>${name}</h3>
+          <p class="shop-price"><strong>${escapeHTML(priceLabel(product))}</strong><small>هر کیلوگرم</small></p>
+          <button class="shop-add" type="button" data-add-product="${id}" ${unavailable ? 'disabled' : ''}><span class="shop-action-art" aria-hidden="true"><img src="assets/ui-basket-3d.webp" alt=""></span><span>${unavailable ? 'ناموجود' : 'افزودن به سبد'}</span></button>
+          <button class="product-view" type="button" data-open-product="${id}" aria-label="جزئیات محصول: ${name}"><span class="product-view-art" aria-hidden="true"><img src="assets/ui-details-3d.webp" alt=""></span><span>جزئیات محصول</span>${icon('arrow-left')}</button>
         </div>
-      </article>`).join('');
+      </article>`;
+    }).join('');
     emptyResults.hidden = filtered.length !== 0;
     const noFavorites = showFavorites && favorites.size === 0;
     $('#empty-results-title').textContent = noFavorites ? 'منتخب‌های شما هنوز خالی است' : (showFavorites ? 'محصول منتخبی پیدا نشد' : 'محصولی پیدا نشد');
-    $('#empty-results-description').textContent = noFavorites
-      ? 'با لمس نشان قلب روی هر محصول، آن را به فهرست منتخب‌های خود اضافه کنید.'
-      : 'عبارت جست‌وجو یا دسته‌بندی را تغییر دهید، یا همه محصولات را ببینید.';
-    const emptyArt = $('#empty-results-art');
-    const emptyArtPath = showFavorites ? 'assets/ui-favorites-3d.webp' : 'assets/ui-search-3d.webp';
-    if (emptyArt.getAttribute('src') !== emptyArtPath) emptyArt.setAttribute('src', emptyArtPath);
-    $('#catalog-count').textContent = `نمایش ${formatNumber(filtered.length)} محصول${showFavorites ? ' منتخب' : ''}`;
+    $('#empty-results-description').textContent = noFavorites ? 'نشان قلب روی هر محصول را لمس کنید.' : 'جست‌وجو یا دسته‌بندی را تغییر دهید.';
+    const art = $('#empty-results-art');
+    const artPath = showFavorites ? 'assets/ui-favorites-3d.webp' : 'assets/ui-search-3d.webp';
+    if (art.getAttribute('src') !== artPath) art.setAttribute('src', artPath);
+    $('#catalog-count').textContent = `${formatNumber(filtered.length)} محصول${showFavorites ? ' منتخب' : ''}`;
     $$('.filter-chip').forEach(button => {
       const selected = button.dataset.filter === activeCategory;
       button.classList.toggle('active', selected);
       button.setAttribute('aria-pressed', String(selected));
     });
-    syncFavoriteControls();
+    syncFavorites();
   }
 
-  function invalidateResult() {
-    quoteResult.hidden = true;
-    feedback.textContent = '';
-  }
-
-  function renderQuote() {
-    const count = quote.length;
-    $$('[data-quote-count]').forEach(el => {
+  function updateCartTotals() {
+    const count = itemCount();
+    $$('[data-cart-count]').forEach(el => {
       el.textContent = formatNumber(count);
       if (el.classList.contains('dock-count') || el.classList.contains('quote-count')) el.hidden = count === 0;
     });
-    $('.quote-trigger').setAttribute('aria-label', `لیست استعلام، ${formatNumber(count)} محصول`);
-    $('.dock-quote').setAttribute('aria-label', `لیست استعلام، ${formatNumber(count)} محصول`);
-    quoteEmpty.hidden = count > 0;
-    quoteSummary.hidden = count === 0;
-    quoteItems.innerHTML = quote.map(item => {
+    $$('.cart-trigger, .dock-cart').forEach(el => el.setAttribute('aria-label', `سبد خرید، ${formatNumber(count)} کیلوگرم`));
+    const total = cartTotal();
+    $('#cart-total').textContent = total === null ? 'نامشخص' : `${formatNumber(total)} تومان`;
+    $('#checkout-total').textContent = total === null ? 'مبلغ: نامشخص' : `مبلغ: ${formatNumber(total)} تومان`;
+    $('#checkout-count').textContent = `${formatNumber(count)} کیلوگرم محصول`;
+    $('#cart-price-note').textContent = total === null ? 'قیمت محصولات هنوز ثبت نشده است.' : 'هزینه ارسال هنوز محاسبه نشده است.';
+    $('#cart-empty').hidden = count > 0;
+    $('#cart-summary').hidden = count === 0;
+    $('[data-checkout]').hidden = count === 0;
+  }
+
+  function renderCart() {
+    $('#cart-items').innerHTML = cart.map(item => {
       const product = productById.get(item.id);
+      const id = escapeHTML(product.id), name = escapeHTML(product.name);
       return `<li class="quote-item">
-        <img src="${product.image}" alt="">
-        <div class="quote-item-info"><strong>${product.name}</strong><small>مقدار مورد نیاز</small>
+        <img src="${escapeHTML(product.image)}" alt="">
+        <div class="quote-item-info"><strong>${name}</strong><small>${escapeHTML(priceLabel(product))} / کیلوگرم</small>
           <div class="quantity-control">
-            <button type="button" data-decrease="${item.id}" aria-label="کاهش مقدار ${product.name}">${icon('minus')}</button>
-            <input type="text" inputmode="numeric" value="${formatNumber(item.quantity)}" data-quantity="${item.id}" aria-label="مقدار ${product.name} به کیلوگرم">
-            <button type="button" data-increase="${item.id}" aria-label="افزایش مقدار ${product.name}">${icon('plus')}</button>
-            <span>کیلوگرم</span>
+            <button type="button" data-decrease="${id}" aria-label="کاهش مقدار ${name}">${icon('minus')}</button>
+            <input type="text" inputmode="numeric" maxlength="6" value="${quantityFormat.format(item.quantity)}" data-quantity="${id}" aria-label="مقدار ${name} به کیلوگرم">
+            <button type="button" data-increase="${id}" aria-label="افزایش مقدار ${name}">${icon('plus')}</button><span>کیلوگرم</span>
           </div>
         </div>
-        <button class="quote-item-remove" type="button" data-remove="${item.id}" aria-label="حذف ${product.name} از لیست">${icon('trash')}</button>
+        <button class="quote-item-remove" type="button" data-remove="${id}" aria-label="حذف ${name} از سبد خرید">${icon('trash')}</button>
       </li>`;
     }).join('');
+    updateCartTotals();
   }
 
-  function updateQuote() {
-    saveQuote();
-    renderQuote();
-    invalidateResult();
-  }
-
-  function notify(message, kind = 'basket') {
-    clearTimeout(toastTimer);
-    toast.dataset.kind = kind;
-    toast.textContent = message;
-    toast.classList.add('visible');
-    toastTimer = setTimeout(() => toast.classList.remove('visible'), 2600);
-  }
-
-  function addProduct(id, increment = true) {
+  function addProduct(id) {
     const product = productById.get(id);
-    if (!product) return;
-    const item = quote.find(entry => entry.id === id);
-    if (item && increment) item.quantity = Math.min(100000, item.quantity + 1);
-    else if (!item) quote.push({ id, quantity: 1 });
-    updateQuote();
-    if (increment) notify(`${product.name} به لیست استعلام اضافه شد.`);
+    if (!product || product.inStock === false) return;
+    const item = cart.find(entry => entry.id === id);
+    if (item) item.quantity = Math.min(maxQuantity, item.quantity + 1);
+    else cart.push({ id, quantity: 1 });
+    saveCart();
+    renderCart();
+    if (productModal.open) closeProduct();
+    notify(`${product.name} به سبد خرید اضافه شد.`);
   }
 
-  function setCategory(category, shouldScroll = true, keepFavorites = false) {
-    const valid = category === 'all' || products.some(product => product.category === category);
-    if (!keepFavorites) showFavorites = false;
-    activeCategory = valid ? category : 'all';
+  function resetFilters() {
+    activeCategory = 'all';
+    showFavorites = false;
     search.value = '';
     renderProducts();
-    const filterList = $('.filter-list');
-    const selectedFilter = filterList.querySelector('.active');
-    if (selectedFilter && filterList.scrollWidth > filterList.clientWidth) {
-      const listBounds = filterList.getBoundingClientRect();
-      const chipBounds = selectedFilter.getBoundingClientRect();
-      const offset = chipBounds.left < listBounds.left ? chipBounds.left - listBounds.left :
-        chipBounds.right > listBounds.right ? chipBounds.right - listBounds.right : 0;
-      if (offset) filterList.scrollBy({ left: offset, behavior: scrollBehavior() });
-    }
-    if (shouldScroll) $('#products').scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
   }
 
-  function closeMobileMenu() {
-    mobileNav.hidden = true;
-    mobileToggle.setAttribute('aria-expanded', 'false');
-    mobileToggle.setAttribute('aria-label', 'باز کردن منو');
-    mobileToggle.querySelector('use').setAttribute('href', '#i-menu');
+  function scrollToProducts(target = $('#products'), block = 'start') {
+    target.scrollIntoView({ behavior: scrollBehavior(), block });
+    dockSection = 'catalog';
+    syncDock();
+  }
+
+  function goHome() {
+    resetFilters();
+    dockSection = 'home';
+    syncDock();
+    if (window.matchMedia('(max-width: 680px)').matches) appScroll.scrollTo({ top: 0, behavior: scrollBehavior() });
+    else window.scrollTo({ top: 0, behavior: scrollBehavior() });
   }
 
   function syncModalState() {
-    document.body.classList.toggle('is-modal-open', drawer.open || productModal.open);
+    document.body.classList.toggle('is-modal-open', productModal.open || cartDrawer.open || checkoutDrawer.open);
   }
 
   function closeProduct() {
@@ -262,238 +263,159 @@
   function openProduct(id) {
     const product = productById.get(id);
     if (!product) return;
-    if (drawer.open) closeDrawer();
-    closeMobileMenu();
+    if (cartDrawer.open) cartDrawer.close();
     const image = $('#product-modal-image');
     image.src = product.image;
-    image.alt = `تصویر مفهومی ${product.name}`;
-    $('#product-modal-category').textContent = `${product.categoryLabel} / فروش عمده`;
+    image.alt = `تصویر نمونه ${product.name}`;
+    $('#product-modal-category').textContent = product.categoryLabel;
     $('#product-modal-title').textContent = product.name;
-    $('#product-modal-description').textContent = productDescriptions[id] || product.detail;
-    $('#product-modal-quote').dataset.quoteProduct = id;
+    $('#product-modal-description').textContent = product.detail;
+    $('#product-modal-price').textContent = priceLabel(product);
+    const missing = [];
+    if (!hasPrice(product)) missing.push('قیمت');
+    if (product.inStock !== true && product.inStock !== false) missing.push('موجودی');
+    $('#product-modal-note').textContent = product.inStock === false
+      ? 'محصول نمونه است؛ این محصول در حال حاضر ناموجود است.'
+      : missing.length ? `محصول نمونه است؛ ${missing.join(' و ')} آن هنوز ثبت نشده است.` : 'محصول و تصویر نمایش‌داده‌شده نمونه‌اند.';
+    $('#product-modal-add').dataset.addProduct = id;
+    $('#product-modal-add').disabled = product.inStock === false;
+    $('#product-modal-add-label').textContent = product.inStock === false ? 'ناموجود' : 'افزودن به سبد';
     $('#product-modal-favorite').dataset.favoriteProduct = id;
-    syncFavoriteControls();
+    syncFavorites();
     if (!productModal.open) productModal.showModal();
     syncModalState();
     productModal.scrollTop = 0;
   }
 
-  function openDrawer(focusForm = false) {
-    if (productModal.open) closeProduct();
-    closeMobileMenu();
-    renderQuote();
-    if (!drawer.open) drawer.showModal();
+  function closeCart() {
+    if (cartDrawer.open) cartDrawer.close();
     syncModalState();
-    $('.drawer-scroll').scrollTop = 0;
-    if (focusForm) requestAnimationFrame(() => {
-      if (drawer.open) $('#request-form-wrap').scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
-    });
   }
 
-  function closeDrawer() {
-    if (drawer.open) drawer.close();
+  function openCart() {
+    if (productModal.open) productModal.close();
+    if (checkoutDrawer.open) checkoutDrawer.close();
+    checkoutForm.reset();
+    $('#cart-feedback').textContent = '';
+    renderCart();
+    if (!cartDrawer.open) cartDrawer.showModal();
     syncModalState();
+    $('.cart-drawer .drawer-scroll').scrollTop = 0;
+  }
+
+  function openCheckout() {
+    if (!cart.length) return;
+    closeCart();
+    checkoutForm.reset();
+    [...checkoutForm.elements].forEach(el => { if (typeof el.setCustomValidity === 'function') el.setCustomValidity(''); });
+    checkoutFormView.hidden = false;
+    checkoutSuccess.hidden = true;
+    checkoutDrawer.setAttribute('aria-describedby', 'checkout-disclaimer');
+    updateCartTotals();
+    if (!checkoutDrawer.open) checkoutDrawer.showModal();
+    syncModalState();
+    $('.checkout-drawer .drawer-scroll').scrollTop = 0;
+  }
+
+  function closeCheckout() {
+    const wasComplete = !checkoutSuccess.hidden;
+    if (checkoutDrawer.open) checkoutDrawer.close();
+    checkoutForm.reset();
+    syncModalState();
+    if (!wasComplete) openCart();
+    else scrollToProducts();
   }
 
   document.addEventListener('click', event => {
-    const category = event.target.closest('[data-category]');
-    const filter = event.target.closest('[data-filter]');
-    const footerCategory = event.target.closest('[data-footer-category]');
-    const add = event.target.closest('[data-add-product]');
-    const quoteProduct = event.target.closest('[data-quote-product]');
-    const productView = event.target.closest('[data-open-product]');
-    const favorite = event.target.closest('[data-favorite-product]');
-    const increase = event.target.closest('[data-increase]');
-    const decrease = event.target.closest('[data-decrease]');
-    const remove = event.target.closest('[data-remove]');
-    const open = event.target.closest('[data-open-quote]');
-
-    // The header is outside the independently scrolling content on phones.
-    // A fragment targeting that header would otherwise leave the content at its old position.
-    const homeLink = event.target.closest('a[href="#top"], a[href="#home"]');
-    if (homeLink && window.matchMedia('(max-width: 680px)').matches) {
-      event.preventDefault();
-      appScroll.scrollTo({ top: 0, behavior: scrollBehavior() });
-      closeMobileMenu();
-      dockSection = 'home';
-      syncDock();
+    const target = event.target.closest('button, a');
+    if (!target) return;
+    if (target.matches('[data-home]')) { event.preventDefault(); goHome(); return; }
+    if (target.matches('[data-browse], [data-browse-products]')) { event.preventDefault(); closeCart(); resetFilters(); scrollToProducts(); return; }
+    if (target.matches('[data-focus-search]')) { resetFilters(); scrollToProducts(); search.focus({ preventScroll: true }); return; }
+    if (target.matches('[data-filter]')) { activeCategory = target.dataset.filter; renderProducts(); return; }
+    if (target.matches('[data-reset-filters]')) { resetFilters(); scrollToProducts(); return; }
+    if (target.matches('[data-toggle-favorites]')) { showFavorites = !showFavorites; renderProducts(); scrollToProducts(showFavorites && !favorites.size ? emptyResults : grid, showFavorites && !favorites.size ? 'center' : 'start'); return; }
+    if (target.matches('[data-dock-favorites]')) { showFavorites = true; activeCategory = 'all'; search.value = ''; renderProducts(); scrollToProducts(favorites.size ? grid : emptyResults, favorites.size ? 'start' : 'center'); return; }
+    if (target.matches('[data-open-product]')) { openProduct(target.dataset.openProduct); return; }
+    if (target.matches('[data-favorite-product]')) { toggleFavorite(target.dataset.favoriteProduct); return; }
+    if (target.matches('[data-add-product]')) { addProduct(target.dataset.addProduct); return; }
+    if (target.matches('[data-close-product]')) { closeProduct(); return; }
+    if (target.matches('[data-open-cart]')) { openCart(); return; }
+    if (target.matches('[data-close-cart]')) { closeCart(); return; }
+    if (target.matches('[data-checkout]')) { openCheckout(); return; }
+    if (target.matches('[data-close-checkout], [data-finish-checkout]')) { closeCheckout(); return; }
+    if (target.matches('[data-increase], [data-decrease]')) {
+      const increase = target.hasAttribute('data-increase');
+      const id = increase ? target.dataset.increase : target.dataset.decrease;
+      const item = cart.find(entry => entry.id === id);
+      if (!item) return;
+      item.quantity = Math.min(maxQuantity, Math.max(1, item.quantity + (increase ? 1 : -1)));
+      saveCart(); renderCart();
+      if (event.detail === 0) $(`[data-${increase ? 'increase' : 'decrease'}="${id}"]`)?.focus({ preventScroll: true });
+      return;
     }
-
-    if (category) setCategory(category.dataset.category);
-    if (filter) setCategory(filter.dataset.filter, false, true);
-    if (footerCategory) { event.preventDefault(); setCategory(footerCategory.dataset.footerCategory); }
-    if (event.target.closest('[data-show-all]')) setCategory('all', false);
-    if (event.target.closest('[data-reset-filters]')) { showFavorites = false; sortControl.value = 'featured'; setCategory('all', false); }
-    if (event.target.closest('[data-favorites-filter]')) { showFavorites = !showFavorites; renderProducts(); }
-    if (event.target.closest('[data-dock-products]')) { event.preventDefault(); setCategory('all'); dockSection = 'catalog'; syncDock(); }
-    if (event.target.closest('[data-dock-favorites]')) {
-      showFavorites = true; activeCategory = 'all'; search.value = ''; renderProducts();
-      dockSection = 'catalog'; syncDock();
-      const destination = favorites.size === 0 ? emptyResults : $('#product-grid');
-      destination.scrollIntoView({ behavior: scrollBehavior(), block: favorites.size === 0 ? 'center' : 'start' });
-    }
-    if (event.target.closest('[data-dock-home]')) { closeMobileMenu(); dockSection = 'home'; syncDock(); }
-    if (productView) openProduct(productView.dataset.openProduct);
-    if (favorite) toggleFavorite(favorite.dataset.favoriteProduct);
-    if (event.target.closest('[data-close-product]')) closeProduct();
-    if (add) addProduct(add.dataset.addProduct);
-    if (quoteProduct) { addProduct(quoteProduct.dataset.quoteProduct, false); openDrawer(); }
-    if (open) openDrawer(open.dataset.openQuote === 'form');
-    if (event.target.closest('[data-close-quote]')) closeDrawer();
-    if (event.target.closest('[data-browse-products]')) { closeDrawer(); setCategory('all'); }
-    if (event.target.closest('[data-focus-search]')) {
-      setCategory('all');
-      search.focus({ preventScroll: true });
-    }
-    if (increase || decrease) {
-      const id = increase ? increase.dataset.increase : decrease.dataset.decrease;
-      const item = quote.find(entry => entry.id === id);
-      if (item) {
-        item.quantity = Math.min(100000, Math.max(1, item.quantity + (increase ? 1 : -1)));
-        const input = quoteItems.querySelector(`[data-quantity="${id}"]`);
-        if (input) input.value = formatNumber(item.quantity);
-        saveQuote();
-        invalidateResult();
-      }
-    }
-    if (remove) {
-      quote = quote.filter(item => item.id !== remove.dataset.remove);
-      updateQuote();
-      notify('محصول از لیست استعلام حذف شد.');
+    if (target.matches('[data-remove]')) {
+      const id = target.dataset.remove;
+      const product = productById.get(id);
+      cart = cart.filter(item => item.id !== id);
+      saveCart(); renderCart();
+      if (event.detail === 0) (cart.length ? $('#cart-items button') : $('[data-browse-products]')).focus({ preventScroll: true });
+      if (product) $('#cart-feedback').textContent = `${product.name} از سبد خرید حذف شد.`;
     }
   });
 
   search.addEventListener('input', renderProducts);
   sortControl.addEventListener('change', renderProducts);
-  const isTextEditor = element => Boolean(element && element.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]), textarea'));
-  document.addEventListener('focusin', event => {
-    if (isTextEditor(event.target)) document.body.classList.add('is-editing');
-  });
-  document.addEventListener('focusout', () => {
-    setTimeout(() => document.body.classList.toggle('is-editing', isTextEditor(document.activeElement)), 0);
-  });
-  quoteItems.addEventListener('input', event => {
-    if (event.target.matches('[data-quantity]')) invalidateResult();
-  });
-  quoteItems.addEventListener('change', event => {
+  $('#cart-items').addEventListener('change', event => {
     const input = event.target.closest('[data-quantity]');
     if (!input) return;
-    const item = quote.find(entry => entry.id === input.dataset.quantity);
+    const item = cart.find(entry => entry.id === input.dataset.quantity);
     if (!item) return;
     const digits = toEnglishDigits(input.value).replace(/[^0-9]/g, '');
     const quantity = Number(digits);
-    item.quantity = Number.isFinite(quantity) && quantity > 0 ? Math.min(100000, Math.floor(quantity)) : 1;
-    input.value = formatNumber(item.quantity);
-    saveQuote();
-    invalidateResult();
+    item.quantity = Number.isFinite(quantity) && quantity > 0 ? Math.min(maxQuantity, Math.floor(quantity)) : 1;
+    input.value = quantityFormat.format(item.quantity);
+    saveCart(); updateCartTotals();
   });
 
-  mobileToggle.addEventListener('click', () => {
-    const isOpening = mobileNav.hidden;
-    mobileNav.hidden = !isOpening;
-    mobileToggle.setAttribute('aria-expanded', String(isOpening));
-    mobileToggle.setAttribute('aria-label', isOpening ? 'بستن منو' : 'باز کردن منو');
-    mobileToggle.querySelector('use').setAttribute('href', isOpening ? '#i-close' : '#i-menu');
-  });
-  mobileNav.addEventListener('click', event => { if (event.target.closest('a')) closeMobileMenu(); });
-  drawer.addEventListener('click', event => { if (event.target === drawer) closeDrawer(); });
-  drawer.addEventListener('cancel', event => { event.preventDefault(); closeDrawer(); });
-  productModal.addEventListener('cancel', event => { event.preventDefault(); closeProduct(); });
-  drawer.addEventListener('close', syncModalState);
-  productModal.addEventListener('close', syncModalState);
+  const isTextEditor = element => Boolean(element && element.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]), textarea'));
+  document.addEventListener('focusin', event => { if (isTextEditor(event.target)) document.body.classList.add('is-editing'); });
+  document.addEventListener('focusout', () => { setTimeout(() => document.body.classList.toggle('is-editing', isTextEditor(document.activeElement)), 0); });
   productModal.addEventListener('click', event => { if (event.target === productModal) closeProduct(); });
-  quoteForm.addEventListener('input', event => {
-    if (event.target.name === 'phone' || event.target.name === 'name') event.target.setCustomValidity('');
-    invalidateResult();
-  });
-
-  quoteForm.addEventListener('submit', event => {
+  cartDrawer.addEventListener('click', event => { if (event.target === cartDrawer) closeCart(); });
+  checkoutDrawer.addEventListener('click', event => { if (event.target === checkoutDrawer) closeCheckout(); });
+  productModal.addEventListener('cancel', event => { event.preventDefault(); closeProduct(); });
+  cartDrawer.addEventListener('cancel', event => { event.preventDefault(); closeCart(); });
+  checkoutDrawer.addEventListener('cancel', event => { event.preventDefault(); closeCheckout(); });
+  [productModal, cartDrawer, checkoutDrawer].forEach(dialog => dialog.addEventListener('close', syncModalState));
+  checkoutForm.addEventListener('input', event => { if (typeof event.target.setCustomValidity === 'function') event.target.setCustomValidity(''); });
+  checkoutForm.addEventListener('submit', event => {
     event.preventDefault();
-    const data = new FormData(quoteForm);
-    const name = String(data.get('name') || '').trim();
-    const phone = String(data.get('phone') || '').trim();
-    const message = String(data.get('message') || '').trim();
-    const nameInput = quoteForm.elements.name;
-    const phoneInput = quoteForm.elements.phone;
-    const normalizedPhone = toEnglishDigits(phone);
-    const phoneDigits = normalizedPhone.replace(/\D/g, '');
-    if (!name) {
-      nameInput.setCustomValidity('لطفاً نام خود یا کسب‌وکارتان را وارد کنید.');
-      nameInput.reportValidity();
-      return;
+    if (!cart.length) { closeCheckout(); return; }
+    const name = checkoutForm.elements.name;
+    const phone = checkoutForm.elements.phone;
+    const address = checkoutForm.elements.address;
+    const normalizedPhone = toEnglishDigits(phone.value.trim());
+    const digits = normalizedPhone.replace(/\D/g, '');
+    if (!name.value.trim()) { name.setCustomValidity('نام گیرنده را وارد کنید.'); name.reportValidity(); return; }
+    name.setCustomValidity('');
+    if (!/^[+()\d\s-]+$/.test(normalizedPhone) || digits.length < 8 || digits.length > 15) {
+      phone.setCustomValidity('شماره تماس معتبر وارد کنید.'); phone.reportValidity(); return;
     }
-    nameInput.setCustomValidity('');
-    if (!/^[+()\d\s-]+$/.test(normalizedPhone) || phoneDigits.length < 8 || phoneDigits.length > 15) {
-      phoneInput.setCustomValidity('لطفاً شماره تماس معتبر وارد کنید.');
-      phoneInput.reportValidity();
-      return;
-    }
-    phoneInput.setCustomValidity('');
-    const lines = [
-      'سلام، برای همکاری با عمده‌فروشی آجیل و خشکبار درخشان درخواست استعلام دارم.',
-      '',
-      `نام / کسب‌وکار: ${name}`,
-      `شماره تماس: ${phone}`,
-      ''
-    ];
-    if (quote.length) {
-      lines.push('محصولات مورد نظر:');
-      quote.forEach(item => lines.push(`• ${productById.get(item.id).name}: ${formatNumber(item.quantity)} کیلوگرم`));
-    } else {
-      lines.push('موضوع: درخواست همکاری و استعلام محصولات');
-    }
-    if (message) lines.push('', `توضیحات: ${message}`);
-    lines.push('', 'لطفاً قیمت، موجودی و شرایط سفارش را اعلام کنید.');
-    quoteText.value = lines.join('\n');
-    quoteResult.hidden = false;
-    feedback.textContent = '';
-    quoteResult.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest' });
-  });
-
-  $('#copy-quote').addEventListener('click', async () => {
-    try {
-      if (window.DerakhshanAndroid && typeof window.DerakhshanAndroid.copyText === 'function') {
-        // The Android wrapper provides clipboard access without any network permission.
-        window.DerakhshanAndroid.copyText(quoteText.value);
-      } else if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(quoteText.value);
-      } else {
-        quoteText.focus();
-        quoteText.select();
-        if (!document.execCommand('copy')) throw new Error('Copy unavailable');
-      }
-      feedback.textContent = 'متن کپی شد. حالا می‌توانید آن را برای فروشنده ارسال کنید.';
-    } catch {
-      quoteText.focus();
-      quoteText.select();
-      feedback.textContent = 'لطفاً متن انتخاب‌شده را به‌صورت دستی کپی کنید.';
-    }
-  });
-
-  $('#download-quote').addEventListener('click', () => {
-    if (window.DerakhshanAndroid && typeof window.DerakhshanAndroid.saveText === 'function') {
-      try {
-        window.DerakhshanAndroid.saveText(quoteText.value);
-        feedback.textContent = 'برای ذخیره فایل، محل مورد نظر را انتخاب کنید.';
-      } catch {
-        feedback.textContent = 'ذخیره فایل ممکن نشد؛ می‌توانید متن را کپی کنید.';
-      }
-      return;
-    }
-    const blob = new Blob(['\ufeff', quoteText.value], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'derakhshan-inquiry.txt';
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    feedback.textContent = 'فایل متن درخواست آماده شد.';
+    phone.setCustomValidity('');
+    if (!address.value.trim()) { address.setCustomValidity('نشانی را وارد کنید.'); address.reportValidity(); return; }
+    address.setCustomValidity('');
+    // A deliberate local simulation: no card data is collected, no order or money is sent.
+    checkoutForm.reset();
+    checkoutFormView.hidden = true;
+    checkoutSuccess.hidden = false;
+    checkoutDrawer.setAttribute('aria-describedby', 'checkout-success');
+    $('.checkout-drawer .drawer-scroll').scrollTop = 0;
+    $('[data-finish-checkout]').focus({ preventScroll: true });
   });
 
   window.addEventListener('storage', event => {
-    if (event.key === storageKey) { quote = readQuote(); renderQuote(); invalidateResult(); }
+    if (event.key === cartKey) { cart = readCart(); renderCart(); }
     if (event.key === favoritesKey) { favorites = readFavorites(); renderProducts(); }
   });
 
@@ -504,10 +426,14 @@
       if (observer) observer.disconnect();
       observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
-          if (entry.isIntersecting) { dockSection = entry.target.id === 'products' ? 'catalog' : 'home'; syncDock(); }
+          if (entry.isIntersecting) {
+            const atTop = mobileLayout.matches ? appScroll.scrollTop < 10 : window.scrollY < 10;
+            dockSection = atTop ? 'home' : (entry.target.id === 'products' ? 'catalog' : 'home');
+            syncDock();
+          }
         });
-      }, { root: mobileLayout.matches ? appScroll : null, rootMargin: '-25% 0px -55% 0px', threshold: 0 });
-      ['home', 'categories', 'products', 'about', 'contact'].forEach(id => observer.observe(document.getElementById(id)));
+      }, { root: mobileLayout.matches ? appScroll : null, rootMargin: '-20% 0px -60% 0px', threshold: 0 });
+      ['home', 'products'].forEach(id => observer.observe(document.getElementById(id)));
     };
     observeSections();
     if (mobileLayout.addEventListener) mobileLayout.addEventListener('change', observeSections);
@@ -515,5 +441,5 @@
   }
 
   renderProducts();
-  renderQuote();
+  renderCart();
 })();

@@ -1,12 +1,13 @@
 {
   "name": "derakhshan-wholesale",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "private": true,
-  "description": "Standalone Persian wholesale nuts and dried fruit storefront",
+  "description": "Persian nuts and dried fruit storefront with a local demo checkout",
   "scripts": {
     "dev": "python3 -m http.server 4173 --bind 0.0.0.0 --directory derakhshan-wholesale",
     "start": "npm run dev",
-    "test:ui": "node tests/mobile-layout.cjs"
+    "test:ui": "node tests/mobile-layout.cjs",
+    "test:android-web": "node tests/android-offline.cjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

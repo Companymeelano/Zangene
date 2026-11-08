@@ -1,0 +1,79 @@
+const { chromium } = require('playwright-core');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+// The same JavaScript that MainActivity evaluates for the Android Back button.
+const java = fs.readFileSync(path.join(__dirname, '../derakhshan-android/app/src/main/java/ir/derakhshan/wholesale/MainActivity.java'), 'utf8');
+const expression = java.match(/String script = ([\s\S]*?);\s*webView\.evaluateJavascript/);
+assert(expression, 'Could not find the Android Back handler');
+const nativeBack = [...expression[1].matchAll(/"(?:\\.|[^"\\])*"/g)].map(match => JSON.parse(match[0])).join('');
+assert(nativeBack.startsWith('(function(){') && nativeBack.endsWith('})()'), 'Unexpected Back handler');
+const root = path.resolve(process.env.APK_ASSETS_DIR || path.join(__dirname, '../derakhshan-wholesale'));
+const origin = 'https://appassets.androidplatform.net';
+const types = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.js':'application/javascript; charset=utf-8', '.svg':'image/svg+xml; charset=utf-8', '.webp':'image/webp', '.woff2':'font/woff2', '.png':'image/png', '.txt':'text/plain; charset=utf-8', '.md':'text/plain; charset=utf-8' };
+
+(async () => {
+  const launch = { headless: true };
+  if (process.env.CHROMIUM_PATH) launch.executablePath = process.env.CHROMIUM_PATH;
+  if (process.env.CHROMIUM_ARGS) launch.args = JSON.parse(process.env.CHROMIUM_ARGS);
+  const browser = await chromium.launch(launch);
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+  const unexpected = [], missing = [], errors = [];
+  await context.route('**/*', async route => {
+    const url = new URL(route.request().url());
+    if (url.origin !== origin || !url.pathname.startsWith('/assets/') || route.request().method() !== 'GET') {
+      unexpected.push(`${route.request().method()} ${route.request().url()}`);
+      return route.fulfill({ status: 403, body: '' });
+    }
+    const target = path.resolve(root, decodeURIComponent(url.pathname.substring('/assets/'.length)));
+    if (!target.startsWith(root + path.sep) || !fs.existsSync(target)) {
+      missing.push(url.pathname); return route.fulfill({ status: 404, body: '' });
+    }
+    await route.fulfill({ path: target, contentType: types[path.extname(target)] || 'application/octet-stream', headers: { 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' } });
+  });
+  await context.setOffline(true);
+  const page = await context.newPage();
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(`${origin}/assets/index.html`, { waitUntil: 'networkidle' });
+  await page.evaluate(() => document.fonts.ready);
+  assert.equal(await page.locator('.product-card').count(), 5);
+  assert(await page.evaluate(() => document.fonts.check('700 16px Vazirmatn')));
+  assert(await page.locator('img[src="assets/hero-wholesale-3d.webp"]').evaluate(image => image.complete && image.naturalWidth > 0));
+  assert(await page.locator('img[src="assets/ui-payment-3d.webp"]').first().evaluate(image => image.complete && image.naturalWidth > 0));
+  await page.locator('[data-open-product="pistachio"]').tap();
+  assert(await page.locator('#product-modal').isVisible());
+  assert.equal(await page.evaluate(nativeBack), true);
+  assert.equal(await page.locator('#product-modal').isVisible(), false);
+  await page.locator('.product-card [data-add-product="pistachio"]').tap();
+  await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(await page.locator('.mobile-dock [data-cart-count]').innerText(), '۱');
+  await page.locator('.dock-cart').tap();
+  assert(await page.locator('#cart-drawer').isVisible());
+  await page.locator('[data-checkout]').tap();
+  assert(await page.locator('#checkout-drawer').isVisible());
+  assert.equal(await page.evaluate(nativeBack), true);
+  assert.equal(await page.locator('#checkout-drawer').isVisible(), false);
+  assert(await page.locator('#cart-drawer').isVisible(), 'native Back from checkout should return to cart');
+  assert.equal(await page.evaluate(nativeBack), true);
+  assert.equal(await page.locator('#cart-drawer').isVisible(), false);
+  await page.locator('[data-dock-products]').tap();
+  assert(await page.evaluate(() => document.querySelector('#app-scroll').scrollTop > 10));
+  assert.equal(await page.evaluate(nativeBack), true);
+  await page.waitForTimeout(50);
+  assert.equal(await page.evaluate(() => document.querySelector('#app-scroll').scrollTop), 0);
+  assert.equal(await page.evaluate(nativeBack), false, 'native Back falls through only at home');
+  await page.locator('.dock-cart').tap();
+  await page.locator('[data-checkout]').tap();
+  await page.locator('[name="name"]').fill('نام آزمایشی');
+  await page.locator('[name="phone"]').fill('۰۹۱۲۳۴۵۶۷۸۹');
+  await page.locator('[name="address"]').fill('نشانی آزمایشی');
+  await page.locator('#checkout-form button[type="submit"]').tap();
+  assert.match(await page.locator('#checkout-success').innerText(), /هیچ پولی کسر و سفارشی ثبت نشده/);
+  assert(!await page.evaluate(() => JSON.stringify(localStorage).includes('نشانی آزمایشی')));
+  assert.equal(await page.evaluate(nativeBack), true);
+  assert.equal(await page.locator('#checkout-drawer').isVisible(), false);
+  assert.deepEqual(unexpected, []); assert.deepEqual(missing, []); assert.deepEqual(errors, []);
+  console.log('Offline virtual-origin assets, cart persistence, demo privacy, and actual Java Back script: PASS');
+  await browser.close();
+})().catch(error => { console.error(error); process.exit(1); });

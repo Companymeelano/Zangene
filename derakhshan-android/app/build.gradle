@@ -10,8 +10,8 @@ android {
         applicationId 'ir.derakhshan.wholesale'
         minSdk 23
         targetSdk 34
-        versionCode 3
-        versionName '2.1.0'
+        versionCode 4
+        versionName '3.0.0'
     }
 
     // Keep one source of truth for the offline storefront, shared with the web version.
