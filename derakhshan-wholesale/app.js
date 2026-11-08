@@ -35,6 +35,8 @@
   let showFavorites = false;
   let dockSection = 'home';
   let toastTimer;
+  const mobileLayout = window.matchMedia('(max-width: 680px)');
+  let lastScrollPosition = mobileLayout.matches ? appScroll.scrollTop : window.scrollY;
 
   const toEnglishDigits = value => String(value)
     .replace(/[۰-۹]/g, digit => String(digit.charCodeAt(0) - 0x06f0))
@@ -94,7 +96,19 @@
 
   function syncDock() {
     const active = dockSection === 'contact' ? null : (dockSection === 'catalog' ? (showFavorites ? '[data-dock-favorites]' : '[data-dock-products]') : '[data-dock-home]');
-    $$('.dock-item').forEach(item => item.classList.toggle('is-current', Boolean(active && item.matches(active))));
+    $$('.dock-item').forEach(item => {
+      const selected = Boolean(active && item.matches(active));
+      item.classList.toggle('is-current', selected);
+      if (selected) item.setAttribute('aria-current', 'location');
+      else item.removeAttribute('aria-current');
+    });
+  }
+
+  function setDockSection(section) {
+    dockSection = section;
+    // An explicit action wins over a previously queued scroll frame.
+    lastScrollPosition = mobileLayout.matches ? appScroll.scrollTop : window.scrollY;
+    syncDock();
   }
 
   function syncFavorites() {
@@ -158,7 +172,7 @@
           <button class="product-favorite" type="button" data-favorite-product="${id}" aria-label="افزودن به منتخب‌ها: ${name}" aria-pressed="false"><img src="assets/ui-favorites-3d.webp" alt=""><span aria-hidden="true">♥</span></button>
         </div>
         <div class="product-info">
-          <p class="product-category">${escapeHTML(product.categoryLabel)}</p>
+          ${product.categoryLabel === product.name ? '' : `<p class="product-category">${escapeHTML(product.categoryLabel)}</p>`}
           <h3>${name}</h3>
           <p class="shop-price"><strong>${escapeHTML(priceLabel(product))}</strong><small>هر کیلوگرم</small></p>
           <button class="shop-add" type="button" data-add-product="${id}" ${unavailable ? 'disabled' : ''}><span class="shop-action-art" aria-hidden="true"><img src="assets/ui-basket-3d.webp" alt=""></span><span>${unavailable ? 'ناموجود' : 'افزودن به سبد'}</span></button>
@@ -166,6 +180,7 @@
         </div>
       </article>`;
     }).join('');
+    grid.classList.toggle('is-single', filtered.length === 1);
     emptyResults.hidden = filtered.length !== 0;
     const noFavorites = showFavorites && favorites.size === 0;
     $('#empty-results-title').textContent = noFavorites ? 'منتخب‌های شما هنوز خالی است' : (showFavorites ? 'محصول منتخبی پیدا نشد' : 'محصولی پیدا نشد');
@@ -239,16 +254,14 @@
 
   function scrollToProducts(target = $('#products'), block = 'start') {
     target.scrollIntoView({ behavior: scrollBehavior(), block });
-    dockSection = 'catalog';
-    syncDock();
+    setDockSection('catalog');
   }
 
   function goHome() {
     resetFilters();
-    dockSection = 'home';
-    syncDock();
-    if (window.matchMedia('(max-width: 680px)').matches) appScroll.scrollTo({ top: 0, behavior: scrollBehavior() });
+    if (mobileLayout.matches) appScroll.scrollTo({ top: 0, behavior: scrollBehavior() });
     else window.scrollTo({ top: 0, behavior: scrollBehavior() });
+    setDockSection('home');
   }
 
   function syncModalState() {
@@ -330,10 +343,10 @@
     const target = event.target.closest('button, a');
     if (!target) return;
     if (target.matches('[data-home]')) { event.preventDefault(); goHome(); return; }
-    if (target.matches('[data-show-contact]')) { event.preventDefault(); dockSection = 'contact'; syncDock(); $('#contact').scrollIntoView({ behavior: scrollBehavior(), block: 'start' }); return; }
+    if (target.matches('[data-show-contact]')) { event.preventDefault(); $('#contact').scrollIntoView({ behavior: scrollBehavior(), block: 'start' }); setDockSection('contact'); return; }
     if (target.matches('[data-browse], [data-browse-products]')) { event.preventDefault(); closeCart(); resetFilters(); scrollToProducts(); return; }
     if (target.matches('[data-focus-search]')) { resetFilters(); scrollToProducts(); search.focus({ preventScroll: true }); return; }
-    if (target.matches('[data-filter]')) { activeCategory = target.dataset.filter; renderProducts(); return; }
+    if (target.matches('[data-filter]')) { activeCategory = target.dataset.filter; renderProducts(); setDockSection('catalog'); return; }
     if (target.matches('[data-reset-filters]')) { resetFilters(); scrollToProducts(); return; }
     if (target.matches('[data-toggle-favorites]')) { showFavorites = !showFavorites; renderProducts(); scrollToProducts(showFavorites && !favorites.size ? emptyResults : grid, showFavorites && !favorites.size ? 'center' : 'start'); return; }
     if (target.matches('[data-dock-favorites]')) { showFavorites = true; activeCategory = 'all'; search.value = ''; renderProducts(); scrollToProducts(favorites.size ? grid : emptyResults, favorites.size ? 'start' : 'center'); return; }
@@ -365,8 +378,8 @@
     }
   });
 
-  search.addEventListener('input', renderProducts);
-  sortControl.addEventListener('change', renderProducts);
+  search.addEventListener('input', () => { renderProducts(); setDockSection('catalog'); });
+  sortControl.addEventListener('change', () => { renderProducts(); setDockSection('catalog'); });
   $('#cart-items').addEventListener('change', event => {
     const input = event.target.closest('[data-quantity]');
     if (!input) return;
@@ -420,26 +433,40 @@
     if (event.key === favoritesKey) { favorites = readFavorites(); renderProducts(); }
   });
 
-  if ('IntersectionObserver' in window) {
-    const mobileLayout = window.matchMedia('(max-width: 680px)');
-    let observer;
-    const observeSections = () => {
-      if (observer) observer.disconnect();
-      observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const atTop = mobileLayout.matches ? appScroll.scrollTop < 10 : window.scrollY < 10;
-            dockSection = atTop ? 'home' : (entry.target.id === 'contact' ? 'contact' : (entry.target.id === 'products' ? 'catalog' : 'home'));
-            syncDock();
-          }
-        });
-      }, { root: mobileLayout.matches ? appScroll : null, rootMargin: '-20% 0px -60% 0px', threshold: 0 });
-      ['home', 'products', 'contact'].forEach(id => observer.observe(document.getElementById(id)));
-    };
-    observeSections();
-    if (mobileLayout.addEventListener) mobileLayout.addEventListener('change', observeSections);
-    else if (mobileLayout.addListener) mobileLayout.addListener(observeSections);
+  // Update the dock on actual scrolling, not just intersection transitions: a
+  // section can stay intersecting while the hero scrolls away or cards resize.
+  let scrollFrame = 0;
+  function updateDockForScroll() {
+    scrollFrame = 0;
+    const mobile = mobileLayout.matches;
+    const scrollPosition = mobile ? appScroll.scrollTop : window.scrollY;
+    const wasScrollingUp = scrollPosition < lastScrollPosition;
+    lastScrollPosition = scrollPosition;
+    if (scrollPosition < 10) {
+      // Keep an explicit filter/search selection at the very top; returning
+      // upward to the top still restores the Home state.
+      if (wasScrollingUp) dockSection = 'home';
+    } else {
+      const scrollBounds = mobile ? appScroll.getBoundingClientRect() : { top: 0, bottom: window.innerHeight, height: window.innerHeight };
+      const probe = scrollBounds.top + scrollBounds.height * 0.25;
+      const contactBounds = $('#contact').getBoundingClientRect();
+      const productsTop = $('#products').getBoundingClientRect().top;
+      const maxScroll = mobile ? appScroll.scrollHeight - appScroll.clientHeight : document.documentElement.scrollHeight - window.innerHeight;
+      // Short result lists can reach the end before the contact section ever
+      // crosses the probe. At the end, honor contact if it is visible.
+      const contactAtEnd = scrollPosition >= maxScroll - 2 && contactBounds.top < scrollBounds.bottom && contactBounds.bottom > scrollBounds.top;
+      dockSection = contactBounds.top <= probe || contactAtEnd ? 'contact' : (productsTop <= probe ? 'catalog' : 'home');
+    }
+    syncDock();
   }
+  function scheduleDockUpdate() {
+    if (!scrollFrame) scrollFrame = requestAnimationFrame(updateDockForScroll);
+  }
+  appScroll.addEventListener('scroll', scheduleDockUpdate, { passive: true });
+  window.addEventListener('scroll', scheduleDockUpdate, { passive: true });
+  window.addEventListener('resize', scheduleDockUpdate, { passive: true });
+  if (mobileLayout.addEventListener) mobileLayout.addEventListener('change', scheduleDockUpdate);
+  else if (mobileLayout.addListener) mobileLayout.addListener(scheduleDockUpdate);
 
   renderProducts();
   renderCart();

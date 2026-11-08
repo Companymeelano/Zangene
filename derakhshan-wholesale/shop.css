@@ -181,3 +181,35 @@
   .developer-links a{min-height:40px;font-size:11px}
 }
 @media(max-width:360px){.contact-main{padding:17px}.contact-heading h2{font-size:14px}.contact-phones a{font-size:12px}.developer-credit{padding:16px 17px}.developer-links a{padding-inline:7px}}
+
+/* Keep the hero compact even when Android enlarges text, without disabling that setting. */
+@media(max-width:680px){
+  .store-hero{display:block;min-height:120px}
+  .store-hero-copy{width:84%;padding:14px 16px}
+  .store-hero h1{font-size:clamp(17px,5vw,26px);line-height:1.38;text-shadow:0 1px 2px #082d20dd,0 0 5px #082d20aa}
+  .store-hero-image{position:absolute;inset:0 auto 0 0;width:43%;height:100%}
+  .store-hero-image:after{background:linear-gradient(270deg,#155538 0%,#155538ec 18%,#15553888 45%,transparent 75%)}
+}
+/* A single match uses the available row instead of leaving an empty column. */
+.shop-catalog .product-grid.is-single{grid-template-columns:minmax(0,1fr);width:min(100%,500px);margin-inline:auto}
+.shop-catalog .product-grid.is-single .product-card{display:grid;grid-template-columns:minmax(105px,40%) minmax(0,1fr);align-items:stretch}
+.shop-catalog .product-grid.is-single .product-image-wrap{height:100%;min-height:160px;aspect-ratio:auto}
+.shop-catalog .product-grid.is-single .product-image-wrap>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.shop-catalog .product-info h3{white-space:normal;overflow:visible;overflow-wrap:anywhere}
+.shop-catalog .shop-add{margin-top:auto}
+.shop-heading{flex-wrap:wrap}
+.shop-heading>div{flex:1 0 max-content;max-width:100%}
+
+/* Let enlarged system text wrap instead of cutting off controls or contact details. */
+@media(max-width:680px){
+  .header-inner{height:auto;min-height:76px;flex-wrap:wrap;align-content:center;padding-block:8px;row-gap:8px}
+  .header-actions{flex:none;margin-inline-start:auto}
+  .mobile-dock{height:auto;min-height:72px;flex:0 0 auto}
+  .dock-item{white-space:normal;text-align:center}
+  .dock-item>span:last-child{max-width:100%;overflow-wrap:anywhere}
+  .shop-catalog .catalog-utility{flex-wrap:wrap}
+  .shop-catalog .catalog-utility-actions,.shop-catalog .catalog-sort{max-width:100%}
+  .shop-catalog .catalog-sort select{max-width:none}
+  .contact-phones{display:flex;flex-wrap:wrap}
+  .contact-phones a{flex:1 1 max-content;min-width:0;padding-inline:7px}
+}

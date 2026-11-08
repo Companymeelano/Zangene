@@ -151,6 +151,161 @@ const path = require('node:path');
     console.log(`width ${width}: layout, contact details, filters, cart, demo checkout, favorites and keyboard PASS`);
   }
 
+  // Reproduce Android's enlarged text without suppressing the user's setting.
+  // The original two-column hero wrapped to four lines at 140%, and a single
+  // search/category result occupied only half the screen.
+  for (const width of [320, 360, 393, 412, 680]) {
+    await reset(width, 844);
+    const scaleStyle = await page.addStyleTag({ content: 'html{-webkit-text-size-adjust:100%!important}' });
+    let baseFont = 0;
+    for (const scale of [100, 140, 150, 200]) {
+      await scaleStyle.evaluate((style, value) => { style.textContent = `html{-webkit-text-size-adjust:${value}%!important}`; }, scale);
+      await page.locator('[data-dock-home]').tap();
+      await page.waitForTimeout(40);
+      await shell(`${width}/${scale}% text`);
+      const layout = await page.evaluate(() => {
+        const rect = el => {
+          const r = el.getBoundingClientRect();
+          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height };
+        };
+        const within = (child, parent) => child.left >= parent.left - 1 && child.right <= parent.right + 1 && child.top >= parent.top - 1 && child.bottom <= parent.bottom + 1;
+        const heading = document.querySelector('.store-hero h1');
+        const hero = rect(heading.closest('.store-hero'));
+        const headingRect = rect(heading);
+        const header = rect(document.querySelector('.header-inner'));
+        const navItems = [...document.querySelectorAll('.dock-item')].map(item => within(rect(item.lastElementChild), rect(item)));
+        const phones = [...document.querySelectorAll('.contact-phones a')].map(link => within(rect(link.querySelector('bdi')), rect(link)) && link.scrollWidth <= link.clientWidth + 1);
+        const sort = document.querySelector('#catalog-sort');
+        const style = getComputedStyle(sort);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+        return {
+          font: parseFloat(getComputedStyle(heading).fontSize),
+          lines: Math.round(headingRect.height / parseFloat(getComputedStyle(heading).lineHeight)),
+          heroFits: within(headingRect, hero) && heading.scrollWidth <= heading.clientWidth + 1,
+          image: rect(document.querySelector('.store-hero-image')),
+          brandFits: within(rect(document.querySelector('.brand')), header),
+          actionsFit: within(rect(document.querySelector('.header-actions')), header),
+          navItems, phones,
+          sortFits: sort.clientWidth >= ctx.measureText(sort.selectedOptions[0].textContent).width + 8
+        };
+      });
+      if (scale === 100) baseFont = layout.font;
+      assert(Math.abs(layout.font / baseFont - scale / 100) < .02, `${width}/${scale}%: system text enlargement must remain enabled`);
+      if (scale <= 150) assert.equal(layout.lines, 2, `${width}/${scale}%: hero should remain compact`);
+      assert(layout.heroFits && layout.image.width > 100 && layout.image.height >= 110, `${width}/${scale}%: hero content clipped: ${JSON.stringify(layout)}`);
+      assert(layout.brandFits && layout.actionsFit, `${width}/${scale}%: header controls clipped`);
+      assert(layout.navItems.every(Boolean), `${width}/${scale}%: dock labels overlap their controls`);
+      assert(layout.phones.every(Boolean), `${width}/${scale}%: contact numbers clipped`);
+      assert(layout.sortFits, `${width}/${scale}%: sort selection is truncated`);
+
+      await page.locator('[data-filter="mixed"]').tap();
+      assert.equal(await page.locator('.product-card').count(), 1);
+      assert(await page.locator('#product-grid').evaluate(el => el.classList.contains('is-single')));
+      assert.equal(await page.locator('.product-card h3').innerText(), 'آجیل مخلوط');
+      assert.equal(await page.locator('.product-card .product-category').count(), 0, 'identical category/name should not be repeated');
+      const card = await page.locator('.product-card').evaluate(el => {
+        const rect = child => {
+          const r = child.getBoundingClientRect();
+          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height };
+        };
+        const within = (child, parent) => child.left >= parent.left - 1 && child.right <= parent.right + 1 && child.top >= parent.top - 1 && child.bottom <= parent.bottom + 1;
+        const info = rect(el.querySelector('.product-info'));
+        const image = rect(el.querySelector('.product-image-wrap'));
+        const favorite = rect(el.querySelector('.product-favorite'));
+        const badge = rect(el.querySelector('.product-badge'));
+        const add = el.querySelector('.shop-add');
+        const detail = el.querySelector('.product-view');
+        return {
+          width: rect(el).width, image, info,
+          nameFits: within(rect(el.querySelector('h3')), info),
+          addFits: within(rect(add.lastElementChild), rect(add)),
+          detailFits: within(rect(detail.querySelector('span:nth-child(2)')), rect(detail)),
+          imageButtonsSeparate: favorite.right <= badge.left + 1 || badge.right <= favorite.left + 1 || favorite.bottom <= badge.top + 1 || badge.bottom <= favorite.top + 1,
+          controlsReachable: add.getBoundingClientRect().height >= 44 && detail.getBoundingClientRect().height >= 39
+        };
+      });
+      assert(card.width >= Math.min(width - 32, 500) - 2, `${width}/${scale}%: single result leaves an empty column`);
+      assert(card.image.left >= card.info.right - 1 && card.image.width >= 105, `${width}/${scale}%: result should be a readable horizontal card`);
+      assert(card.nameFits && card.addFits && card.detailFits && card.imageButtonsSeparate && card.controlsReachable, `${width}/${scale}%: single result controls clipped`);
+      if (width === 393 && scale === 140) await capture('393-enlarged-single-result');
+      if (width === 320 && scale === 200) {
+        await page.locator('.product-card [data-add-product="mixed"]').tap();
+        await page.locator('.product-card [data-open-product="mixed"]').tap();
+        assert(await page.locator('#product-modal').isVisible());
+        await page.locator('[data-close-product]').tap();
+        await page.locator('.dock-cart').tap();
+        assert(await page.locator('#cart-drawer').isVisible());
+        assert.equal(await page.locator('.quote-item').count(), 1);
+        await page.locator('[data-close-cart]').tap();
+      }
+    }
+    console.log(`width ${width}: 100–200% text, full-width result and reachable controls PASS`);
+  }
+
+  // The current dock item must track real scrolling, explicit filters, search,
+  // favorites and contact, including when a short result list reaches its end.
+  await reset(393, 844);
+  async function currentDock(selector, label) {
+    const current = await page.locator('.dock-item').evaluateAll(items => items.filter(item => item.classList.contains('is-current')).map(item => ({
+      selector: item.hasAttribute('data-dock-home') ? 'home' : item.hasAttribute('data-dock-products') ? 'products' : item.hasAttribute('data-dock-favorites') ? 'favorites' : 'cart',
+      aria: item.getAttribute('aria-current')
+    })));
+    assert.deepEqual(current, selector ? [{ selector, aria: 'location' }] : [], `${label}: wrong current dock item`);
+    assert.equal(await page.locator('.dock-item[aria-current]').count(), current.length, `${label}: stale aria-current`);
+  }
+  async function scrollApp(top) {
+    await page.locator('#app-scroll').evaluate((el, value) => el.scrollTo({ top: value, behavior: 'instant' }), top);
+    await page.waitForTimeout(50);
+  }
+  await currentDock('home', 'initial');
+  await page.locator('[data-filter="mixed"]').tap();
+  await currentDock('products', 'filter at top');
+  await scrollApp(5);
+  await currentDock('products', 'small downward scroll');
+  for (const offset of [100, 200]) {
+    await scrollApp(offset);
+    await currentDock('products', `scroll ${offset}`);
+  }
+  await scrollApp(0);
+  await currentDock('home', 'scroll back to top');
+  await page.locator('[data-filter="mixed"]').tap();
+  await scrollApp(99999);
+  await currentDock(null, 'end of short result with contact visible');
+  await page.locator('[data-dock-home]').tap();
+  await currentDock('home', 'home shortcut');
+  assert.equal(await page.locator('.product-card').count(), 5);
+  await page.locator('[data-show-contact]').tap();
+  await page.waitForTimeout(50);
+  await currentDock(null, 'contact shortcut');
+  await page.locator('[data-dock-home]').tap();
+  await page.locator('[data-dock-favorites]').tap();
+  await page.waitForTimeout(50);
+  await currentDock('favorites', 'empty favorites');
+  await page.locator('[data-dock-home]').tap();
+  await page.locator('.product-card [data-favorite-product="mixed"]').tap();
+  await page.locator('[data-dock-favorites]').tap();
+  await page.waitForTimeout(50);
+  await currentDock('favorites', 'saved favorite');
+  assert.equal(await page.locator('.product-card').count(), 1);
+  await page.locator('[data-dock-home]').tap();
+  await page.locator('#product-search').fill('مخلوط');
+  assert.equal(await page.locator('.mobile-dock').isVisible(), false, 'search focus hides the dock');
+  await page.locator('#product-search').blur();
+  await page.waitForTimeout(30);
+  await currentDock('products', 'search results');
+  await page.locator('[data-dock-home]').tap();
+  await page.locator('#catalog-sort').selectOption('name-asc');
+  await currentDock('products', 'sort selection');
+  await page.setViewportSize({ width: 680, height: 844 });
+  await page.waitForTimeout(120);
+  await currentDock('products', 'resize with catalog active');
+  await page.setViewportSize({ width: 393, height: 844 });
+  await page.waitForTimeout(120);
+  await currentDock('products', 'resize back with catalog active');
+  console.log('dock selection, aria-current, filters, contact, search, favorites and resizing: PASS');
+
   // Preserve old inquiry selections/favorites on upgrade; no customer details are migrated.
   await reset(390, 844);
   await page.evaluate(() => {
