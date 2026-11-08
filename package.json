@@ -1,0 +1,15 @@
+{
+  "name": "derakhshan-wholesale",
+  "version": "2.1.0",
+  "private": true,
+  "description": "Standalone Persian wholesale nuts and dried fruit storefront",
+  "scripts": {
+    "dev": "python3 -m http.server 4173 --bind 0.0.0.0 --directory derakhshan-wholesale",
+    "start": "npm run dev",
+    "test:ui": "node tests/mobile-layout.cjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "playwright-core": "1.65.0"
+  }
+}

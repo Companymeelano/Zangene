@@ -1,0 +1,28 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'ir.derakhshan.wholesale'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'ir.derakhshan.wholesale'
+        minSdk 23
+        targetSdk 34
+        versionCode 3
+        versionName '2.1.0'
+    }
+
+    // Keep one source of truth for the offline storefront, shared with the web version.
+    sourceSets {
+        main {
+            assets.srcDirs = [file("${rootDir}/../derakhshan-wholesale")]
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
