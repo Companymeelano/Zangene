@@ -63,6 +63,13 @@ const types = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=ut
   await page.waitForTimeout(50);
   assert.equal(await page.evaluate(() => document.querySelector('#app-scroll').scrollTop), 0);
   assert.equal(await page.evaluate(nativeBack), false, 'native Back falls through only at home');
+  await page.locator('[data-show-contact]').tap();
+  assert(await page.locator('#contact-title').isVisible());
+  assert.match(await page.locator('.contact-address').innerText(), /اهواز، بنکداران، خیابان نظامی، فاز سوم/);
+  assert.deepEqual(await page.locator('#contact a[href]').evaluateAll(links => links.map(link => link.getAttribute('href'))), ['tel:09163099404', 'tel:09169165947', 'tel:09120219593', 'http://www.Meelano.ir']);
+  assert.equal(await page.evaluate(nativeBack), true);
+  await page.waitForTimeout(50);
+  assert.equal(await page.evaluate(() => document.querySelector('#app-scroll').scrollTop), 0);
   await page.locator('.dock-cart').tap();
   await page.locator('[data-checkout]').tap();
   await page.locator('[name="name"]').fill('نام آزمایشی');
@@ -74,6 +81,6 @@ const types = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=ut
   assert.equal(await page.evaluate(nativeBack), true);
   assert.equal(await page.locator('#checkout-drawer').isVisible(), false);
   assert.deepEqual(unexpected, []); assert.deepEqual(missing, []); assert.deepEqual(errors, []);
-  console.log('Offline virtual-origin assets, cart persistence, demo privacy, and actual Java Back script: PASS');
+  console.log('Offline virtual-origin assets, cart persistence, contact details, demo privacy, and actual Java Back script: PASS');
   await browser.close();
 })().catch(error => { console.error(error); process.exit(1); });

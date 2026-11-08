@@ -1,6 +1,8 @@
 package ir.derakhshan.wholesale;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -20,6 +22,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -41,12 +44,12 @@ public final class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setStatusBarColor(Color.rgb(41, 69, 51));
-        getWindow().setNavigationBarColor(Color.rgb(41, 69, 51));
+        getWindow().setStatusBarColor(Color.rgb(8, 43, 27));
+        getWindow().setNavigationBarColor(Color.rgb(8, 43, 27));
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
         webView = new WebView(this);
-        webView.setBackgroundColor(Color.rgb(248, 246, 237));
+        webView.setBackgroundColor(Color.rgb(8, 43, 27));
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -61,6 +64,7 @@ public final class MainActivity extends Activity {
         webView.setWebViewClient(new OfflineClient());
 
         rootLayout = new FrameLayout(this);
+        rootLayout.setBackgroundColor(Color.rgb(8, 43, 27));
         rootLayout.addView(webView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         splashView = createSplash();
@@ -84,14 +88,14 @@ public final class MainActivity extends Activity {
         splash.setGravity(Gravity.CENTER);
         splash.setPadding(dp(24), dp(24), dp(24), dp(24));
         splash.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[] { Color.rgb(35, 65, 43), Color.rgb(12, 34, 23) }));
+                new int[] { Color.rgb(22, 83, 51), Color.rgb(9, 55, 33), Color.rgb(5, 31, 20) }));
 
         ImageView emblem = new ImageView(this);
         int art = getResources().getIdentifier("splash_emblem", "drawable", getPackageName());
         if (art != 0) emblem.setImageResource(art);
         GradientDrawable emblemShape = new GradientDrawable();
         emblemShape.setShape(GradientDrawable.OVAL);
-        emblemShape.setColor(Color.rgb(16, 40, 27));
+        emblemShape.setColor(Color.rgb(8, 43, 27));
         emblem.setBackground(emblemShape);
         emblem.setClipToOutline(true);
         emblem.setContentDescription("Nute Store");
@@ -174,6 +178,26 @@ public final class MainActivity extends Activity {
         super.onDestroy();
     }
 
+    /** Open only the provided contact numbers or developer site in a system app. */
+    private void openContact(Uri uri) {
+        if (uri == null) return;
+        String number = ContactLinks.dialNumber(uri.toString());
+        Intent intent;
+        if (number != null) {
+            // ACTION_DIAL lets the user choose whether to place a call, without CALL_PHONE permission.
+            intent = new Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", number, null));
+        } else if (ContactLinks.isDeveloperWebsite(uri.toString())) {
+            intent = new Intent(Intent.ACTION_VIEW, uri);
+        } else {
+            return;
+        }
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException | SecurityException error) {
+            Toast.makeText(this, "برنامه تلفن یا مرورگر در دسترس نیست.", Toast.LENGTH_LONG).show();
+        }
+    }
+
     /** Map a single virtual HTTPS origin to APK assets and deny all other requests. */
     private final class OfflineClient extends WebViewClient {
         @Override
@@ -184,13 +208,22 @@ public final class MainActivity extends Activity {
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            return !isHomeDocument(request.getUrl());
+            Uri uri = request.getUrl();
+            if (isHomeDocument(uri)) return false;
+            // Some WebView versions omit the gesture flag for genuine link taps.
+            // The handler itself accepts only our known contacts and never places a call.
+            if (request.isForMainFrame()) openContact(uri);
+            return true;
         }
 
         @Override
         @SuppressWarnings("deprecation")
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            return !isHomeDocument(Uri.parse(url));
+            Uri uri = Uri.parse(url);
+            if (isHomeDocument(uri)) return false;
+            // On Android 6 this older callback does not expose gesture information.
+            openContact(uri);
+            return true;
         }
 
         @Override

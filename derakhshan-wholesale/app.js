@@ -93,8 +93,8 @@
   }
 
   function syncDock() {
-    const active = dockSection === 'catalog' ? (showFavorites ? '[data-dock-favorites]' : '[data-dock-products]') : '[data-dock-home]';
-    $$('.dock-item').forEach(item => item.classList.toggle('is-current', item.matches(active)));
+    const active = dockSection === 'contact' ? null : (dockSection === 'catalog' ? (showFavorites ? '[data-dock-favorites]' : '[data-dock-products]') : '[data-dock-home]');
+    $$('.dock-item').forEach(item => item.classList.toggle('is-current', Boolean(active && item.matches(active))));
   }
 
   function syncFavorites() {
@@ -330,6 +330,7 @@
     const target = event.target.closest('button, a');
     if (!target) return;
     if (target.matches('[data-home]')) { event.preventDefault(); goHome(); return; }
+    if (target.matches('[data-show-contact]')) { event.preventDefault(); dockSection = 'contact'; syncDock(); $('#contact').scrollIntoView({ behavior: scrollBehavior(), block: 'start' }); return; }
     if (target.matches('[data-browse], [data-browse-products]')) { event.preventDefault(); closeCart(); resetFilters(); scrollToProducts(); return; }
     if (target.matches('[data-focus-search]')) { resetFilters(); scrollToProducts(); search.focus({ preventScroll: true }); return; }
     if (target.matches('[data-filter]')) { activeCategory = target.dataset.filter; renderProducts(); return; }
@@ -428,12 +429,12 @@
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             const atTop = mobileLayout.matches ? appScroll.scrollTop < 10 : window.scrollY < 10;
-            dockSection = atTop ? 'home' : (entry.target.id === 'products' ? 'catalog' : 'home');
+            dockSection = atTop ? 'home' : (entry.target.id === 'contact' ? 'contact' : (entry.target.id === 'products' ? 'catalog' : 'home'));
             syncDock();
           }
         });
       }, { root: mobileLayout.matches ? appScroll : null, rootMargin: '-20% 0px -60% 0px', threshold: 0 });
-      ['home', 'products'].forEach(id => observer.observe(document.getElementById(id)));
+      ['home', 'products', 'contact'].forEach(id => observer.observe(document.getElementById(id)));
     };
     observeSections();
     if (mobileLayout.addEventListener) mobileLayout.addEventListener('change', observeSections);

@@ -122,3 +122,62 @@
   .shop-catalog .favorites-filter{display:none}
   .shop-catalog .product-image-wrap{aspect-ratio:1.25}
 }
+
+/* Emerald first impression and a compact, reachable contact signature. */
+.site-header{background:linear-gradient(125deg,#08281b,#104830 55%,#0a3021);border-bottom:1px solid #ddc88a35;box-shadow:0 5px 18px #0a2a1b30,inset 0 -1px #dfc88724}
+.site-header .brand-copy strong{color:#f8f5e8}
+.site-header .brand-copy small{color:#d6e5d5}
+.site-header .desktop-nav a,.site-header .desktop-nav button{color:#f0f4e9}
+.site-header .desktop-nav a:hover,.site-header .desktop-nav .nav-current,.site-header .desktop-nav button:hover,.site-header .desktop-nav button.is-active{color:#fffbed;background:linear-gradient(145deg,#285d42,#174831);border-color:#d4c59550;box-shadow:inset 0 1px 1px #ffffff26,0 3px 0 #092c1d,0 5px 10px #061a1240}
+.store-hero{border-color:#d7c28f55;background:linear-gradient(130deg,#082f20,#15583a 64%,#15432e);box-shadow:0 5px 0 #d5e0d2,0 16px 28px rgba(20,65,39,.18),inset 0 1px 2px #e1d4a530}
+.store-hero-kicker{color:#dcead4}
+.store-hero-kicker span{color:#ecd292}
+.store-hero h1{color:#fffaf0}
+.store-hero h1 span{color:#d5e1b7}
+.store-hero p{color:#dfebd8}
+.store-hero-image:after{background:linear-gradient(270deg,#155538 0%,rgba(21,85,56,.8) 17%,transparent 55%)}
+.contact-section{padding-bottom:34px}
+.contact-card{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);overflow:hidden;border:1px solid #d1b66b60;border-radius:24px;background:linear-gradient(135deg,#092d1e,#155239 57%,#0a3322);box-shadow:0 5px 0 #d4e0d1,0 16px 32px #123e2526,inset 0 1px #f3dda02b;color:#f9f6e9}
+.contact-main{padding:28px 32px}
+.contact-heading{display:flex;align-items:center;gap:15px}
+.contact-art{width:68px;height:68px;display:block;flex:none;overflow:hidden;border:1px solid #f6e7be;border-radius:18px;background:#f4f0e3;box-shadow:0 4px 0 #b7c8af,0 8px 17px #071b1340}
+.contact-art img{width:100%;height:100%;object-fit:cover;mix-blend-mode:multiply}
+.contact-kicker,.developer-kicker{display:block;margin-bottom:4px;color:#eedcae;font-size:10px;font-weight:700;letter-spacing:.04em}
+.contact-heading h2{margin:0;color:#fdfbf1;font-size:19px;line-height:1.7;font-weight:700}
+.contact-heading h2 strong{color:#eed79e;font-weight:800}
+.contact-address{display:flex;align-items:flex-start;gap:10px;margin:24px 0 0;padding:14px 16px;border:1px solid #d8c58c42;border-radius:14px;background:#061f174d;font-style:normal;color:#f8f8eb;font-size:12px;line-height:1.9}
+.contact-address>.icon{width:20px;height:20px;margin-top:3px;color:#ecd292}
+.contact-address span{display:flex;flex-direction:column;gap:2px}
+.contact-address small{color:#e9d9b1;font-size:10px;font-weight:700}
+.contact-person{margin:15px 0 10px;color:#f9f8ea;font-size:12px;font-weight:700}
+.contact-phones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.contact-phones a,.developer-links a{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:1px solid #dfc98968;border-radius:11px;background:linear-gradient(145deg,#2a6448,#174630);color:#fffdf3;font-size:13px;font-weight:700;direction:ltr;box-shadow:inset 0 1px #f7e8c333,0 3px 0 #092c1c}
+.contact-phones a:hover,.developer-links a:hover{background:linear-gradient(145deg,#367653,#20553a)}
+.contact-phones .icon,.developer-links .icon{width:16px;height:16px;color:#eed697}
+.developer-credit{display:flex;align-items:center;gap:16px;padding:30px;border-inline-start:1px solid #d5bd8447;background:linear-gradient(145deg,#071f16a8,#173d2ea8)}
+.developer-seal{width:59px;height:59px;display:grid;place-items:center;position:relative;flex:none;border:1px solid #ddc27b9c;border-radius:50%;background:radial-gradient(circle at 30% 20%,#385f48,#0b2a1d 68%);box-shadow:inset 0 1px 4px #e6d49e55,0 4px 10px #06160f70;color:#f6e0a8;font-family:Georgia,serif;font-size:20px;font-weight:700;letter-spacing:-1px;direction:ltr}
+.developer-seal i{position:absolute;right:2px;bottom:1px;color:#f5d991;font-size:11px;font-style:normal}
+.developer-copy{min-width:0}
+.developer-copy h3{margin:1px 0 11px;color:#fff9e9;font-family:Georgia,serif;font-size:19px;font-weight:700;letter-spacing:.015em;line-height:1.4;text-align:right}
+.developer-links{display:flex;flex-wrap:wrap;gap:8px}
+.developer-links a{min-height:40px;padding:4px 10px;font-size:11px}
+.developer-links .icon{width:14px;height:14px}
+@media(max-width:1000px){.contact-card{grid-template-columns:1fr}.developer-credit{border-inline-start:0;border-top:1px solid #d5bd8447}.developer-copy h3{text-align:right}}
+@media(max-width:680px){
+  #contact{scroll-margin-top:14px}
+  .contact-section{padding-bottom:25px}
+  .contact-card{border-radius:20px}
+  .contact-main{padding:20px}
+  .contact-heading{gap:12px}
+  .contact-art{width:56px;height:56px;border-radius:15px}
+  .contact-heading h2{font-size:15px;line-height:1.8}
+  .contact-address{margin-top:20px;padding:11px 12px;font-size:11px}
+  .contact-person{font-size:11px}
+  .contact-phones a{font-size:12px;gap:5px}
+  .developer-credit{padding:18px 20px;gap:12px}
+  .developer-seal{width:51px;height:51px;font-size:18px}
+  .developer-copy h3{font-size:17px}
+  .developer-links{gap:7px}
+  .developer-links a{min-height:40px;font-size:11px}
+}
+@media(max-width:360px){.contact-main{padding:17px}.contact-heading h2{font-size:14px}.contact-phones a{font-size:12px}.developer-credit{padding:16px 17px}.developer-links a{padding-inline:7px}}

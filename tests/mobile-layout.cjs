@@ -56,7 +56,8 @@ const path = require('node:path');
     assert.equal(await page.locator('.product-card').count(), 5);
     assert.equal(await page.locator('.dock-count:visible').count(), 0);
     assert.deepEqual(await page.locator('.shop-price strong').allTextContents(), Array(5).fill('قیمت ثبت نشده'));
-    assert.equal(await page.locator('#about, #contact, #quote-form').count(), 0, 'legacy marketing/inquiry sections remain');
+    assert.equal(await page.locator('#about, #quote-form').count(), 0, 'legacy marketing/inquiry sections remain');
+    assert.equal(await page.locator('#contact').count(), 1, 'contact details should be reachable');
     const chips = await page.locator('.filter-chip').evaluateAll(elements => elements.map(element => {
       const r = element.getBoundingClientRect(), parent = element.parentElement.getBoundingClientRect();
       return r.left >= parent.left - .5 && r.right <= parent.right + .5 && r.height >= 40;
@@ -64,6 +65,18 @@ const path = require('node:path');
     assert.equal(chips.length, 6);
     assert(chips.every(Boolean), `${width}/category buttons clipped`);
     if ([320, 390, 680].includes(width)) await capture(`${width}-home`);
+    await page.locator('[data-show-contact]').tap();
+    await page.waitForTimeout(50);
+    await shell(`${width}/contact`);
+    assert.match(await page.locator('#contact-title').innerText(), /پخش عمده آجیل و خشکبار درخشان/);
+    assert.match(await page.locator('.contact-address').innerText(), /اهواز، بنکداران، خیابان نظامی، فاز سوم/);
+    assert.match(await page.locator('.contact-person').innerText(), /سرکار خانم حمدانی مطلق/);
+    assert.equal(await page.locator('#developer-name').innerText(), 'Milad Yaghoobi');
+    assert.deepEqual(await page.locator('.contact-phones a').evaluateAll(links => links.map(link => link.getAttribute('href'))), ['tel:09163099404', 'tel:09169165947']);
+    assert.deepEqual(await page.locator('.developer-links a').evaluateAll(links => links.map(link => link.getAttribute('href'))), ['tel:09120219593', 'http://www.Meelano.ir']);
+    assert(await page.locator('.contact-heading').isVisible());
+    if (width === 320) { await capture('320-contact'); await axe('contact'); }
+    await page.locator('[data-dock-home]').tap();
     await page.locator('[data-filter="walnut"]').tap();
     assert.equal(await page.locator('.product-card').count(), 1);
     assert.match(await page.locator('.product-card h3').innerText(), /گردو/);
@@ -135,7 +148,7 @@ const path = require('node:path');
     await page.setViewportSize({ width, height: 760 });
     await page.waitForTimeout(120);
     await shell(`${width}/keyboard restored`);
-    console.log(`width ${width}: layout, filters, cart, quantities, demo checkout, favorites and keyboard PASS`);
+    console.log(`width ${width}: layout, contact details, filters, cart, demo checkout, favorites and keyboard PASS`);
   }
 
   // Preserve old inquiry selections/favorites on upgrade; no customer details are migrated.
@@ -222,9 +235,15 @@ const path = require('node:path');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), width, 'landscape dialog overflow');
     await page.locator('[data-close-checkout]').click();
     await page.locator('[data-close-cart]').click();
+    await page.locator('[data-show-contact]').click();
+    const contactLink = page.locator('a[href="tel:09163099404"]');
+    await contactLink.scrollIntoViewIfNeeded();
+    const contactRect = await contactLink.boundingBox();
+    assert(contactRect && contactRect.x >= 0 && contactRect.x + contactRect.width <= width, 'landscape contact link is clipped');
+    assert(contactRect.y >= -1 && contactRect.y + contactRect.height <= height + 1, `landscape contact link is offscreen: ${width}x${height} ${JSON.stringify(contactRect)}`);
     await capture(`${width}x${height}-landscape`);
   }
-  console.log('landscape layout and checkout: PASS');
+  console.log('landscape layout, checkout and contacts: PASS');
 
   for (const width of [681, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
