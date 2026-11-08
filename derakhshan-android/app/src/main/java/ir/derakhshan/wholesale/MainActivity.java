@@ -141,8 +141,9 @@ public final class MainActivity extends Activity {
             super.onBackPressed();
             return;
         }
-        // Return through checkout, cart and product dialogs before leaving the shop.
+        // Return through local demo panels, checkout, cart and product dialogs before leaving the shop.
         String script = "(function(){"
+                + "if(typeof window.NuteDemoBack==='function'&&window.NuteDemoBack())return true;"
                 + "var q=document.getElementById('checkout-drawer');"
                 + "if(q&&q.open){var x=q.querySelector('[data-close-checkout]');if(x){x.click();return true;}}"
                 + "var d=document.getElementById('cart-drawer');"

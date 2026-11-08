@@ -1,6 +1,6 @@
 {
   "name": "derakhshan-wholesale",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "private": true,
   "description": "Persian nuts and dried fruit storefront with a local demo checkout",
   "scripts": {
@@ -8,7 +8,8 @@
     "start": "npm run dev",
     "test:ui": "node tests/mobile-layout.cjs",
     "test:android-web": "node tests/android-offline.cjs",
-    "test:contact-links": "sh tests/run-contact-links.sh"
+    "test:contact-links": "sh tests/run-contact-links.sh",
+    "test:accounts": "node tests/accounts-demo.cjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

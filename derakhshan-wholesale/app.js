@@ -265,7 +265,8 @@
   }
 
   function syncModalState() {
-    document.body.classList.toggle('is-modal-open', productModal.open || cartDrawer.open || checkoutDrawer.open);
+    // New account and admin dialogs share the same mobile shell.
+    document.body.classList.toggle('is-modal-open', Boolean(document.querySelector('dialog[open]')));
   }
 
   function closeProduct() {

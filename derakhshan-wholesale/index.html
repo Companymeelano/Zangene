@@ -12,7 +12,9 @@
   <link rel="stylesheet" href="three-dimensional.css">
   <link rel="stylesheet" href="luxury-mobile.css">
   <link rel="stylesheet" href="shop.css">
+  <link rel="stylesheet" href="accounts.css">
   <script src="app.js" defer></script>
+  <script src="accounts.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">رفتن به محصولات</a>
@@ -57,6 +59,19 @@
           <p>انتخاب خوش‌طعم شما، تنها چند لمس تا سبد خرید.</p>
         </div>
         <div class="store-hero-image"><img src="assets/hero-wholesale-3d.webp" alt="کاسه و کیسه آجیل و خشکبار" fetchpriority="high"></div>
+      </section>
+
+      <section class="access-strip container" aria-label="دسترسی به حساب‌ها">
+        <button type="button" class="access-tile" data-open-account>
+          <span class="access-art" aria-hidden="true"><img src="assets/ui-user-3d.webp" alt=""></span>
+          <span class="access-copy"><strong>ورود کاربران</strong><small id="account-shortcut-label">نمایه روی دستگاه</small></span>
+          <svg class="icon access-arrow" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+        </button>
+        <button type="button" class="access-tile access-tile-admin" data-open-admin>
+          <span class="access-art" aria-hidden="true"><img src="assets/ui-admin-3d.webp" alt=""></span>
+          <span class="access-copy"><strong>ورود مدیر</strong><small>پنل نمایشی</small></span>
+          <svg class="icon access-arrow" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+        </button>
       </section>
 
       <section class="shop-catalog" id="products" aria-labelledby="products-title">
@@ -126,6 +141,158 @@
     <button type="button" class="dock-item" data-dock-favorites><span class="dock-art"><img src="assets/ui-favorites-3d.webp" alt=""><b class="dock-count" data-favorites-count hidden>۰</b></span><span>منتخب‌ها</span></button>
     <button type="button" class="dock-item dock-cart" data-open-cart aria-label="سبد خرید، ۰ محصول"><span class="dock-art"><img src="assets/ui-basket-3d.webp" alt=""><b class="dock-count" data-cart-count hidden>۰</b></span><span>سبد خرید</span></button>
   </nav>
+
+  <dialog class="quote-drawer account-drawer" id="account-drawer" aria-labelledby="account-dialog-title">
+    <div class="drawer-shell">
+      <div class="drawer-header account-dialog-header">
+        <div class="drawer-title-group"><span class="drawer-title-art" aria-hidden="true"><img src="assets/ui-user-3d.webp" alt=""></span><div><span class="drawer-kicker">نمایشی و آفلاین</span><h2 id="account-dialog-title">حساب کاربران</h2></div></div>
+        <button class="drawer-close demo-close" type="button" data-close-account aria-label="بستن حساب کاربران" autofocus><svg class="icon"><use href="#i-close"></use></svg></button>
+      </div>
+      <div class="drawer-scroll demo-scroll">
+        <section id="account-entry-view" aria-labelledby="account-entry-title">
+          <div class="account-welcome">
+            <span class="account-welcome-art" aria-hidden="true"><img src="assets/ui-user-3d.webp" alt=""></span>
+            <span class="demo-eyebrow">حساب محلی درخشان</span>
+            <h3 id="account-entry-title" tabindex="-1">خوش آمدید</h3>
+            <p>برای تجربه بخش کاربران، یک نام نمایشی انتخاب کنید یا مهمان بمانید.</p>
+          </div>
+          <p class="demo-note-card">این ورود واقعی نیست؛ نام فقط در همین دستگاه نگهداری می‌شود. رمز عبور، پیامک یا اتصال به سرور وجود ندارد.</p>
+          <form id="account-form" class="demo-form" novalidate>
+            <label for="account-name">نام نمایشی</label>
+            <input id="account-name" name="displayName" type="text" maxlength="40" autocomplete="off" placeholder="نام دلخواه برای نمایش" required>
+            <p class="demo-field-help">از اطلاعات حساس یا رمز عبور استفاده نکنید.</p>
+            <button class="demo-primary" type="submit"><span class="demo-button-art" aria-hidden="true"><img src="assets/ui-user-3d.webp" alt=""></span><span id="account-submit-label">ادامه با نام نمایشی</span><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg></button>
+            <button class="demo-secondary" type="button" data-account-guest>ادامه به عنوان مهمان</button>
+            <button class="demo-secondary" type="button" data-account-cancel-edit hidden>انصراف از ویرایش</button>
+          </form>
+        </section>
+        <section id="account-home-view" aria-labelledby="account-home-title" hidden>
+          <div class="account-profile-banner">
+            <span class="account-profile-art" aria-hidden="true"><img src="assets/ui-user-3d.webp" alt=""></span>
+            <div><span class="demo-eyebrow">نمایه محلی</span><h3 id="account-home-title" tabindex="-1"></h3><p>خوش آمدید؛ این حساب فقط روی همین دستگاه است.</p></div>
+          </div>
+          <div class="account-action-grid">
+            <button type="button" class="account-action" data-account-cart><span class="demo-tile-art" aria-hidden="true"><img src="assets/ui-basket-3d.webp" alt=""></span><span><strong>سبد خرید</strong><small><b id="account-cart-count">۰</b> محصول</small></span></button>
+            <button type="button" class="account-action" data-account-favorites><span class="demo-tile-art" aria-hidden="true"><img src="assets/ui-favorites-3d.webp" alt=""></span><span><strong>منتخب‌ها</strong><small><b id="account-favorites-count">۰</b> محصول</small></span></button>
+            <button type="button" class="account-action" data-account-orders><span class="demo-tile-art" aria-hidden="true"><img src="assets/ui-orders-3d.webp" alt=""></span><span><strong>سفارش‌های من</strong><small>وضعیت آزمایشی</small></span></button>
+            <button type="button" class="account-action" data-account-edit><span class="demo-tile-art" aria-hidden="true"><img src="assets/ui-settings-3d.webp" alt=""></span><span><strong>ویرایش نمایه</strong><small>تغییر نام نمایشی</small></span></button>
+          </div>
+          <p class="demo-note-card">سبد و منتخب‌ها به این دستگاه تعلق دارند، نه به یک حساب واقعی.</p>
+          <button class="demo-secondary demo-signout" type="button" data-account-signout>خروج و حذف نام نمایشی</button>
+          <p class="demo-field-help">با خروج، سبد و منتخب‌های این دستگاه پاک نمی‌شوند.</p>
+        </section>
+        <section id="account-orders-view" aria-labelledby="account-orders-title" hidden>
+          <div class="demo-empty"><span class="demo-empty-art" aria-hidden="true"><img src="assets/ui-orders-3d.webp" alt=""></span><h3 id="account-orders-title" tabindex="-1">سفارش واقعی ثبت نشده است</h3><p>پرداخت فعلی فقط شبیه‌سازی است و هیچ سفارشی ارسال یا ثبت نمی‌شود.</p></div>
+          <button class="demo-primary" type="button" data-account-browse><span class="demo-button-art" aria-hidden="true"><img src="assets/ui-categories-3d.webp" alt=""></span><span>مشاهده محصولات</span><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg></button>
+          <button class="demo-secondary" type="button" data-account-back>بازگشت به حساب</button>
+        </section>
+        <p id="account-feedback" class="demo-feedback" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="quote-drawer admin-drawer" id="admin-drawer" aria-labelledby="admin-dialog-title">
+    <div class="drawer-shell">
+      <div class="drawer-header account-dialog-header">
+        <div class="drawer-title-group"><span class="drawer-title-art" aria-hidden="true"><img src="assets/ui-admin-3d.webp" alt=""></span><div><span class="drawer-kicker">فقط برای نمایش</span><h2 id="admin-dialog-title">مدیریت درخشان</h2></div></div>
+        <button class="drawer-close demo-close" type="button" data-close-admin aria-label="بستن پنل مدیریت" autofocus><svg class="icon"><use href="#i-close"></use></svg></button>
+      </div>
+      <nav class="admin-tabs" id="admin-tabs" role="tablist" aria-label="بخش‌های پنل نمایشی" hidden>
+        <button type="button" role="tab" id="admin-tab-overview" aria-controls="admin-panel-overview" aria-selected="true" data-admin-tab="overview"><span class="admin-tab-art" aria-hidden="true"><img src="assets/ui-admin-3d.webp" alt=""></span><span>خلاصه</span></button>
+        <button type="button" role="tab" id="admin-tab-products" aria-controls="admin-panel-products" aria-selected="false" tabindex="-1" data-admin-tab="products"><span class="admin-tab-art" aria-hidden="true"><img src="assets/ui-catalog-3d.webp" alt=""></span><span>محصولات</span></button>
+        <button type="button" role="tab" id="admin-tab-orders" aria-controls="admin-panel-orders" aria-selected="false" tabindex="-1" data-admin-tab="orders"><span class="admin-tab-art" aria-hidden="true"><img src="assets/ui-orders-3d.webp" alt=""></span><span>سفارش‌ها</span></button>
+        <button type="button" role="tab" id="admin-tab-users" aria-controls="admin-panel-users" aria-selected="false" tabindex="-1" data-admin-tab="users"><span class="admin-tab-art" aria-hidden="true"><img src="assets/ui-user-3d.webp" alt=""></span><span>کاربران</span></button>
+        <button type="button" role="tab" id="admin-tab-reports" aria-controls="admin-panel-reports" aria-selected="false" tabindex="-1" data-admin-tab="reports"><span class="admin-tab-art" aria-hidden="true"><img src="assets/ui-reports-3d.webp" alt=""></span><span>گزارش‌ها</span></button>
+        <button type="button" role="tab" id="admin-tab-settings" aria-controls="admin-panel-settings" aria-selected="false" tabindex="-1" data-admin-tab="settings"><span class="admin-tab-art" aria-hidden="true"><img src="assets/ui-settings-3d.webp" alt=""></span><span>تنظیمات</span></button>
+      </nav>
+      <div class="drawer-scroll demo-scroll admin-scroll">
+        <section id="admin-gate" aria-labelledby="admin-gate-title">
+          <div class="admin-gate-hero"><span class="admin-gate-art" aria-hidden="true"><img src="assets/ui-admin-3d.webp" alt=""></span><span class="demo-eyebrow">مدیریت فروشگاه درخشان</span><h3 id="admin-gate-title" tabindex="-1">ورود نمایشی مدیر</h3><p>امکانات مدیریت و گزارش‌ها را در یک محیط آزمایشی بررسی کنید.</p></div>
+          <p class="demo-note-card"><strong>توجه:</strong> این پنل رمز و امنیت واقعی ندارد، به سرور متصل نیست و برای مدیریت فروشگاه واقعی قابل استفاده نیست.</p>
+          <button class="demo-primary" type="button" data-admin-enter><span class="demo-button-art" aria-hidden="true"><img src="assets/ui-admin-3d.webp" alt=""></span><span>ورود به پنل نمایشی</span><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg></button>
+        </section>
+        <div id="admin-workspace" hidden>
+          <p class="admin-sandbox-note">محیط نمایشی روی این دستگاه است؛ تغییرات آن فروشگاه اصلی را تغییر نمی‌دهد.</p>
+          <section id="admin-panel-overview" role="tabpanel" aria-labelledby="admin-tab-overview" data-admin-panel="overview">
+            <div class="admin-section-heading"><div><span class="demo-eyebrow">نمای کلی</span><h3>داشبورد نمایشی</h3></div><span class="admin-heading-art" aria-hidden="true"><img src="assets/ui-reports-3d.webp" alt=""></span></div>
+            <div class="admin-stats" id="admin-overview-stats"></div>
+            <h4 class="demo-subheading">دسترسی سریع</h4>
+            <div class="admin-quick-grid">
+              <button type="button" class="admin-quick" data-admin-tab="products"><span class="demo-tile-art" aria-hidden="true"><img src="assets/ui-catalog-3d.webp" alt=""></span><span><strong>محصولات نمونه</strong><small>افزودن و ویرایش</small></span></button>
+              <button type="button" class="admin-quick" data-admin-tab="orders"><span class="demo-tile-art" aria-hidden="true"><img src="assets/ui-orders-3d.webp" alt=""></span><span><strong>سفارش‌های نمونه</strong><small>ساخت و بررسی</small></span></button>
+              <button type="button" class="admin-quick" data-admin-tab="users"><span class="demo-tile-art" aria-hidden="true"><img src="assets/ui-user-3d.webp" alt=""></span><span><strong>کاربران نمونه</strong><small>ساخت و بررسی</small></span></button>
+              <button type="button" class="admin-quick" data-admin-tab="reports"><span class="demo-tile-art" aria-hidden="true"><img src="assets/ui-reports-3d.webp" alt=""></span><span><strong>گزارش‌ها</strong><small>آمار آزمایشی</small></span></button>
+            </div>
+            <p class="demo-note-card">فروش، پرداخت، مشتریان و موجودی واقعی در این نسخه به سامانه‌ای متصل نیستند.</p>
+          </section>
+          <section id="admin-panel-products" role="tabpanel" aria-labelledby="admin-tab-products" data-admin-panel="products" hidden>
+            <div class="admin-section-heading"><div><span class="demo-eyebrow">کاتالوگ آزمایشی</span><h3>محصولات نمونه</h3></div><span class="admin-heading-art" aria-hidden="true"><img src="assets/ui-catalog-3d.webp" alt=""></span></div>
+            <div id="admin-products-browser">
+              <p class="demo-section-intro">تغییرات این فهرست صرفاً برای تمرین پنل است و در فروشگاه اصلی اعمال نمی‌شود.</p>
+              <button class="demo-primary demo-inline-primary" type="button" data-admin-add-product><span class="demo-button-art" aria-hidden="true"><img src="assets/ui-catalog-3d.webp" alt=""></span><span>افزودن محصول نمونه</span></button>
+              <label class="demo-search-label" for="admin-product-search">جست‌وجو در محصولات نمونه</label><input id="admin-product-search" class="demo-search" type="search" autocomplete="off" placeholder="نام محصول نمونه">
+              <div class="admin-list" id="admin-products-list"></div>
+            </div>
+            <form class="demo-form admin-form" id="admin-product-form" hidden novalidate>
+              <h4 id="admin-product-form-title" tabindex="-1">محصول نمونه جدید</h4>
+              <label for="admin-product-name">نام محصول نمونه</label><input id="admin-product-name" name="demoProductName" maxlength="80" autocomplete="off" required>
+              <label for="admin-product-category">دسته‌بندی</label><select id="admin-product-category" name="category"><option>پسته</option><option>بادام</option><option>مغزها</option><option>خشکبار</option><option>آجیل مخلوط</option><option>سایر</option></select>
+              <label for="admin-product-price">قیمت آزمایشی هر کیلوگرم (تومان)</label><input id="admin-product-price" name="price" type="text" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="اختیاری؛ خالی یعنی نامشخص">
+              <label for="admin-product-stock">موجودی آزمایشی (کیلوگرم)</label><input id="admin-product-stock" name="stock" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="اختیاری؛ خالی یعنی نامشخص">
+              <p class="demo-field-help">قیمت و موجودی واردشده ساختگی هستند و به فروشگاه اصلی منتقل نمی‌شوند.</p>
+              <button class="demo-primary" type="submit"><span class="demo-button-art" aria-hidden="true"><img src="assets/ui-catalog-3d.webp" alt=""></span><span>ذخیره نمونه</span></button>
+              <button class="demo-secondary" type="button" data-admin-cancel-product>انصراف</button>
+            </form>
+          </section>
+          <section id="admin-panel-orders" role="tabpanel" aria-labelledby="admin-tab-orders" data-admin-panel="orders" hidden>
+            <div class="admin-section-heading"><div><span class="demo-eyebrow">بدون سفارش واقعی</span><h3>سفارش‌های نمونه</h3></div><span class="admin-heading-art" aria-hidden="true"><img src="assets/ui-orders-3d.webp" alt=""></span></div>
+            <div id="admin-orders-browser">
+              <p class="demo-section-intro">برای تمرین، سفارش ساختگی بسازید و وضعیت آن را تغییر دهید. هیچ سفارشی ارسال نمی‌شود.</p>
+              <button class="demo-primary demo-inline-primary" type="button" data-admin-add-order><span class="demo-button-art" aria-hidden="true"><img src="assets/ui-orders-3d.webp" alt=""></span><span>ساخت سفارش نمونه</span></button>
+              <div class="admin-list" id="admin-orders-list"></div>
+            </div>
+            <form class="demo-form admin-form" id="admin-order-form" hidden novalidate>
+              <h4 tabindex="-1">سفارش ساختگی جدید</h4>
+              <label for="admin-order-product">محصول نمونه</label><select id="admin-order-product" name="product" required></select>
+              <label for="admin-order-quantity">مقدار آزمایشی (کیلوگرم)</label><input id="admin-order-quantity" name="quantity" type="text" inputmode="numeric" maxlength="6" value="۱" required>
+              <p class="demo-field-help">هیچ نام، نشانی یا اطلاعات پرداختی دریافت نمی‌شود.</p>
+              <button class="demo-primary" type="submit"><span class="demo-button-art" aria-hidden="true"><img src="assets/ui-orders-3d.webp" alt=""></span><span>ایجاد سفارش ساختگی</span></button>
+              <button class="demo-secondary" type="button" data-admin-cancel-order>انصراف</button>
+            </form>
+          </section>
+          <section id="admin-panel-users" role="tabpanel" aria-labelledby="admin-tab-users" data-admin-panel="users" hidden>
+            <div class="admin-section-heading"><div><span class="demo-eyebrow">بدون حساب واقعی</span><h3>کاربران نمونه</h3></div><span class="admin-heading-art" aria-hidden="true"><img src="assets/ui-user-3d.webp" alt=""></span></div>
+            <div id="admin-users-browser">
+              <p class="demo-section-intro">این فهرست مستقل و ساختگی است و کاربران واقعی یا نمایه دستگاه را نشان نمی‌دهد.</p>
+              <button class="demo-primary demo-inline-primary" type="button" data-admin-add-user><span class="demo-button-art" aria-hidden="true"><img src="assets/ui-user-3d.webp" alt=""></span><span>افزودن کاربر نمونه</span></button>
+              <div class="admin-list" id="admin-users-list"></div>
+            </div>
+            <form class="demo-form admin-form" id="admin-user-form" hidden novalidate>
+              <h4 id="admin-user-form-title" tabindex="-1">کاربر ساختگی جدید</h4>
+              <label for="admin-user-name">نام مستعار نمونه</label><input id="admin-user-name" name="alias" type="text" maxlength="40" autocomplete="off" required>
+              <p class="demo-field-help">فقط نام ساختگی وارد کنید؛ شماره تلفن، رمز یا اطلاعات واقعی دریافت نمی‌شود.</p>
+              <button class="demo-primary" type="submit"><span class="demo-button-art" aria-hidden="true"><img src="assets/ui-user-3d.webp" alt=""></span><span>ایجاد کاربر نمونه</span></button>
+              <button class="demo-secondary" type="button" data-admin-cancel-user>انصراف</button>
+            </form>
+          </section>
+          <section id="admin-panel-reports" role="tabpanel" aria-labelledby="admin-tab-reports" data-admin-panel="reports" hidden>
+            <div class="admin-section-heading"><div><span class="demo-eyebrow">فقط داده‌های نمایشی</span><h3>گزارش‌های آزمایشی</h3></div><span class="admin-heading-art" aria-hidden="true"><img src="assets/ui-reports-3d.webp" alt=""></span></div>
+            <label class="demo-report-filter" for="admin-report-range"><span>بازه گزارش</span><select id="admin-report-range"><option value="all">همه زمان‌ها</option><option value="today">امروز</option><option value="week">۷ روز گذشته</option><option value="month">۳۰ روز گذشته</option></select></label>
+            <div class="admin-stats" id="admin-report-stats"></div>
+            <h4 class="demo-subheading">وضعیت سفارش‌های ساختگی</h4>
+            <div class="report-bars" id="admin-report-bars"></div>
+            <p class="demo-note-card">این اعداد فروش یا درآمد واقعی نیستند؛ گزارش واقعی به سامانه سفارش و پرداخت متصل نیاز دارد.</p>
+          </section>
+          <section id="admin-panel-settings" role="tabpanel" aria-labelledby="admin-tab-settings" data-admin-panel="settings" hidden>
+            <div class="admin-section-heading"><div><span class="demo-eyebrow">محیط آزمایشی</span><h3>تنظیمات پنل</h3></div><span class="admin-heading-art" aria-hidden="true"><img src="assets/ui-settings-3d.webp" alt=""></span></div>
+            <div class="demo-settings-card"><strong>داده‌های پنل نمایشی</strong><p>محصولات، کاربران و سفارش‌های ساختگی فقط در این دستگاه نگهداری می‌شوند. بازنشانی، سبد، منتخب‌ها و نمایه کاربر را حذف نمی‌کند.</p><button class="demo-secondary" type="button" data-admin-reset>بازنشانی داده‌های پنل</button><div class="demo-confirm" id="admin-reset-confirm" hidden><span>محصولات نمونه به حالت اولیه برمی‌گردند و کاربران و سفارش‌های ساختگی پاک می‌شوند. ادامه می‌دهید؟</span><div><button type="button" data-admin-reset-confirm>بله، بازنشانی</button><button type="button" data-admin-reset-cancel>انصراف</button></div></div></div>
+            <button class="demo-secondary demo-signout" type="button" data-admin-exit>خروج از مدیریت نمایشی</button>
+          </section>
+          <p id="admin-feedback" class="demo-feedback" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </dialog>
 
   <dialog class="product-modal" id="product-modal" aria-labelledby="product-modal-title" aria-describedby="product-modal-description">
     <div class="product-modal-shell">
